@@ -1,23 +1,33 @@
-// Fichier: src/App.jsx (Version Design Réparé - Fond Blanc & Large)
+// Fichier: src/App.jsx (Version FINALE avec Sidebar)
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
-import Dashboard from './Dashboard.jsx';
 import { Routes, Route, Navigate } from 'react-router-dom';
+
+// Import du nouveau Layout
+import Layout from './Layout.jsx'; 
+// Import des Pages
+import Dashboard from './Dashboard.jsx'; // C'est devenu notre "BiensPage"
+// On aura besoin de créer ces fichiers bientôt, mais on les prépare
+// import ContactsPage from './pages/ContactsPage.jsx'; 
+// import TachesPage from './pages/TachesPage.jsx';
+
 import PropertyDetail from './pages/PropertyDetail.jsx';
 import ContactDetail from './pages/ContactDetail.jsx';
 import SecretRegister from './pages/SecretRegister.jsx';
 import PriceEstimator from './PriceEstimator.jsx';
-import { Box, Heading, FormControl, FormLabel, Input, Button, Alert, Spinner, Center, Container } from '@chakra-ui/react';
+import { Box, Heading, FormControl, FormLabel, Input, Button, Alert, Spinner, Center, Flex } from '@chakra-ui/react';
 import { AlertIcon } from '@chakra-ui/icons';
 
 export default function App() {
+  const [token, setToken] = useState(null);
+  const [isLoadingToken, setIsLoadingToken] = useState(true);
+  
+  // États pour le Login (on les garde ici)
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [token, setToken] = useState(null);
   const [message, setMessage] = useState('');
-  const [isLoadingToken, setIsLoadingToken] = useState(true);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
@@ -31,7 +41,6 @@ export default function App() {
     setMessage('');
     setIsLoggingIn(true);
     try {
-      // Connexion au serveur Render
       const response = await axios.post('https://saas-immo-complet.onrender.com/api/auth/login', { email, password });
       localStorage.setItem('token', response.data.token);
       setToken(response.data.token);
@@ -47,78 +56,45 @@ export default function App() {
   if (isLoadingToken) return <Center h="100vh"><Spinner size="xl" color="blue.500" /></Center>;
 
   return (
-    // 1. LE CONTENEUR PRINCIPAL (La mise en page)
-    <Box minH="100vh" bg="gray.50" py={10} px={4}> {/* py=padding vertical, px=padding horizontal */}
-      
-      <Box 
-        maxWidth="1200px"     /* Largeur demandée */
-        margin="0 auto"       /* Centré */
-        bg="white"            /* Fond BLANC (pour voir le texte) */
-        borderRadius="xl"     /* Coins arrondis */
-        boxShadow="xl"        /* Belle ombre */
-        borderWidth="1px"
-        borderColor="gray.200"
-        p={[4, 8]}            /* Espace intérieur (petit sur mobile, grand sur ordi) */
-        minH="80vh"           /* Hauteur minimum pour que ça fasse "pro" */
-      >
-        
-        <Routes>
-          {/* ROUTE D'ACCUEIL (Dashboard ou Login) */}
-          <Route path="/" element={token ? <Dashboard token={token} onLogout={handleLogout} /> : (
-            <Center h="60vh">
-              <Box w="100%" maxWidth="400px">
-                <Heading as="h2" size="xl" mb={8} textAlign="center" color="blue.600">
-                  Connexion
-                </Heading>
-                <form onSubmit={handleLogin}>
-                  <FormControl id="email-login" mb={4} isRequired>
-                    <FormLabel>Email</FormLabel>
-                    <Input 
-                      type="email" 
-                      value={email} 
-                      onChange={(e) => setEmail(e.target.value)} 
-                      size="lg" 
-                      bg="gray.50"
-                    />
-                  </FormControl>
-                  <FormControl id="password-login" mb={6} isRequired>
-                    <FormLabel>Mot de passe</FormLabel>
-                    <Input 
-                      type="password" 
-                      value={password} 
-                      onChange={(e) => setPassword(e.target.value)} 
-                      size="lg"
-                      bg="gray.50"
-                    />
-                  </FormControl>
-                  {message && (
-                    <Alert status="error" mb={4} borderRadius="md">
-                      <AlertIcon />{message}
-                    </Alert>
-                  )}
-                  <Button 
-                    type="submit" 
-                    colorScheme="blue" 
-                    size="lg" 
-                    width="full" 
-                    isLoading={isLoggingIn}
-                    loadingText="Connexion..."
-                  >
-                    Se connecter
-                  </Button>
-                </form>
-              </Box>
-            </Center>
-          )} />
+    <Routes>
+      {/* Si l'utilisateur EST connecté */}
+      {token ? (
+        <Route path="/" element={<Layout onLogout={handleLogout} />}>
+          {/* Les pages à l'intérieur de la Sidebar */}
+          <Route index element={<Dashboard token={token} />} /> {/* Page d'accueil (Biens) */}
+          <Route path="biens" element={<Dashboard token={token} />} />
           
-          {/* AUTRES ROUTES */}
-          <Route path="/property/:propertyId" element={token ? <PropertyDetail token={token} onLogout={handleLogout} /> : <Navigate to="/" />} />
-          <Route path="/contact/:contactId" element={token ? <ContactDetail token={token} onLogout={handleLogout} /> : <Navigate to="/" />} />
-          <Route path="/estimate" element={token ? <PriceEstimator token={token} /> : <Navigate to="/" />} />
-          <Route path="/nouveau-membre-agence" element={<SecretRegister />} />
-        </Routes>
+          {/* ON DOIT CRÉER CES PAGES ENSUITE */}
+          <Route path="contacts" element={<div>Page Contacts (à faire)</div>} />
+          <Route path="taches" element={<div>Page Tâches (à faire)</div>} />
+          <Route path="estimate" element={<PriceEstimator token={token} />} />
 
-      </Box>
-    </Box>
+          {/* Pages de détail (elles s'affichent aussi dans le layout) */}
+          <Route path="property/:propertyId" element={<PropertyDetail token={token} />} />
+          <Route path="contact/:contactId" element={<ContactDetail token={token} />} />
+        </Route>
+      ) : (
+        /* Si l'utilisateur N'EST PAS connecté */
+        <Route path="/" element={
+          <Center h="100vh" bg="gray.50">
+            <Box p={8} maxWidth="400px" borderWidth={1} borderRadius="lg" boxShadow="xl" bg="white" width="100%">
+              <Heading as="h2" size="lg" mb={6} textAlign="center">Connexion Agence</Heading>
+              <form onSubmit={handleLogin}>
+                <FormControl id="email-login" mb={4} isRequired><FormLabel>Email</FormLabel><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></FormControl>
+                <FormControl id="password-login" mb={6} isRequired><FormLabel>Mot de passe</FormLabel><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} /></FormControl>
+                {message && <Alert status="error" mb={4} borderRadius="md"><AlertIcon />{message}</Alert>}
+                <Button type="submit" colorScheme="blue" width="full" isLoading={isLoggingIn}>Se connecter</Button>
+              </form>
+            </Box>
+          </Center>
+        } />
+      )}
+
+      {/* Route secrète (elle est en dehors du layout) */}
+      <Route path="/nouveau-membre-agence" element={<SecretRegister />} />
+      
+      {/* Redirection si on est perdu */}
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
   );
 }
