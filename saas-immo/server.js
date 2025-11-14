@@ -100,22 +100,20 @@ app.get('/api/me', authenticateToken, (req, res) => {
 });
 
 // --- ROUTES BIENS (Properties) - VERSION CORRIGÉE AVEC LOGS ---
+// Route Création Bien (Mise à jour avec Image)
 app.post('/api/properties', authenticateToken, async (req, res) => {
   console.log("----------------------------------------------------");
-  console.log("🕵️‍♂️ [ESPION] Tentative de création de bien...");
-  console.log("📦 Données reçues:", req.body);
-
+  console.log("🕵️‍♂️ [ESPION] Création bien avec image...");
+  
   try {
-    const { address, city, postalCode, price, area, rooms, bedrooms, description } = req.body;
+    // On récupère imageUrl en plus des autres infos
+    const { address, city, postalCode, price, area, rooms, bedrooms, description, imageUrl } = req.body;
 
-    // Vérification avant envoi
+    // Vérification simple
     if (!address || !price || !area) {
-        console.log("❌ [ESPION] Il manque des données obligatoires !");
         return res.status(400).json({ error: "Champs requis manquants." });
     }
 
-    console.log("🔄 [ESPION] Envoi à la base de données (Prisma)...");
-    
     const newProperty = await prisma.property.create({
       data: {
         address, city, postalCode, 
@@ -124,16 +122,17 @@ app.post('/api/properties', authenticateToken, async (req, res) => {
         rooms: parseInt(rooms) || 0, 
         bedrooms: parseInt(bedrooms) || 0, 
         description,
+        imageUrl, // <--- La nouveauté est ici !
         agentId: req.user.id
       }
     });
 
-    console.log("✅ [ESPION] SUCCÈS ! Bien créé avec ID:", newProperty.id);
+    console.log("✅ [ESPION] Bien créé avec image :", imageUrl ? "OUI" : "NON");
     res.status(201).json(newProperty);
 
   } catch (error) {
-    console.error("💥 [ESPION] ERREUR FATALE :", error);
-    res.status(500).json({ error: 'Erreur lors de la création du bien.' });
+    console.error("💥 [ESPION] ERREUR :", error);
+    res.status(500).json({ error: 'Erreur création bien.' });
   }
 });
 
