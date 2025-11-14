@@ -1,13 +1,15 @@
-// Fichier : src/Layout.jsx
+// Fichier : src/Layout.jsx (Corrigé)
 
 import React from 'react';
-import { Box } from '@chakra-ui/react';
-import { Outlet } from 'react-router-dom'; // C'est ici que les pages s'afficheront
+// LA CORRECTION EST ICI : J'ajoute 'Flex'
+import { Box, Flex } from '@chakra-ui/react'; 
+import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar.jsx';
 
 export default function Layout({ onLogout }) {
   return (
-    <Flex>
+    <Flex> {/* Maintenant, React sait ce qu'est 'Flex' */}
+      
       {/* 1. La Sidebar */}
       <Sidebar onLogout={onLogout} />
 
