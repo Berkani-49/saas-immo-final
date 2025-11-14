@@ -68,7 +68,7 @@ export default function App() {
             <Center h="60vh">
               <Box w="100%" maxWidth="400px">
                 <Heading as="h2" size="xl" mb={8} textAlign="center" color="blue.600">
-                  Connexion Agence
+                  Connexion
                 </Heading>
                 <form onSubmit={handleLogin}>
                   <FormControl id="email-login" mb={4} isRequired>
