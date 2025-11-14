@@ -1,11 +1,11 @@
-// Fichier : src/TaskItem.jsx
+// Fichier : src/TaskItem.jsx (Version avec Bouton Appel)
 
 import React, { useState } from 'react';
 import axios from 'axios';
 import { 
-  Box, Checkbox, Text, IconButton, Flex, Badge, Spacer, useToast 
+  Box, Checkbox, Text, IconButton, Flex, Badge, Spacer, useToast, Tooltip, HStack
 } from '@chakra-ui/react';
-import { DeleteIcon } from '@chakra-ui/icons';
+import { DeleteIcon, PhoneIcon } from '@chakra-ui/icons'; // <-- J'ai ajouté PhoneIcon
 import { Link } from 'react-router-dom';
 
 export default function TaskItem({ task, token, onTaskUpdated, onTaskDeleted }) {
@@ -48,8 +48,6 @@ export default function TaskItem({ task, token, onTaskUpdated, onTaskDeleted }) 
   };
 
   const isDone = task.status === 'DONE';
-
-  // Formatage de la date
   const dateStr = task.dueDate ? new Date(task.dueDate).toLocaleDateString() : null;
 
   return (
@@ -57,42 +55,64 @@ export default function TaskItem({ task, token, onTaskUpdated, onTaskDeleted }) 
       p={3} mb={2} borderWidth={1} borderRadius="md" bg={isDone ? "gray.50" : "white"}
       borderColor={isDone ? "gray.200" : "gray.300"}
       opacity={isDone ? 0.7 : 1}
+      _hover={{ boxShadow: "sm" }}
     >
-      <Flex alignItems="center">
+      <Flex alignItems="center" wrap="wrap" gap={2}>
         <Checkbox 
           isChecked={isDone} 
           onChange={handleToggleStatus} 
           size="lg" 
           colorScheme="green" 
-          mr={3}
           isDisabled={isLoading}
         />
         
-        <Box>
-          <Text as={isDone ? "s" : "b"} fontSize="md">
+        <Box flex="1">
+          <Text as={isDone ? "s" : "b"} fontSize="md" display="block">
             {task.title}
           </Text>
+          
           <Flex mt={1} gap={2} fontSize="xs" color="gray.500" alignItems="center" wrap="wrap">
-            {dateStr && <Badge colorScheme="purple">📅 {dateStr}</Badge>}
+            {dateStr && <Badge colorScheme="purple" variant="subtle">📅 {dateStr}</Badge>}
             
-            {/* Lien vers Contact */}
+            {/* --- ZONE CONTACT & APPEL --- */}
             {task.contact && (
-              <Link to={`/contact/${task.contact.id}`}>
-                <Badge colorScheme="blue" cursor="pointer">👤 {task.contact.firstName} {task.contact.lastName}</Badge>
-              </Link>
+              <HStack spacing={1}>
+                {/* Lien vers le profil */}
+                <Link to={`/contact/${task.contact.id}`}>
+                  <Badge colorScheme="blue" cursor="pointer" _hover={{ bg: "blue.200" }}>
+                    👤 {task.contact.firstName} {task.contact.lastName}
+                  </Badge>
+                </Link>
+
+                {/* BOUTON APPELER (S'affiche seulement s'il y a un numéro) */}
+                {task.contact.phoneNumber && (
+                  <Tooltip label={`Appeler : ${task.contact.phoneNumber}`} hasArrow>
+                    <IconButton
+                      as="a" 
+                      href={`tel:${task.contact.phoneNumber}`} // La magie est ici
+                      icon={<PhoneIcon />}
+                      size="xs"
+                      colorScheme="green"
+                      variant="solid"
+                      aria-label="Appeler"
+                      isRound
+                    />
+                  </Tooltip>
+                )}
+              </HStack>
             )}
 
             {/* Lien vers Bien */}
             {task.property && (
                <Link to={`/property/${task.property.id}`}>
-                <Badge colorScheme="orange" cursor="pointer">🏠 {task.property.address}</Badge>
+                <Badge colorScheme="orange" cursor="pointer" _hover={{ bg: "orange.200" }}>
+                  🏠 {task.property.address}
+                </Badge>
                </Link>
             )}
           </Flex>
         </Box>
 
-        <Spacer />
-        
         <IconButton 
           icon={<DeleteIcon />} 
           size="sm" 
@@ -100,6 +120,7 @@ export default function TaskItem({ task, token, onTaskUpdated, onTaskDeleted }) 
           colorScheme="red" 
           onClick={handleDelete}
           isLoading={isLoading}
+          aria-label="Supprimer la tâche"
         />
       </Flex>
     </Box>
