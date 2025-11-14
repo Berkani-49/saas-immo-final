@@ -168,16 +168,28 @@ app.get('/api/properties/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// Route : Mettre à jour un bien (Avec Image)
 app.put('/api/properties/:id', authenticateToken, async (req, res) => {
     try {
       const { id } = req.params;
-      const { address, city, postalCode, price, area, rooms, bedrooms, description } = req.body;
+      // On ajoute imageUrl dans la liste des choses qu'on reçoit
+      const { address, city, postalCode, price, area, rooms, bedrooms, description, imageUrl } = req.body;
+      
       const updatedProperty = await prisma.property.update({
         where: { id: parseInt(id) },
-        data: { address, city, postalCode, price: parseInt(price), area: parseInt(area), rooms: parseInt(rooms), bedrooms: parseInt(bedrooms), description }
+        data: { 
+            address, city, postalCode, 
+            price: parseInt(price), 
+            area: parseInt(area), 
+            rooms: parseInt(rooms), 
+            bedrooms: parseInt(bedrooms), 
+            description,
+            imageUrl // <--- La ligne magique ajoutée
+        }
       });
       res.status(200).json(updatedProperty);
     } catch (error) {
+      console.error("Erreur Update:", error);
       res.status(500).json({ error: "Erreur update bien." });
     }
 });
