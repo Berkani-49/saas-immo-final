@@ -1,13 +1,13 @@
-// Fichier : src/AddPropertyForm.jsx (Version Corrigée et Robuste)
+// Fichier : src/AddPropertyForm.jsx (Version Finale avec Photo)
 
 import React, { useState } from 'react';
 import axios from 'axios';
 import {
-  Box, Button, FormControl, FormLabel, Input, Textarea, HStack, VStack, Heading, useToast, NumberInput, NumberInputField
+  Box, Button, FormControl, FormLabel, Input, Textarea, HStack, VStack, Heading, useToast, Image, Text
 } from '@chakra-ui/react';
+import { supabase } from './supabaseClient'; // On importe notre connecteur
 
 export default function AddPropertyForm({ token, onPropertyAdded }) {
-  // États du formulaire
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [postalCode, setPostalCode] = useState('');
@@ -16,6 +16,10 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
   const [rooms, setRooms] = useState('');
   const [bedrooms, setBedrooms] = useState('');
   const [description, setDescription] = useState('');
+  
+  // États pour l'image
+  const [imageFile, setImageFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const toast = useToast();
@@ -23,57 +27,63 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validation simple
     if (!address || !price || !area) {
-      toast({ title: "Champs manquants", description: "Adresse, Prix et Surface sont obligatoires.", status: "warning" });
+      toast({ title: "Erreur", description: "Adresse, Prix et Surface requis.", status: "warning" });
       return;
     }
 
     setIsSubmitting(true);
+    let finalImageUrl = null;
 
     try {
+      // 1. Upload de l'image (si elle existe)
+      if (imageFile) {
+        setUploading(true);
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`; // Nom unique
+        const filePath = `${fileName}`;
+
+        // Envoi vers le bucket 'properties'
+        const { error: uploadError } = await supabase.storage
+          .from('properties')
+          .upload(filePath, imageFile);
+
+        if (uploadError) throw uploadError;
+
+        // Récupération du lien public
+        const { data } = supabase.storage.from('properties').getPublicUrl(filePath);
+        finalImageUrl = data.publicUrl;
+        setUploading(false);
+      }
+
+      // 2. Envoi des données au serveur (avec l'URL de l'image)
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      
-      // Préparation des données (On s'assure que les chiffres sont bien des chiffres)
       const payload = {
-        address,
-        city,
-        postalCode,
-        price: parseInt(price),
-        area: parseInt(area),
-        rooms: parseInt(rooms) || 0,    // Si vide, on met 0
-        bedrooms: parseInt(bedrooms) || 0, // Si vide, on met 0
-        description
+        address, city, postalCode, 
+        price: parseInt(price), area: parseInt(area), 
+        rooms: parseInt(rooms) || 0, bedrooms: parseInt(bedrooms) || 0, 
+        description,
+        imageUrl: finalImageUrl // <--- On ajoute le lien ici
       };
 
-      console.log("Envoi du bien...", payload); // Pour le débogage dans la console navigateur
-
+      // On utilise l'URL de production
       const response = await axios.post('https://saas-immo-complet.onrender.com/api/properties', payload, config);
 
-      // Succès
       onPropertyAdded(response.data);
       
-      // Reset du formulaire
-      setAddress('');
-      setCity('');
-      setPostalCode('');
-      setPrice('');
-      setArea('');
-      setRooms('');
-      setBedrooms('');
-      setDescription('');
+      // Reset
+      setAddress(''); setCity(''); setPostalCode(''); setPrice('');
+      setArea(''); setRooms(''); setBedrooms(''); setDescription('');
+      setImageFile(null);
 
-      toast({ title: "Bien ajouté !", status: "success", duration: 2000 });
+      toast({ title: "Bien ajouté avec succès !", status: "success" });
 
     } catch (error) {
-      console.error("Erreur Frontend (Ajout Bien):", error);
-      toast({ 
-        title: "Erreur", 
-        description: error.response?.data?.error || "Impossible d'ajouter le bien.", 
-        status: "error" 
-      });
+      console.error("Erreur:", error);
+      toast({ title: "Erreur", description: "Problème lors de l'ajout.", status: "error" });
     } finally {
       setIsSubmitting(false);
+      setUploading(false);
     }
   };
 
@@ -83,53 +93,49 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
       <form onSubmit={handleSubmit}>
         <VStack spacing={4}>
           
-          {/* Adresse Complète */}
           <FormControl isRequired>
             <FormLabel>Adresse</FormLabel>
             <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="10 rue de la Paix" />
           </FormControl>
 
           <HStack width="full">
-            <FormControl>
-              <FormLabel>Ville</FormLabel>
-              <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Paris" />
-            </FormControl>
-            <FormControl>
-              <FormLabel>Code Postal</FormLabel>
-              <Input value={postalCode} onChange={(e) => setPostalCode(e.target.value)} placeholder="75001" />
-            </FormControl>
+            <FormControl><FormLabel>Ville</FormLabel><Input value={city} onChange={(e) => setCity(e.target.value)} /></FormControl>
+            <FormControl><FormLabel>Code Postal</FormLabel><Input value={postalCode} onChange={(e) => setPostalCode(e.target.value)} /></FormControl>
           </HStack>
 
-          {/* Prix et Surface */}
           <HStack width="full">
-            <FormControl isRequired>
-              <FormLabel>Prix (€)</FormLabel>
-              <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="350000" />
-            </FormControl>
-            <FormControl isRequired>
-              <FormLabel>Surface (m²)</FormLabel>
-              <Input type="number" value={area} onChange={(e) => setArea(e.target.value)} placeholder="85" />
-            </FormControl>
+            <FormControl isRequired><FormLabel>Prix (€)</FormLabel><Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} /></FormControl>
+            <FormControl isRequired><FormLabel>Surface (m²)</FormLabel><Input type="number" value={area} onChange={(e) => setArea(e.target.value)} /></FormControl>
           </HStack>
 
-          {/* Pièces et Chambres */}
           <HStack width="full">
-            <FormControl>
-              <FormLabel>Pièces</FormLabel>
-              <Input type="number" value={rooms} onChange={(e) => setRooms(e.target.value)} placeholder="4" />
-            </FormControl>
-            <FormControl>
-              <FormLabel>Chambres</FormLabel>
-              <Input type="number" value={bedrooms} onChange={(e) => setBedrooms(e.target.value)} placeholder="2" />
-            </FormControl>
+            <FormControl><FormLabel>Pièces</FormLabel><Input type="number" value={rooms} onChange={(e) => setRooms(e.target.value)} /></FormControl>
+            <FormControl><FormLabel>Chambres</FormLabel><Input type="number" value={bedrooms} onChange={(e) => setBedrooms(e.target.value)} /></FormControl>
           </HStack>
 
           <FormControl>
-            <FormLabel>Description</FormLabel>
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Description du bien..." />
+            <FormLabel>Photo du bien</FormLabel>
+            <Input 
+              type="file" 
+              accept="image/*"
+              onChange={(e) => setImageFile(e.target.files[0])} 
+              p={1}
+            />
+            {imageFile && <Text fontSize="sm" color="green.500" mt={1}>Image sélectionnée : {imageFile.name}</Text>}
           </FormControl>
 
-          <Button type="submit" colorScheme="blue" width="full" isLoading={isSubmitting}>
+          <FormControl>
+            <FormLabel>Description</FormLabel>
+            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
+          </FormControl>
+
+          <Button 
+            type="submit" 
+            colorScheme="blue" 
+            width="full" 
+            isLoading={isSubmitting || uploading}
+            loadingText={uploading ? "Envoi de la photo..." : "Enregistrement..."}
+          >
             Ajouter le bien
           </Button>
         </VStack>
