@@ -1,3 +1,5 @@
+// Fichier: src/App.jsx (Version Finale & Propre)
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
@@ -29,11 +31,12 @@ export default function App() {
     setMessage('');
     setIsLoggingIn(true);
     try {
+      // On pointe vers ton serveur Render
       const response = await axios.post('https://saas-immo-complet.onrender.com/api/auth/login', { email, password });
       localStorage.setItem('token', response.data.token);
       setToken(response.data.token);
     } catch (error) {
-      setMessage('Erreur connexion');
+      setMessage('Email ou mot de passe incorrect.');
     } finally {
       setIsLoggingIn(false);
     }
@@ -44,19 +47,24 @@ export default function App() {
   if (isLoadingToken) return <Center h="100vh"><Spinner size="xl" /></Center>;
 
   return (
-    <Box maxWidth="1200px" margin="40px auto" p={[3, 6]} borderWidth={1} borderRadius="lg" boxShadow="md" bg="white">
+    <Box maxWidth="1200px" margin="40px auto" p={[3, 6]}> 
+      {/* J'ai enlevé le cadre blanc pour la page principale, c'est plus joli si le Dashboard gère son design */}
       <Routes>
         <Route path="/" element={token ? <Dashboard token={token} onLogout={handleLogout} /> : (
-          <Box maxWidth="400px" margin="0 auto">
-            <Heading as="h2" size="lg" mb={6} textAlign="center">TEST FINAL</Heading>
-            <form onSubmit={handleLogin}>
-              <FormControl id="email-login" mb={4} isRequired><FormLabel>Email</FormLabel><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></FormControl>
-              <FormControl id="password-login" mb={6} isRequired><FormLabel>Mot de passe</FormLabel><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} /></FormControl>
-              {message && <Alert status="error" mb={4}><AlertIcon />{message}</Alert>}
-              <Button type="submit" colorScheme="blue" width="full" isLoading={isLoggingIn}>Se connecter</Button>
-            </form>
-          </Box>
+          // BOITE DE CONNEXION CENTRÉE
+          <Center h="80vh">
+            <Box p={8} maxWidth="400px" borderWidth={1} borderRadius="lg" boxShadow="xl" bg="white" width="100%">
+              <Heading as="h2" size="lg" mb={6} textAlign="center">Connexion Agence</Heading>
+              <form onSubmit={handleLogin}>
+                <FormControl id="email-login" mb={4} isRequired><FormLabel>Email</FormLabel><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></FormControl>
+                <FormControl id="password-login" mb={6} isRequired><FormLabel>Mot de passe</FormLabel><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} /></FormControl>
+                {message && <Alert status="error" mb={4} borderRadius="md"><AlertIcon />{message}</Alert>}
+                <Button type="submit" colorScheme="blue" width="full" isLoading={isLoggingIn}>Se connecter</Button>
+              </form>
+            </Box>
+          </Center>
         )} />
+        
         <Route path="/property/:propertyId" element={token ? <PropertyDetail token={token} onLogout={handleLogout} /> : <Navigate to="/" />} />
         <Route path="/contact/:contactId" element={token ? <ContactDetail token={token} onLogout={handleLogout} /> : <Navigate to="/" />} />
         <Route path="/estimate" element={token ? <PriceEstimator token={token} /> : <Navigate to="/" />} />
