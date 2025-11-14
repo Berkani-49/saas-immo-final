@@ -1,0 +1,96 @@
+// Fichier : prisma/schema.prisma (Version 2 - Corrigée)
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+// --- MODÈLE USER ---
+model User {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  password    String
+  firstName   String
+  lastName    String
+  createdAt   DateTime @default(now())
+
+  // Relations existantes
+  properties Property[]
+  contacts   Contact[]
+
+  // NOUVELLE LIGNE AJOUTÉE (le champ opposé)
+  tasks      Task[]
+}
+
+// --- MODÈLE PROPERTY ---
+model Property {
+  id          Int      @id @default(autoincrement())
+  address     String
+  city        String?
+  postalCode  String?
+  price       Int
+  area        Int
+  rooms       Int
+  bedrooms    Int
+  description String?
+  createdAt   DateTime @default(now())
+
+  // Relation existante
+  agent     User @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agentId   Int
+
+  // NOUVELLE LIGNE AJOUTÉE (le champ opposé)
+  tasks     Task[]
+
+  @@index([agentId])
+}
+
+// --- MODÈLE CONTACT ---
+model Contact {
+  id          Int      @id @default(autoincrement())
+  firstName   String
+  lastName    String
+  email       String?
+  phoneNumber String?
+  type        String   // "BUYER" ou "SELLER"
+  createdAt   DateTime @default(now())
+
+  // Relation existante
+  agent     User @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agentId   Int
+
+  // NOUVELLE LIGNE AJOUTÉE (le champ opposé)
+  tasks     Task[]
+
+  @@index([agentId])
+}
+
+// --- NOTRE NOUVEAU MODÈLE TASK ---
+model Task {
+  id          Int      @id @default(autoincrement())
+  title       String   // Le nom de la tâche (ex: "Appeler M. Dupont")
+  dueDate     DateTime? // La date d'échéance (optionnelle)
+  status      String   @default("PENDING") // "PENDING" ou "DONE"
+  createdAt   DateTime @default(now())
+
+  // Le lien avec l'agent
+  agent     User @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agentId   Int
+
+  // Les liens optionnels
+  contact     Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  contactId   Int?
+
+  property    Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  propertyId  Int?
+
+  @@index([agentId])
+  @@index([contactId])
+  @@index([propertyId])
+}

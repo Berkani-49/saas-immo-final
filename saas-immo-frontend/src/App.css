@@ -1,0 +1,74 @@
+/* Fichier: src/index.css (Fond Mauve/Noir Animé) */
+
+/* Importe une police de caractères si tu en veux une spécifique */
+/* @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap'); */
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87); /* Couleur de texte par défaut pour que ça ressorte sur fond sombre */
+  background-color: #242424; /* Fallback si l'animation ne charge pas */
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  display: flex; /* Utilise flexbox pour centrer le contenu de App.jsx */
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh; /* S'assure que le body prend toute la hauteur */
+
+  /* --- DÉGRADÉ ANIMÉ MAUVE/NOIR --- */
+  background: linear-gradient(-45deg, #1A202C, #2D3748, #6B46C1, #805AD5); /* Couleurs du dégradé */
+  background-size: 400% 400%; /* Taille du dégradé pour l'animation */
+  animation: gradientAnimation 15s ease infinite; /* Nom de l'animation, durée, type, répétition */
+}
+
+/* Définition de l'animation */
+@keyframes gradientAnimation {
+  0% {
+    background-position: 0% 50%; /* Position de départ du dégradé */
+  }
+  50% {
+    background-position: 100% 50%; /* Position intermédiaire */
+  }
+  100% {
+    background-position: 0% 50%; /* Retour à la position de départ */
+  }
+}
+
+/* Styles généraux pour le titre et les liens (juste un exemple) */
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}
+
+/* Ajustements pour les modes clair/sombre */
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+  a:hover {
+    color: #747bff;
+  }
+  .card {
+    background-color: #ffffff;
+  }
+}
