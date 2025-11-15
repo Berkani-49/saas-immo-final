@@ -23,7 +23,7 @@ export default function BiensPage({ token }) { // Note: On reçoit "token" en pr
       setIsLoading(true);
       try {
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
-        const response = await axios.get('https://saas-immo-complet.onrender.com/api/properties', config);
+        const response = await axios.get('https://api-immo-final.onrender.com/api/properties', config);
         setProperties(response.data);
       } catch (error) {
         console.error("Erreur (biens):", error);

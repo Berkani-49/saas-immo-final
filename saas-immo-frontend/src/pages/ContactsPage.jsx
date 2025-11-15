@@ -20,7 +20,7 @@ export default function ContactsPage({ token }) {
       setIsLoading(true);
       try {
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
-        const response = await axios.get('https://saas-immo-complet.onrender.com/api/contacts', config);
+        const response = await axios.get('https://api-immo-final.onrender.com/api/contacts', config);
         setContacts(response.data);
       } catch (err) {
         console.error("Erreur (contacts):", err);

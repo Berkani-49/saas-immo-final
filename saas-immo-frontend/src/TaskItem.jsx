@@ -18,7 +18,7 @@ export default function TaskItem({ task, token, onTaskUpdated, onTaskDeleted }) 
     setIsLoading(true);
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      const response = await axios.put(`https://saas-immo-complet.onrender.com/api/tasks/${task.id}`, {
+      const response = await axios.put(`https://api-immo-final.onrender.com/api/tasks/${task.id}`, {
         title: task.title,
         status: newStatus
       }, config);
@@ -37,7 +37,7 @@ export default function TaskItem({ task, token, onTaskUpdated, onTaskDeleted }) 
     setIsLoading(true);
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      await axios.delete(`https://saas-immo-complet.onrender.com/api/tasks/${task.id}`, config);
+      await axios.delete(`https://api-immo-final.onrender.com/api/tasks/${task.id}`, config);
       onTaskDeleted(task.id);
       toast({ status: 'success', title: "Tâche supprimée." });
     } catch (error) {

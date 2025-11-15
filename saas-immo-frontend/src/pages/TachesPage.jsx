@@ -28,9 +28,9 @@ export default function TachesPage({ token }) {
         
         // On lance les 3 requêtes en parallèle pour gagner du temps
         const [tasksRes, contactsRes, propsRes] = await Promise.all([
-          axios.get('https://saas-immo-complet.onrender.com/api/tasks', config),
-          axios.get('https://saas-immo-complet.onrender.com/api/contacts', config),
-          axios.get('https://saas-immo-complet.onrender.com/api/properties', config)
+          axios.get('https://api-immo-final.onrender.com/api/tasks', config),
+          axios.get('https://api-immo-final.onrender.com/api/contacts', config),
+          axios.get('https://api-immo-final.onrender.com/api/properties', config)
         ]);
 
         setTasks(tasksRes.data);

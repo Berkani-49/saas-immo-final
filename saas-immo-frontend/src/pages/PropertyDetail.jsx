@@ -39,7 +39,7 @@ export default function PropertyDetail({ token, onLogout }) {
       setError('');
       try {
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
-        const response = await axios.get(`https://saas-immo-complet.onrender.com/api/properties/${propertyId}`, config);
+        const response = await axios.get(`https://api-immo-final.onrender.com/api/properties/${propertyId}`, config);
         
         setProperty(response.data);
         // Initialiser le formulaire d'édition avec les données du bien
@@ -102,7 +102,7 @@ export default function PropertyDetail({ token, onLogout }) {
         return;
       }
 
-      const response = await axios.put(`https://saas-immo-complet.onrender.com/api/properties/${propertyId}`, dataToSave, config);
+      const response = await axios.put(`https://api-immo-final.onrender.com/api/properties/${propertyId}`, dataToSave, config);
       setProperty(response.data); // Mettre à jour le bien
       setEditFormData(response.data); // Mettre à jour le formulaire
       setIsEditing(false); // Quitter le mode édition
@@ -127,7 +127,7 @@ export default function PropertyDetail({ token, onLogout }) {
     setGeneratedDescription('');
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      const response = await axios.post(`https://saas-immo-complet.onrender.com/api/properties/${propertyId}/generate-description`, {}, config);
+      const response = await axios.post(`https://api-immo-final.onrender.com/api/properties/${propertyId}/generate-description`, {}, config);
       setGeneratedDescription(response.data.description);
       toast({
         title: "Description IA générée.",

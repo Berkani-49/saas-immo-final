@@ -30,7 +30,7 @@ export default function AddTaskForm({ token, onTaskAdded, contacts, properties }
         propertyId: propertyId ? parseInt(propertyId) : null
       };
 
-      const response = await axios.post('https://saas-immo-complet.onrender.com/api/tasks', payload, config);
+      const response = await axios.post('https://api-immo-final.onrender.com/api/tasks', payload, config);
       
       // On recharge la tâche avec les infos complètes (pour avoir les noms des contacts/biens)
       // Petite astuce : Le backend nous renvoie déjà l'objet créé, mais sans les relations incluses 

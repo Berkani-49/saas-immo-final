@@ -30,7 +30,7 @@ export default function ContactDetail({ token, onLogout }) {
       setError('');
       try {
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
-        const response = await axios.get(`https://saas-immo-complet.onrender.com/api/contacts/${contactId}`, config);
+        const response = await axios.get(`https://api-immo-final.onrender.com/api/contacts/${contactId}`, config);
         setContact(response.data);
         setEditFormData(response.data); // Initialise le formulaire
       } catch (err) {
@@ -58,7 +58,7 @@ export default function ContactDetail({ token, onLogout }) {
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
       // Le backend gère déjà la validation, on envoie juste les données
-      const response = await axios.put(`https://saas-immo-complet.onrender.com/api/contacts/${contactId}`, editFormData, config);
+      const response = await axios.put(`https://api-immo-final.onrender.com/api/contacts/${contactId}`, editFormData, config);
       
       setContact(response.data); // Met à jour la vue
       setEditFormData(response.data); // Met à jour le form

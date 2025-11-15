@@ -24,7 +24,7 @@ export default function ContactItem({ contact, token, onContactDeleted, onContac
     setIsLoading(true);
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      await axios.delete(`https://saas-immo-complet.onrender.com/api/contacts/${contact.id}`, config);
+      await axios.delete(`https://api-immo-final.onrender.com/api/contacts/${contact.id}`, config);
       toast({ title: "Contact supprimé.", status: "success", duration: 2000, isClosable: true });
       onContactDeleted(contact.id);
     } catch (err) {
@@ -45,7 +45,7 @@ export default function ContactItem({ contact, token, onContactDeleted, onContac
     }
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      const response = await axios.put(`https://saas-immo-complet.onrender.com/api/contacts/${contact.id}`, editData, config);
+      const response = await axios.put(`https://api-immo-final.onrender.com/api/contacts/${contact.id}`, editData, config);
       onContactUpdated(response.data);
       setIsEditing(false);
       toast({ title: "Contact mis à jour.", status: "success", duration: 2000, isClosable: true });
