@@ -413,48 +413,41 @@ app.post('/api/estimate-price', authenticateToken, async (req, res) => {
 
 
 
-// --- NOUVELLE ROUTE : STATISTIQUES (Version Simplifiée & Robuste) ---
+// --- NOUVELLE ROUTE : STATISTIQUES (Version "Pas à Pas" - Ultra Robuste) ---
 app.get('/api/stats', authenticateToken, async (req, res) => {
   try {
-    const agentId = req.user.id; // L'ID de l'agent connecté
+    const agentId = req.user.id;
+    console.log(`[Stats] Démarrage... Agent ID: ${agentId}`);
 
-    // On utilise 5 requêtes simples au lieu de 'groupBy' complexes
-    // C'est beaucoup plus stable sur Render
-    const [
-      propertyCount,
-      contactCount,
-      buyerCount,
-      sellerCount,
-      pendingTaskCount
-    ] = await Promise.all([
-      prisma.property.count(), // 1. Total des biens
-      prisma.contact.count(),  // 2. Total des contacts
-      prisma.contact.count({ where: { type: 'BUYER' } }),  // 3. Acheteurs
-      prisma.contact.count({ where: { type: 'SELLER' } }), // 4. Vendeurs
-      prisma.task.count({ where: { agentId: agentId, status: 'PENDING' } }) // 5. Tâches (personnelles)
-    ]);
+    // On fait les requêtes UNE PAR UNE pour ne pas surcharger le serveur
+    const propertyCount = await prisma.property.count();
+    console.log(`[Stats] 1/5 - Biens comptés: ${propertyCount}`);
+    
+    const contactCount = await prisma.contact.count();
+    console.log(`[Stats] 2/5 - Contacts comptés: ${contactCount}`);
+    
+    const buyerCount = await prisma.contact.count({ where: { type: 'BUYER' } });
+    console.log(`[Stats] 3/5 - Acheteurs comptés: ${buyerCount}`);
+    
+    const sellerCount = await prisma.contact.count({ where: { type: 'SELLER' } });
+    console.log(`[Stats] 4/5 - Vendeurs comptés: ${sellerCount}`);
+    
+    const pendingTaskCount = await prisma.task.count({ where: { agentId: agentId, status: 'PENDING' } });
+    console.log(`[Stats] 5/5 - Tâches comptées: ${pendingTaskCount}`);
 
     // Mettre en forme les résultats
     const stats = {
-      properties: {
-        total: propertyCount,
-      },
-      contacts: {
-        total: contactCount,
-        buyers: buyerCount,
-        sellers: sellerCount,
-      },
-      tasks: {
-        pending: pendingTaskCount,
-        // (On n'a pas besoin de compter les tâches "DONE" pour le dashboard)
-        done: 0 
-      }
+      properties: { total: propertyCount },
+      contacts: { total: contactCount, buyers: buyerCount, sellers: sellerCount },
+      tasks: { pending: pendingTaskCount, done: 0 }
     };
-
+    
+    console.log("[Stats] ✅ Succès ! Envoi des données.");
     res.status(200).json(stats);
 
   } catch (error) {
-    console.error("💥 ERREUR GET /api/stats:", error);
+    // Si ça plante, on le verra ENFIN ici
+    console.error("💥💥💥 ERREUR FATALE GET /api/stats:", error);
     res.status(500).json({ error: "Erreur lors du chargement des statistiques." });
   }
 });
