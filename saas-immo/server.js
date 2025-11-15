@@ -412,6 +412,64 @@ app.post('/api/estimate-price', authenticateToken, async (req, res) => {
 });
 
 
+
+// --- NOUVELLE ROUTE : STATISTIQUES DU TABLEAU DE BORD ---
+app.get('/api/stats', authenticateToken, async (req, res) => {
+  try {
+    const agentId = req.user.id;
+
+    // 1. Compter les Biens (en mode agence, on compte tout)
+    const propertyCount = await prisma.property.count({
+      // Si tu veux les compter par agent : where: { agentId: agentId }
+    });
+
+    // 2. Compter les Contacts (par type)
+    const contactCounts = await prisma.contact.groupBy({
+      by: ['type'],
+      _count: {
+        _all: true,
+      },
+      // Si tu veux les compter par agent : where: { agentId: agentId }
+    });
+
+    // 3. Compter les Tâches (par statut, pour CET agent)
+    const taskCounts = await prisma.task.groupBy({
+      by: ['status'],
+      _count: {
+        _all: true,
+      },
+      where: { 
+        agentId: agentId // Les tâches restent personnelles
+      },
+    });
+
+    // 4. Mettre en forme les résultats
+    const stats = {
+      properties: {
+        total: propertyCount,
+      },
+      contacts: {
+        total: contactCounts.reduce((acc, curr) => acc + curr._count._all, 0),
+        buyers: contactCounts.find(c => c.type === 'BUYER')?._count._all || 0,
+        sellers: contactCounts.find(c => c.type === 'SELLER')?._count._all || 0,
+      },
+      tasks: {
+        total: taskCounts.reduce((acc, curr) => acc + curr._count._all, 0),
+        pending: taskCounts.find(t => t.status === 'PENDING')?._count._all || 0,
+        done: taskCounts.find(t => t.status === 'DONE')?._count._all || 0,
+      }
+    };
+
+    res.status(200).json(stats);
+
+  } catch (error) {
+    console.error("Erreur GET /api/stats:", error);
+    res.status(500).json({ error: "Erreur lors du chargement des statistiques." });
+  }
+});
+
+
+
 // 7. DÉMARRAGE
 app.listen(PORT, () => {
   console.log(`Serveur démarré sur http://localhost:${PORT}`);
