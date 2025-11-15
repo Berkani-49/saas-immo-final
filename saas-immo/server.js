@@ -287,22 +287,43 @@ app.post('/api/tasks', authenticateToken, async (req, res) => {
     }
 });
 
-// 2. Lister toutes les tâches de l'agent
+// --- NOUVELLE ROUTE : LISTER LES TÂCHES (Version Robuste) ---
 app.get('/api/tasks', authenticateToken, async (req, res) => {
-    try {
-        const tasks = await prisma.task.findMany({
-            where: { agentId: req.user.id },
-            include: { // On inclut les infos du contact et du bien liés !
-                contact: true,
-                property: true
+  console.log(`[Stats] Démarrage... Agent ID: ${req.user.id}`);
+  
+  try {
+    const agentId = req.user.id;
+    console.log(`[Tasks] Recherche des tâches pour l'agent ${agentId}`);
+
+    const tasks = await prisma.task.findMany({
+        where: { agentId: agentId }, // On garde les tâches personnelles
+        include: {
+            contact: { // On inclut le contact
+              select: { // Mais SEULEMENT ce dont on a besoin
+                id: true,
+                firstName: true,
+                lastName: true,
+                phoneNumber: true
+              }
             },
-            orderBy: { createdAt: 'desc' }
-        });
-        res.status(200).json(tasks);
-    } catch (error) {
-        console.error("Erreur GET /api/tasks:", error);
-        res.status(500).json({ error: "Erreur récupération tâches." });
-    }
+            property: { // On inclut le bien
+              select: { // Mais SEULEMENT ce dont on a besoin
+                id: true,
+                address: true
+              }
+            }
+        },
+        orderBy: { createdAt: 'desc' }
+    });
+
+    console.log(`[Tasks] ✅ Succès ! ${tasks.length} tâches trouvées.`);
+    res.status(200).json(tasks);
+
+  } catch (error) {
+    // Si ça plante, on le verra ENFIN ici
+    console.error("💥💥💥 ERREUR FATALE GET /api/tasks:", error);
+    res.status(500).json({ error: "Erreur récupération tâches." });
+  }
 });
 
 // 3. Mettre à jour une tâche
