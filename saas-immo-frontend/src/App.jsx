@@ -1,4 +1,4 @@
-// Fichier: src/App.jsx (Version avec ContactsPage)
+// Fichier: src/App.jsx (Version FINALE - Sidebar 100% fonctionnelle)
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -10,8 +10,8 @@ import Layout from './Layout.jsx';
 
 // Import des Pages
 import Dashboard from './Dashboard.jsx'; // C'est notre "BiensPage"
-import ContactsPage from './pages/ContactsPage.jsx'; // <-- NOUVELLE LIGNE
-// import TachesPage from './pages/TachesPage.jsx'; // (Bientôt)
+import ContactsPage from './pages/ContactsPage.jsx'; 
+import TachesPage from './pages/TachesPage.jsx'; // <-- NOUVELLE LIGNE
 
 import PropertyDetail from './pages/PropertyDetail.jsx';
 import ContactDetail from './pages/ContactDetail.jsx';
@@ -63,11 +63,11 @@ export default function App() {
           {/* Les pages à l'intérieur de la Sidebar */}
           <Route index element={<Dashboard token={token} />} />
           <Route path="biens" element={<Dashboard token={token} />} />
-          
-          {/* LA LIGNE MODIFIÉE : */}
           <Route path="contacts" element={<ContactsPage token={token} />} /> 
           
-          <Route path="taches" element={<div>Page Tâches (à faire)</div>} />
+          {/* LA LIGNE MODIFIÉE : */}
+          <Route path="taches" element={<TachesPage token={token} />} />
+          
           <Route path="estimate" element={<PriceEstimator token={token} />} />
 
           {/* Pages de détail */}
