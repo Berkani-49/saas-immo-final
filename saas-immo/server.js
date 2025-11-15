@@ -158,6 +158,27 @@ app.delete('/api/properties/:id', authenticateToken, async (req, res) => {
     }
 });
 
+
+// --- LA ROUTE MANQUANTE POUR AFFICHER LA LISTE ---
+// Route : Voir TOUS les biens de l'agence (Mode Équipe)
+app.get('/api/properties', authenticateToken, async (req, res) => {
+  try {
+    const properties = await prisma.property.findMany({
+      // On n'a pas de filtre 'agentId' pour que tout le monde voie tout
+      orderBy: { createdAt: 'desc' },
+      include: { 
+        agent: { // On demande le nom de l'agent qui a créé le bien
+            select: { firstName: true, lastName: true } 
+        } 
+      }
+    });
+    res.status(200).json(properties);
+  } catch (error) {
+    console.error("Erreur GET /api/properties:", error);
+    res.status(500).json({ error: "Erreur serveur." });
+  }
+});
+
 // --- ROUTES CONTACTS ---
 app.post('/api/contacts', authenticateToken, async (req, res) => {
   try {
