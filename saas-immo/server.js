@@ -103,68 +103,26 @@ app.get('/api/me', authenticateToken, (req, res) => {
 // Route Création Bien (Mise à jour avec Image)
 app.post('/api/properties', authenticateToken, async (req, res) => {
   console.log("----------------------------------------------------");
-  console.log("🕵️‍♂️ [ESPION] Création bien avec image...");
-  
+  console.log("🕵️‍♂️ [ESPION] Création bien...");
   try {
-    // On récupère imageUrl en plus des autres infos
-    const { address, city, postalCode, price, area, rooms, bedrooms, description, imageUrl } = req.body;
-
-    // Vérification simple
+    const { address, city, postalCode, price, area, rooms, bedrooms, description } = req.body;
     if (!address || !price || !area) {
         return res.status(400).json({ error: "Champs requis manquants." });
     }
-
     const newProperty = await prisma.property.create({
       data: {
         address, city, postalCode, 
-        price: parseInt(price), 
-        area: parseInt(area), 
-        rooms: parseInt(rooms) || 0, 
-        bedrooms: parseInt(bedrooms) || 0, 
+        price: parseInt(price), area: parseInt(area), 
+        rooms: parseInt(rooms) || 0, bedrooms: parseInt(bedrooms) || 0, 
         description,
-        imageUrl, // <--- La nouveauté est ici !
         agentId: req.user.id
       }
     });
-
-    console.log("✅ [ESPION] Bien créé avec image :", imageUrl ? "OUI" : "NON");
+    console.log("✅ [ESPION] Bien créé avec ID:", newProperty.id);
     res.status(201).json(newProperty);
-
   } catch (error) {
     console.error("💥 [ESPION] ERREUR :", error);
     res.status(500).json({ error: 'Erreur création bien.' });
-  }
-});
-
-// Route : Voir TOUS les biens de l'agence (Mode Équipe)
-app.get('/api/properties', authenticateToken, async (req, res) => {
-  try {
-    const properties = await prisma.property.findMany({
-      // ON A ENLEVÉ : where: { agentId: req.user.id },
-      // On veut tout voir !
-      orderBy: { createdAt: 'desc' },
-      include: { 
-        agent: { // On demande aussi le nom de l'agent qui a créé le bien
-            select: { firstName: true, lastName: true } 
-        } 
-      }
-    });
-    res.status(200).json(properties);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Erreur serveur." });
-  }
-});
-
-app.get('/api/properties/:id', authenticateToken, async (req, res) => {
-  try {
-    const property = await prisma.property.findFirst({
-      where: { id: parseInt(req.params.id), agentId: req.user.id }
-    });
-    if (!property) return res.status(404).json({ error: 'Bien non trouvé.' });
-    res.status(200).json(property);
-  } catch (error) {
-    res.status(500).json({ error: "Erreur serveur." });
   }
 });
 
@@ -172,9 +130,7 @@ app.get('/api/properties/:id', authenticateToken, async (req, res) => {
 app.put('/api/properties/:id', authenticateToken, async (req, res) => {
     try {
       const { id } = req.params;
-      // On ajoute imageUrl dans la liste des choses qu'on reçoit
-      const { address, city, postalCode, price, area, rooms, bedrooms, description, imageUrl } = req.body;
-      
+      const { address, city, postalCode, price, area, rooms, bedrooms, description } = req.body;
       const updatedProperty = await prisma.property.update({
         where: { id: parseInt(id) },
         data: { 
@@ -183,8 +139,7 @@ app.put('/api/properties/:id', authenticateToken, async (req, res) => {
             area: parseInt(area), 
             rooms: parseInt(rooms), 
             bedrooms: parseInt(bedrooms), 
-            description,
-            imageUrl // <--- La ligne magique ajoutée
+            description
         }
       });
       res.status(200).json(updatedProperty);
