@@ -1,10 +1,9 @@
-// Fichier : src/pages/TachesPage.jsx
+// Fichier : src/pages/TachesPage.jsx (Version Robuste)
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Box, Heading, Spinner, Flex, Alert, AlertIcon, List } from '@chakra-ui/react';
 
-// On réutilise les composants de tâches
 import AddTaskForm from '../AddTaskForm.jsx';
 import TaskItem from '../TaskItem.jsx';
 
@@ -15,8 +14,11 @@ export default function TachesPage({ token }) {
   
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  // On utilise ton NOUVEAU lien Render (api-immo-final)
+  const API_URL = 'https://api-immo-final.onrender.com'; 
 
-  // --- Chargement de TOUTES les données (Tâches, Contacts, Biens) ---
+  // --- Chargement de TOUTES les données (en séquence) ---
   useEffect(() => {
     if (!token) return;
     
@@ -26,15 +28,18 @@ export default function TachesPage({ token }) {
       try {
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
         
-        // On lance les 3 requêtes en parallèle pour gagner du temps
-        const [tasksRes, contactsRes, propsRes] = await Promise.all([
-          axios.get('https://api-immo-final.onrender.com/api/tasks', config),
-          axios.get('https://api-immo-final.onrender.com/api/contacts', config),
-          axios.get('https://api-immo-final.onrender.com/api/properties', config)
-        ]);
-
+        // On charge les listes UNE PAR UNE pour ne pas planter le serveur
+        
+        console.log("Chargement 1/3: Tâches...");
+        const tasksRes = await axios.get(`${API_URL}/api/tasks`, config);
         setTasks(tasksRes.data);
+
+        console.log("Chargement 2/3: Contacts...");
+        const contactsRes = await axios.get(`${API_URL}/api/contacts`, config);
         setContacts(contactsRes.data);
+
+        console.log("Chargement 3/3: Biens...");
+        const propsRes = await axios.get(`${API_URL}/api/properties`, config);
         setProperties(propsRes.data);
 
       } catch (err) {
@@ -60,7 +65,6 @@ export default function TachesPage({ token }) {
     setTasks(tasks.map(t => (t.id === updatedTask.id ? updatedTask : t)));
   };
 
-  // Calcul du nombre de tâches "à faire"
   const tasksTodoCount = tasks.filter(t => t.status === 'PENDING').length;
 
   return (
@@ -73,7 +77,6 @@ export default function TachesPage({ token }) {
         <Alert status="error"><AlertIcon />{error}</Alert>
       ) : (
         <>
-          {/* Le formulaire (on lui donne les contacts et biens chargés) */}
           <AddTaskForm 
             token={token} 
             onTaskAdded={handleTaskAdded} 
@@ -85,7 +88,6 @@ export default function TachesPage({ token }) {
             Tâches à faire ({tasksTodoCount})
           </Heading>
 
-          {/* Affichage de la liste */}
           {tasks.length === 0 ? (
             <Alert status="info" borderRadius="md">
               <AlertIcon />
