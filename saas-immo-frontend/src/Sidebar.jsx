@@ -1,13 +1,13 @@
-// Fichier : src/Sidebar.jsx
+// Fichier : src/Sidebar.jsx (Version Gris Foncé)
 
 import React from 'react';
 import { Box, VStack, Button, Heading, Spacer, Text } from '@chakra-ui/react';
 import { NavLink as RouterNavLink } from 'react-router-dom';
 
-// Style pour un lien actif
+// Style pour un lien actif (on le met un peu plus clair)
 const activeStyle = {
-  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  boxShadow: 'inset 3px 0 0 0 white',
+  backgroundColor: 'rgba(255, 255, 255, 0.08)', // Léger blanc
+  boxShadow: 'inset 3px 0 0 0 white', // Ligne blanche à gauche
 };
 
 export default function Sidebar({ onLogout }) {
@@ -20,7 +20,7 @@ export default function Sidebar({ onLogout }) {
         color="white"
         justifyContent="flex-start"
         width="100%"
-        _hover={{ bg: 'rgba(255, 255, 255, 0.05)' }}
+        _hover={{ bg: 'rgba(255, 255, 255, 0.05)' }} // Effet de survol subtil
         {...rest}
       >
         {children}
@@ -31,7 +31,7 @@ export default function Sidebar({ onLogout }) {
   return (
     <Box
       w="250px"
-      bg="blue.800" // Un bleu foncé pour le menu
+      bg="gray.800" // <-- LA MODIFICATION EST ICI (Gris foncé)
       color="white"
       h="100vh"
       position="fixed" // Le menu reste fixe quand on scrolle
