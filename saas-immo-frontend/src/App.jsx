@@ -1,17 +1,17 @@
-// Fichier: src/App.jsx (Version FINALE avec Sidebar)
+// Fichier: src/App.jsx (Version avec ContactsPage)
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
-// Import du nouveau Layout
+// Import du Layout
 import Layout from './Layout.jsx'; 
+
 // Import des Pages
-import Dashboard from './Dashboard.jsx'; // C'est devenu notre "BiensPage"
-// On aura besoin de créer ces fichiers bientôt, mais on les prépare
-// import ContactsPage from './pages/ContactsPage.jsx'; 
-// import TachesPage from './pages/TachesPage.jsx';
+import Dashboard from './Dashboard.jsx'; // C'est notre "BiensPage"
+import ContactsPage from './pages/ContactsPage.jsx'; // <-- NOUVELLE LIGNE
+// import TachesPage from './pages/TachesPage.jsx'; // (Bientôt)
 
 import PropertyDetail from './pages/PropertyDetail.jsx';
 import ContactDetail from './pages/ContactDetail.jsx';
@@ -24,7 +24,7 @@ export default function App() {
   const [token, setToken] = useState(null);
   const [isLoadingToken, setIsLoadingToken] = useState(true);
   
-  // États pour le Login (on les garde ici)
+  // États pour le Login
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
@@ -61,15 +61,16 @@ export default function App() {
       {token ? (
         <Route path="/" element={<Layout onLogout={handleLogout} />}>
           {/* Les pages à l'intérieur de la Sidebar */}
-          <Route index element={<Dashboard token={token} />} /> {/* Page d'accueil (Biens) */}
+          <Route index element={<Dashboard token={token} />} />
           <Route path="biens" element={<Dashboard token={token} />} />
           
-          {/* ON DOIT CRÉER CES PAGES ENSUITE */}
-          <Route path="contacts" element={<div>Page Contacts (à faire)</div>} />
+          {/* LA LIGNE MODIFIÉE : */}
+          <Route path="contacts" element={<ContactsPage token={token} />} /> 
+          
           <Route path="taches" element={<div>Page Tâches (à faire)</div>} />
           <Route path="estimate" element={<PriceEstimator token={token} />} />
 
-          {/* Pages de détail (elles s'affichent aussi dans le layout) */}
+          {/* Pages de détail */}
           <Route path="property/:propertyId" element={<PropertyDetail token={token} />} />
           <Route path="contact/:contactId" element={<ContactDetail token={token} />} />
         </Route>
@@ -90,7 +91,7 @@ export default function App() {
         } />
       )}
 
-      {/* Route secrète (elle est en dehors du layout) */}
+      {/* Route secrète */}
       <Route path="/nouveau-membre-agence" element={<SecretRegister />} />
       
       {/* Redirection si on est perdu */}
