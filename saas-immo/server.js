@@ -179,6 +179,23 @@ app.get('/api/properties', authenticateToken, async (req, res) => {
   }
 });
 
+// --- NOUVELLE ROUTE (Manquante) : Voir le détail d'UN bien ---
+app.get('/api/properties/:id', authenticateToken, async (req, res) => {
+  try {
+    const property = await prisma.property.findFirst({
+      where: { id: parseInt(req.params.id) }, // Mode Agence: pas de filtre agentId
+      include: { 
+        agent: { select: { firstName: true, lastName: true } }
+      }
+    });
+    if (!property) return res.status(404).json({ error: 'Bien non trouvé.' });
+    res.status(200).json(property);
+  } catch (error) {
+    console.error("Erreur GET /api/properties/:id:", error);
+    res.status(500).json({ error: "Erreur serveur." });
+  }
+});
+
 // --- ROUTES CONTACTS ---
 app.post('/api/contacts', authenticateToken, async (req, res) => {
   try {
@@ -208,10 +225,14 @@ app.get('/api/contacts', authenticateToken, async (req, res) => {
   }
 });
 
+// --- ROUTE CORRIGÉE : Voir le détail d'UN contact (Mode Agence) ---
 app.get('/api/contacts/:id', authenticateToken, async (req, res) => {
     try {
       const contact = await prisma.contact.findFirst({
-        where: { id: parseInt(req.params.id), agentId: req.user.id }
+        where: { id: parseInt(req.params.id) }, // On a enlevé le filtre agentId
+        include: { 
+          agent: { select: { firstName: true, lastName: true } }
+        }
       });
       if (!contact) return res.status(404).json({ error: 'Contact non trouvé.' });
       res.status(200).json(contact);
