@@ -103,9 +103,10 @@ app.get('/api/me', authenticateToken, (req, res) => {
 // Route Création Bien (Mise à jour avec Image)
 app.post('/api/properties', authenticateToken, async (req, res) => {
   console.log("----------------------------------------------------");
-  console.log("🕵️‍♂️ [ESPION] Création bien...");
+  console.log("🕵️‍♂️ [ESPION] Création bien avec image...");
   try {
-    const { address, city, postalCode, price, area, rooms, bedrooms, description } = req.body;
+    // On récupère imageUrl en plus
+    const { address, city, postalCode, price, area, rooms, bedrooms, description, imageUrl } = req.body;
     if (!address || !price || !area) {
         return res.status(400).json({ error: "Champs requis manquants." });
     }
@@ -115,6 +116,7 @@ app.post('/api/properties', authenticateToken, async (req, res) => {
         price: parseInt(price), area: parseInt(area), 
         rooms: parseInt(rooms) || 0, bedrooms: parseInt(bedrooms) || 0, 
         description,
+        imageUrl, // <--- La voilà !
         agentId: req.user.id
       }
     });
@@ -130,7 +132,8 @@ app.post('/api/properties', authenticateToken, async (req, res) => {
 app.put('/api/properties/:id', authenticateToken, async (req, res) => {
     try {
       const { id } = req.params;
-      const { address, city, postalCode, price, area, rooms, bedrooms, description } = req.body;
+      // On récupère imageUrl en plus
+      const { address, city, postalCode, price, area, rooms, bedrooms, description, imageUrl } = req.body;
       const updatedProperty = await prisma.property.update({
         where: { id: parseInt(id) },
         data: { 
@@ -139,7 +142,8 @@ app.put('/api/properties/:id', authenticateToken, async (req, res) => {
             area: parseInt(area), 
             rooms: parseInt(rooms), 
             bedrooms: parseInt(bedrooms), 
-            description
+            description,
+            imageUrl // <--- La voilà !
         }
       });
       res.status(200).json(updatedProperty);

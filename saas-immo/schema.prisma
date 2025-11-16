@@ -41,6 +41,10 @@ model Property {
   description String?
   createdAt   DateTime @default(now())
 
+// AJOUTE CETTE LIGNE :
+  imageUrl    String?  // Le lien de la photo (optionnel)
+
+ 
 
   // Relation existante
   agent     User @relation(fields: [agentId], references: [id], onDelete: Cascade)
