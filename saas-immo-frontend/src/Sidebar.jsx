@@ -1,26 +1,25 @@
-// Fichier : src/Sidebar.jsx (Version Gris Foncé)
+// Fichier : src/Sidebar.jsx
 
 import React from 'react';
-import { Box, VStack, Button, Heading, Spacer, Text } from '@chakra-ui/react';
+import { Box, VStack, Button, Heading, Spacer, CloseButton, Flex } from '@chakra-ui/react';
 import { NavLink as RouterNavLink } from 'react-router-dom';
 
-// Style pour un lien actif (on le met un peu plus clair)
 const activeStyle = {
-  backgroundColor: 'rgba(255, 255, 255, 0.08)', // Léger blanc
-  boxShadow: 'inset 3px 0 0 0 white', // Ligne blanche à gauche
+  backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  boxShadow: 'inset 3px 0 0 0 white',
 };
 
-export default function Sidebar({ onLogout }) {
+// onNavClick servira à fermer le menu sur mobile quand on choisit une page
+export default function Sidebar({ onLogout, onClose }) {
   
-  // Fonction pour créer un lien
   const NavItem = ({ to, children, ...rest }) => (
-    <RouterNavLink to={to} style={({ isActive }) => (isActive ? activeStyle : undefined)}>
+    <RouterNavLink to={to} style={({ isActive }) => (isActive ? activeStyle : undefined)} onClick={onClose}>
       <Button
         variant="ghost"
         color="white"
         justifyContent="flex-start"
         width="100%"
-        _hover={{ bg: 'rgba(255, 255, 255, 0.05)' }} // Effet de survol subtil
+        _hover={{ bg: 'rgba(255, 255, 255, 0.05)' }}
         {...rest}
       >
         {children}
@@ -30,16 +29,19 @@ export default function Sidebar({ onLogout }) {
 
   return (
     <Box
-      w="250px"
-      bg="gray.800" // <-- LA MODIFICATION EST ICI (Gris foncé)
+      bg="gray.800"
       color="white"
-      h="100vh"
-      position="fixed" // Le menu reste fixe quand on scrolle
+      h="100%"
+      w="100%"
       p={4}
       display="flex"
       flexDirection="column"
     >
-      <Heading size="md" mb={8}>Mon Agence</Heading>
+      <Flex alignItems="center" justifyContent="space-between" mb={8}>
+        <Heading size="md">Mon Agence</Heading>
+        {/* Le bouton croix n'apparaît que sur mobile (si onClose existe) */}
+        {onClose && <CloseButton display={{ base: 'flex', md: 'none' }} onClick={onClose} />}
+      </Flex>
 
       <VStack align="stretch" spacing={2}>
         <NavItem to="/" end>Accueil</NavItem>
@@ -51,7 +53,7 @@ export default function Sidebar({ onLogout }) {
 
       <Spacer />
 
-      <Button colorScheme="red" onClick={onLogout}>
+      <Button colorScheme="red" onClick={onLogout} mt={6}>
         Se déconnecter
       </Button>
     </Box>
