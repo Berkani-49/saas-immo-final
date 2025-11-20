@@ -1,20 +1,29 @@
-// Fichier : src/pages/TachesPage.jsx (Version Propre)
+// Fichier : src/pages/TachesPage.jsx (Version avec Calendrier)
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Box, Heading, Spinner, Flex, Alert, AlertIcon, List } from '@chakra-ui/react';
+import { 
+  Box, Heading, Spinner, Flex, Alert, AlertIcon, List, 
+  Tabs, TabList, TabPanels, Tab, TabPanel, Icon 
+} from '@chakra-ui/react';
+import { FaList, FaCalendarAlt } from 'react-icons/fa'; // Icônes pour les onglets
+
 import AddTaskForm from '../AddTaskForm.jsx';
 import TaskItem from '../TaskItem.jsx';
+import TaskCalendar from '../components/TaskCalendar.jsx'; // <-- Notre nouveau composant
 
 export default function TachesPage({ token }) {
   const [tasks, setTasks] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [properties, setProperties] = useState([]);
+  
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   
+  // URL API Render
   const API_URL = 'https://api-immo-final.onrender.com'; 
 
+  // --- Chargement ---
   useEffect(() => {
     if (!token) return;
     
@@ -24,19 +33,21 @@ export default function TachesPage({ token }) {
       try {
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
         
-        // On charge les listes UNE PAR UNE (plus stable)
+        console.log("Chargement 1/3: Tâches...");
         const tasksRes = await axios.get(`${API_URL}/api/tasks`, config);
         setTasks(tasksRes.data);
 
+        console.log("Chargement 2/3: Contacts...");
         const contactsRes = await axios.get(`${API_URL}/api/contacts`, config);
         setContacts(contactsRes.data);
 
+        console.log("Chargement 3/3: Biens...");
         const propsRes = await axios.get(`${API_URL}/api/properties`, config);
         setProperties(propsRes.data);
 
       } catch (err) {
         console.error("Erreur (tâches):", err);
-        setError("Impossible de charger les données de la page.");
+        setError("Impossible de charger les données.");
       } finally {
         setIsLoading(false);
       }
@@ -44,7 +55,7 @@ export default function TachesPage({ token }) {
     fetchAllData();
   }, [token]);
 
-  // Handlers
+  // --- Handlers ---
   const handleTaskAdded = (newTask) => setTasks([newTask, ...tasks]);
   const handleTaskDeleted = (id) => setTasks(tasks.filter(t => t.id !== id));
   const handleTaskUpdated = (updatedTask) => setTasks(tasks.map(t => (t.id === updatedTask.id ? updatedTask : t)));
@@ -54,33 +65,55 @@ export default function TachesPage({ token }) {
   return (
     <Box>
       <Heading mb={6}>Agenda & Tâches</Heading>
-      {isLoading ? ( <Flex justify="center"><Spinner size="xl" /></Flex> ) : 
-       error ? ( <Alert status="error"><AlertIcon />{error}</Alert> ) : (
+
+      {isLoading ? (
+        <Flex justify="center"><Spinner size="xl" color="purple.500" /></Flex>
+      ) : error ? (
+        <Alert status="error"><AlertIcon />{error}</Alert>
+      ) : (
         <>
+          {/* Formulaire d'ajout (Toujours visible) */}
           <AddTaskForm 
             token={token} 
             onTaskAdded={handleTaskAdded} 
             contacts={contacts} 
             properties={properties} 
           />
-          <Heading as="h3" size="md" mt={8} mb={4} pt={4} borderTopWidth={1}>
-            Tâches à faire ({tasksTodoCount})
-          </Heading>
-          {tasks.length === 0 ? (
-            <Alert status="info" borderRadius="md"><AlertIcon />Aucune tâche.</Alert>
-          ) : (
-            <List spacing={2}>
-              {tasks.map(t => (
-                <TaskItem 
-                  key={t.id} 
-                  task={t} 
-                  token={token} 
-                  onTaskUpdated={handleTaskUpdated} 
-                  onTaskDeleted={handleTaskDeleted} 
-                />
-              ))}
-            </List>
-          )}
+
+          <Box mt={8}>
+            <Tabs variant="soft-rounded" colorScheme="purple">
+              <TabList mb={4}>
+                <Tab><Icon as={FaList} mr={2} /> Vue Liste ({tasksTodoCount})</Tab>
+                <Tab><Icon as={FaCalendarAlt} mr={2} /> Vue Calendrier</Tab>
+              </TabList>
+
+              <TabPanels>
+                {/* PANNEAU 1 : LA LISTE CLASSIQUE */}
+                <TabPanel p={0}>
+                   {tasks.length === 0 ? (
+                    <Alert status="info" borderRadius="md"><AlertIcon />Aucune tâche.</Alert>
+                  ) : (
+                    <List spacing={2}>
+                      {tasks.map(t => (
+                        <TaskItem 
+                          key={t.id} 
+                          task={t} 
+                          token={token} 
+                          onTaskUpdated={handleTaskUpdated} 
+                          onTaskDeleted={handleTaskDeleted} 
+                        />
+                      ))}
+                    </List>
+                  )}
+                </TabPanel>
+
+                {/* PANNEAU 2 : LE CALENDRIER */}
+                <TabPanel p={0}>
+                   <TaskCalendar tasks={tasks} />
+                </TabPanel>
+              </TabPanels>
+            </Tabs>
+          </Box>
         </>
       )}
     </Box>
