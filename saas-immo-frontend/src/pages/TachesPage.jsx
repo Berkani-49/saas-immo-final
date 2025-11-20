@@ -6,11 +6,11 @@ import {
   Box, Heading, Spinner, Flex, Alert, AlertIcon, List, 
   Tabs, TabList, TabPanels, Tab, TabPanel, Icon 
 } from '@chakra-ui/react';
-import { FaList, FaCalendarAlt } from 'react-icons/fa'; // Icônes pour les onglets
+import { FaList, FaCalendarAlt } from 'react-icons/fa';
 
 import AddTaskForm from '../AddTaskForm.jsx';
 import TaskItem from '../TaskItem.jsx';
-import TaskCalendar from '../components/TaskCalendar.jsx'; // <-- Notre nouveau composant
+import TaskCalendar from '../components/TaskCalendar.jsx';
 
 export default function TachesPage({ token }) {
   const [tasks, setTasks] = useState([]);
@@ -20,10 +20,8 @@ export default function TachesPage({ token }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   
-  // URL API Render
   const API_URL = 'https://api-immo-final.onrender.com'; 
 
-  // --- Chargement ---
   useEffect(() => {
     if (!token) return;
     
@@ -55,7 +53,6 @@ export default function TachesPage({ token }) {
     fetchAllData();
   }, [token]);
 
-  // --- Handlers ---
   const handleTaskAdded = (newTask) => setTasks([newTask, ...tasks]);
   const handleTaskDeleted = (id) => setTasks(tasks.filter(t => t.id !== id));
   const handleTaskUpdated = (updatedTask) => setTasks(tasks.map(t => (t.id === updatedTask.id ? updatedTask : t)));
@@ -72,7 +69,6 @@ export default function TachesPage({ token }) {
         <Alert status="error"><AlertIcon />{error}</Alert>
       ) : (
         <>
-          {/* Formulaire d'ajout (Toujours visible) */}
           <AddTaskForm 
             token={token} 
             onTaskAdded={handleTaskAdded} 
@@ -88,7 +84,6 @@ export default function TachesPage({ token }) {
               </TabList>
 
               <TabPanels>
-                {/* PANNEAU 1 : LA LISTE CLASSIQUE */}
                 <TabPanel p={0}>
                    {tasks.length === 0 ? (
                     <Alert status="info" borderRadius="md"><AlertIcon />Aucune tâche.</Alert>
@@ -107,7 +102,6 @@ export default function TachesPage({ token }) {
                   )}
                 </TabPanel>
 
-                {/* PANNEAU 2 : LE CALENDRIER */}
                 <TabPanel p={0}>
                    <TaskCalendar tasks={tasks} />
                 </TabPanel>
