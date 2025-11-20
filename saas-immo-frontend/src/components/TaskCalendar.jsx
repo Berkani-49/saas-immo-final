@@ -3,65 +3,92 @@
 import React from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
-import 'moment/locale/fr'; // Pour avoir le calendrier en français
-import { Box } from '@chakra-ui/react';
+import 'moment/locale/fr';
+import { Box, useBreakpointValue } from '@chakra-ui/react'; // Import du détecteur d'écran
 
-// Configuration de la langue (Français)
 moment.locale('fr');
 const localizer = momentLocalizer(moment);
 
 export default function TaskCalendar({ tasks }) {
   
-  // On transforme tes "Tâches" en "Événements" pour le calendrier
+  // --- DÉTECTION MOBILE ---
+  // Sur mobile ('base'), on force la vue 'agenda'. Sur ordi ('md'), on met 'month'.
+  const defaultView = useBreakpointValue({ base: 'agenda', md: 'month' });
+  
+  // On adapte aussi la hauteur : plus petit sur mobile pour éviter le scroll infini
+  const calendarHeight = useBreakpointValue({ base: '70vh', md: '500px' });
+
   const events = tasks
-    .filter(task => task.dueDate) // On ne prend que les tâches qui ont une date
+    .filter(task => task.dueDate)
     .map(task => {
       const date = new Date(task.dueDate);
       return {
         id: task.id,
         title: task.title,
         start: date,
-        end: date, // Pour l'instant, ça dure "0 minute", ça s'affichera comme un point
-        allDay: true, // On dit que c'est une tâche pour la journée
-        status: task.status, // Pour la couleur
+        end: date,
+        allDay: true,
+        status: task.status,
         resource: task
       };
     });
 
-  // Fonction pour colorier les événements
   const eventStyleGetter = (event) => {
-    const backgroundColor = event.status === 'DONE' ? '#48BB78' : '#805AD5'; // Vert si fait, Violet sinon
+    const backgroundColor = event.status === 'DONE' ? '#48BB78' : '#805AD5';
     return {
       style: {
         backgroundColor,
-        borderRadius: '5px',
-        opacity: 0.8,
+        borderRadius: '4px',
+        opacity: 0.9,
         color: 'white',
         border: '0px',
-        display: 'block'
+        display: 'block',
+        fontSize: '0.85em' // Texte un peu plus petit pour tenir
       }
     };
   };
 
   return (
-    <Box h="500px" bg="white" p={4} borderRadius="lg" shadow="md" borderWidth="1px">
+    <Box 
+      h={calendarHeight} 
+      bg="white" 
+      p={2} 
+      borderRadius="lg" 
+      shadow="sm" 
+      borderWidth="1px"
+      fontSize={{ base: "xs", md: "sm" }} // Texte global plus petit sur mobile
+      sx={{
+        // Petits ajustements CSS pour les boutons sur mobile
+        ".rbc-toolbar button": {
+            fontSize: { base: "10px", md: "14px" },
+            padding: { base: "2px 5px", md: "5px 10px" }
+        },
+        ".rbc-toolbar-label": {
+            fontSize: { base: "14px", md: "18px" },
+            fontWeight: "bold"
+        }
+      }}
+    >
       <Calendar
         localizer={localizer}
         events={events}
         startAccessor="start"
         endAccessor="end"
         style={{ height: '100%' }}
+        defaultView={defaultView} // <-- C'est ici que la magie opère
         messages={{
-          next: "Suivant",
-          previous: "Précédent",
-          today: "Aujourd'hui",
+          next: "Suiv.",
+          previous: "Préc.",
+          today: "Auj.",
           month: "Mois",
-          week: "Semaine",
+          week: "Sem.",
           day: "Jour",
-          agenda: "Agenda"
+          agenda: "Liste",
+          noEventsInRange: "Aucune tâche sur cette période."
         }}
         eventPropGetter={eventStyleGetter}
-        views={['month', 'week', 'agenda']} // Les vues disponibles
+        // Sur mobile, on ne propose que Agenda et Jour pour éviter la casse
+        views={['month', 'week', 'day', 'agenda']} 
       />
     </Box>
   );
