@@ -1,4 +1,4 @@
-// Fichier : src/Sidebar.jsx
+// Fichier : src/Sidebar.jsx (Version Corrigée - Bouton visible)
 
 import React from 'react';
 import { Box, VStack, Button, Heading, Spacer, CloseButton, Flex } from '@chakra-ui/react';
@@ -9,7 +9,6 @@ const activeStyle = {
   boxShadow: 'inset 3px 0 0 0 white',
 };
 
-// onNavClick servira à fermer le menu sur mobile quand on choisit une page
 export default function Sidebar({ onLogout, onClose }) {
   
   const NavItem = ({ to, children, ...rest }) => (
@@ -31,15 +30,18 @@ export default function Sidebar({ onLogout, onClose }) {
     <Box
       bg="gray.800"
       color="white"
-      h="100%"
+      h="100vh"      /* Prend toute la hauteur */
       w="100%"
+      position="relative"
       p={4}
+      pb={24}        /* <--- AJOUT : Grosse marge en bas pour remonter le bouton */
       display="flex"
       flexDirection="column"
+      overflowY="auto" /* <--- AJOUT : Permet de scroller si l'écran est trop petit */
     >
       <Flex alignItems="center" justifyContent="space-between" mb={8}>
         <Heading size="md">Mon Agence</Heading>
-        {/* Le bouton croix n'apparaît que sur mobile (si onClose existe) */}
+        {/* Bouton fermer uniquement sur mobile */}
         {onClose && <CloseButton display={{ base: 'flex', md: 'none' }} onClick={onClose} />}
       </Flex>
 
@@ -53,9 +55,11 @@ export default function Sidebar({ onLogout, onClose }) {
 
       <Spacer />
 
-      <Button colorScheme="red" onClick={onLogout} mt={6}>
-        Se déconnecter
-      </Button>
+      <Box mt={10}> {/* Petit espace avant le bouton rouge */}
+        <Button colorScheme="red" onClick={onLogout} width="full">
+          Se déconnecter
+        </Button>
+      </Box>
     </Box>
   );
 }
