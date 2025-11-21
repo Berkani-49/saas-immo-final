@@ -40,7 +40,7 @@ export default function PublicPropertyPage() {
           alt="Bien" w="100%" h="100%" objectFit="cover" 
         />
         <Badge 
-            position="absolute" bottom={4} right={4} 
+            position="absolute" top={4} right={4} 
             colorScheme="green" fontSize="xl" px={4} py={2} borderRadius="lg" shadow="xl"
         >
             {property.price.toLocaleString()} €
