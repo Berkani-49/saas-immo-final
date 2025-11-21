@@ -1,13 +1,13 @@
-// Fichier : src/PropertyItem.jsx (Design Carte Airbnb)
+// Fichier : src/PropertyItem.jsx (Version Finale avec Partage)
 
 import React, { useState } from 'react';
 import axios from 'axios';
 import { 
   Box, Text, Button, IconButton, Flex, Badge, Image, VStack, HStack, useToast,
-  FormControl, FormLabel, Input, Textarea
+  FormControl, FormLabel, Input, Textarea, Spacer
 } from '@chakra-ui/react';
 import { EditIcon, DeleteIcon } from '@chakra-ui/icons';
-import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt } from 'react-icons/fa'; // On utilise des icônes parlantes
+import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaShareAlt } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import { supabase } from './supabaseClient';
 
@@ -18,6 +18,15 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const toast = useToast();
+
+  // --- SHARE (Nouvelle fonction) ---
+  const handleShare = () => {
+    // On construit l'URL publique
+    const url = `${window.location.origin}/share/${property.id}`;
+    // On copie dans le presse-papier
+    navigator.clipboard.writeText(url);
+    toast({ title: "Lien copié !", description: "Envoyez-le au client.", status: "success", duration: 2000 });
+  };
 
   // --- DELETE ---
   const handleDelete = async () => {
@@ -74,7 +83,7 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
     setEditData(current => ({ ...current, [name]: value }));
   };
 
-  // --- MODE ÉDITION (Resté simple) ---
+  // --- MODE ÉDITION ---
   if (isEditing) {
     return (
       <Box p={4} borderWidth={1} borderRadius="lg" bg="white" shadow="md">
@@ -108,7 +117,6 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
       transition="all 0.3s" _hover={{ transform: 'translateY(-5px)', shadow: 'xl' }}
       position="relative"
     >
-      {/* 1. L'IMAGE EN HAUT (Grande) */}
       <Box h="200px" w="100%" position="relative" overflow="hidden">
         <Image 
           src={property.imageUrl || "https://via.placeholder.com/400x300?text=Pas+de+photo"} 
@@ -125,7 +133,6 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
         </Badge>
       </Box>
 
-      {/* 2. LES INFOS EN DESSOUS */}
       <Box p={5}>
         <Flex alignItems="center" color="gray.500" fontSize="sm" mb={2}>
             <FaMapMarkerAlt style={{ marginRight: '5px' }} />
@@ -140,20 +147,21 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
             </Text>
         </Link>
 
-        {/* Les icônes de détails */}
         <HStack spacing={4} color="gray.600" fontSize="sm" mb={4}>
             <Flex align="center"><FaRulerCombined /><Text ml={1}>{property.area} m²</Text></Flex>
             <Flex align="center"><FaBed /><Text ml={1}>{property.bedrooms} ch.</Text></Flex>
             <Flex align="center"><FaBath /><Text ml={1}>{property.rooms} p.</Text></Flex>
         </HStack>
 
-        {/* Boutons d'action discrets */}
         <Flex pt={3} borderTopWidth={1} borderColor="gray.100" justify="space-between" align="center">
             {property.agent ? (
                 <Text fontSize="xs" color="gray.400">Agent: {property.agent.firstName}</Text>
             ) : <Spacer />}
             
             <Box>
+                {/* LE BOUTON PARTAGER EST ICI 👇 */}
+                <IconButton icon={<FaShareAlt />} size="sm" variant="ghost" colorScheme="purple" onClick={handleShare} aria-label="Partager" mr={1} />
+                
                 <IconButton icon={<EditIcon />} size="sm" variant="ghost" colorScheme="blue" onClick={() => setIsEditing(true)} aria-label="Modifier" mr={1} />
                 <IconButton icon={<DeleteIcon />} size="sm" variant="ghost" colorScheme="red" onClick={handleDelete} isLoading={isLoading} aria-label="Supprimer" />
             </Box>

@@ -1,4 +1,4 @@
-// Fichier: src/App.jsx (Version avec HomePage)
+// Fichier: src/App.jsx (Version Finale avec Route Publique)
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -9,16 +9,17 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './Layout.jsx'; 
 
 // Import des Pages
-import HomePage from './pages/HomePage.jsx'; // <-- NOUVELLE PAGE
-import Dashboard from './Dashboard.jsx'; // Renommé en "BiensPage"
+import HomePage from './pages/HomePage.jsx';
+import Dashboard from './Dashboard.jsx'; // Page Biens
 import ContactsPage from './pages/ContactsPage.jsx'; 
 import TachesPage from './pages/TachesPage.jsx';
+import PublicPropertyPage from './pages/PublicPropertyPage.jsx'; // <-- La page vitrine
 
 import PropertyDetail from './pages/PropertyDetail.jsx';
 import ContactDetail from './pages/ContactDetail.jsx';
 import SecretRegister from './pages/SecretRegister.jsx';
 import PriceEstimator from './PriceEstimator.jsx';
-import { Box, Heading, FormControl, FormLabel, Input, Button, Alert, Spinner, Center, Flex } from '@chakra-ui/react';
+import { Box, Heading, FormControl, FormLabel, Input, Button, Alert, Spinner, Center } from '@chakra-ui/react';
 import { AlertIcon } from '@chakra-ui/icons';
 
 export default function App() {
@@ -56,42 +57,50 @@ export default function App() {
   if (isLoadingToken) return <Center h="100vh"><Spinner size="xl" color="blue.500" /></Center>;
 
   return (
-    <Routes>
-      {/* Si l'utilisateur EST connecté */}
-      {token ? (
-        <Route path="/" element={<Layout onLogout={handleLogout} />}>
-          
-          {/* LA MODIFICATION EST ICI : */}
-          <Route index element={<HomePage token={token} />} /> {/* Page d'accueil (Stats) */}
-          <Route path="biens" element={<Dashboard token={token} />} /> {/* Page Biens */}
-          
-          <Route path="contacts" element={<ContactsPage token={token} />} /> 
-          <Route path="taches" element={<TachesPage token={token} />} />
-          <Route path="estimate" element={<PriceEstimator token={token} />} />
-          
-          <Route path="property/:propertyId" element={<PropertyDetail token={token} />} />
-          <Route path="contact/:contactId" element={<ContactDetail token={token} />} />
-        </Route>
-      ) : (
-        /* Si l'utilisateur N'EST PAS connecté */
-        <Route path="/" element={
-          <Center h="100vh" bg="gray.50">
-            <Box p={8} maxWidth="400px" borderWidth={1} borderRadius="lg" boxShadow="xl" bg="white" width="100%">
-              <Heading as="h2" size="lg" mb={6} textAlign="center">Connexion Agence</Heading>
-              <form onSubmit={handleLogin}>
-                <FormControl id="email-login" mb={4} isRequired><FormLabel>Email</FormLabel><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></FormControl>
-                <FormControl id="password-login" mb={6} isRequired><FormLabel>Mot de passe</FormLabel><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} /></FormControl>
-                {message && <Alert status="error" mb={4} borderRadius="md"><AlertIcon />{message}</Alert>}
-                <Button type="submit" colorScheme="blue" width="full" isLoading={isLoggingIn}>Se connecter</Button>
-              </form>
-            </Box>
-          </Center>
-        } />
-      )}
+    <Box maxWidth="1200px" margin="40px auto" p={[3, 6]}>
+      <Routes>
+        
+        {/* 1. LA ROUTE PUBLIQUE (Accessible SANS être connecté) */}
+        {/* C'est ici que le client atterrit quand il clique sur ton lien WhatsApp */}
+        <Route path="/share/:id" element={<PublicPropertyPage />} />
 
-      {/* Route secrète */}
-      <Route path="/nouveau-membre-agence" element={<SecretRegister />} />
-      <Route path="*" element={<Navigate to="/" />} />
-    </Routes>
+        {/* 2. LA ROUTE SECRÈTE INSCRIPTION */}
+        <Route path="/nouveau-membre-agence" element={<SecretRegister />} />
+
+        {/* 3. LES ROUTES PRIVÉES (Nécessitent le mot de passe) */}
+        {token ? (
+          // Si on est connecté, on affiche le Layout avec la Sidebar
+          <Route path="/" element={<Layout onLogout={handleLogout} />}>
+            <Route index element={<HomePage token={token} />} />
+            <Route path="biens" element={<Dashboard token={token} />} />
+            <Route path="contacts" element={<ContactsPage token={token} />} /> 
+            <Route path="taches" element={<TachesPage token={token} />} />
+            <Route path="estimate" element={<PriceEstimator token={token} />} />
+            
+            <Route path="property/:propertyId" element={<PropertyDetail token={token} />} />
+            <Route path="contact/:contactId" element={<ContactDetail token={token} />} />
+          </Route>
+        ) : (
+          // Si on n'est PAS connecté, on affiche la boîte de login
+          <Route path="/" element={
+            <Center h="80vh">
+              <Box p={8} maxWidth="400px" borderWidth={1} borderRadius="lg" boxShadow="xl" bg="white" width="100%">
+                <Heading as="h2" size="lg" mb={6} textAlign="center">Connexion Agence</Heading>
+                <form onSubmit={handleLogin}>
+                  <FormControl id="email-login" mb={4} isRequired><FormLabel>Email</FormLabel><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></FormControl>
+                  <FormControl id="password-login" mb={6} isRequired><FormLabel>Mot de passe</FormLabel><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} /></FormControl>
+                  {message && <Alert status="error" mb={4} borderRadius="md"><AlertIcon />{message}</Alert>}
+                  <Button type="submit" colorScheme="blue" width="full" isLoading={isLoggingIn}>Se connecter</Button>
+                </form>
+              </Box>
+            </Center>
+          } />
+        )}
+
+        {/* Redirection si on tape n'importe quoi */}
+        <Route path="*" element={<Navigate to="/" />} />
+        
+      </Routes>
+    </Box>
   );
 }
