@@ -22,30 +22,25 @@ const openai = new OpenAI({
 app.use(express.json());
 app.use(cors());
 
-// 4. ROUTES PUBLIQUES
-app.get('/', (req, res) => {
-  res.json({ message: "Le serveur fonctionne parfaitement !" });
-});
-
-app.post('/api/auth/register', async (req, res) => {
+// --- ROUTE PUBLIQUE : Voir un bien (Pour les clients) ---
+app.get('/api/public/properties/:id', async (req, res) => {
   try {
-    const { email, password, firstName, lastName } = req.body;
-    if (!email || !password || !firstName || !lastName) {
-      return res.status(400).json({ error: 'Tous les champs sont requis.' });
-    }
-    const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
-      return res.status(400).json({ error: 'Cet email est déjà utilisé.' });
-    }
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await prisma.user.create({
-      data: { email, password: hashedPassword, firstName, lastName },
+    const { id } = req.params;
+    const property = await prisma.property.findUnique({
+      where: { id: parseInt(id) },
+      include: { 
+        agent: { // On veut afficher le nom et l'email de l'agent au client
+            select: { firstName: true, lastName: true, email: true } 
+        } 
+      }
     });
-    const { password: _, ...userWithoutPassword } = newUser;
-    res.status(201).json(userWithoutPassword);
+
+    if (!property) return res.status(404).json({ error: 'Bien introuvable.' });
+    
+    res.status(200).json(property);
   } catch (error) {
-    console.error("Erreur /api/auth/register:", error);
-    res.status(500).json({ error: 'Erreur serveur lors de l\'inscription.' });
+    console.error("Erreur Public Property:", error);
+    res.status(500).json({ error: "Erreur serveur." });
   }
 });
 
