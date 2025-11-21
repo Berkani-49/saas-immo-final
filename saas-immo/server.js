@@ -159,18 +159,45 @@ app.delete('/api/properties/:id', authenticateToken, async (req, res) => {
 
 
 // --- LA ROUTE MANQUANTE POUR AFFICHER LA LISTE ---
-// Route : Voir TOUS les biens de l'agence (Mode Équipe)
+// Route : Voir les biens (AVEC FILTRES INTELLIGENTS)
 app.get('/api/properties', authenticateToken, async (req, res) => {
   try {
+    // 1. On récupère les critères envoyés par le site
+    const { minPrice, maxPrice, minRooms, city } = req.query;
+
+    // 2. On construit le filtre dynamique
+    const filters = {};
+
+    // Si un prix min est demandé
+    if (minPrice) {
+        filters.price = { gte: parseInt(minPrice) }; // gte = Greater Than or Equal (Plus grand ou égal)
+    }
+
+    // Si un prix max est demandé
+    if (maxPrice) {
+        // On fusionne avec le filtre prix existant s'il y en a un
+        filters.price = { ...filters.price, lte: parseInt(maxPrice) }; // lte = Less Than or Equal
+    }
+
+    // Si un nombre de pièces min est demandé
+    if (minRooms) {
+        filters.rooms = { gte: parseInt(minRooms) };
+    }
+
+    // Si une ville est demandée (recherche insensible à la casse : Paris = paris)
+    if (city) {
+        filters.city = { contains: city, mode: 'insensitive' };
+    }
+
+    // 3. On demande à la base de données avec ces filtres
     const properties = await prisma.property.findMany({
-      // On n'a pas de filtre 'agentId' pour que tout le monde voie tout
+      where: filters, // <--- C'est ici que la magie opère
       orderBy: { createdAt: 'desc' },
       include: { 
-        agent: { // On demande le nom de l'agent qui a créé le bien
-            select: { firstName: true, lastName: true } 
-        } 
+        agent: { select: { firstName: true, lastName: true } } 
       }
     });
+
     res.status(200).json(properties);
   } catch (error) {
     console.error("Erreur GET /api/properties:", error);
