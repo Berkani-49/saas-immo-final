@@ -1,4 +1,4 @@
-// Fichier : src/pages/PublicPropertyPage.jsx (Version Capture de Leads)
+// Fichier : src/pages/PublicPropertyPage.jsx (Version Finale avec Carte)
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -8,6 +8,22 @@ import {
   FormControl, FormLabel, Input, Textarea, useToast
 } from '@chakra-ui/react';
 import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaPaperPlane } from 'react-icons/fa';
+
+// Imports pour la Carte
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Petite astuce pour corriger l'icône de marker par défaut qui bug parfois dans React
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+let DefaultIcon = L.icon({
+    iconUrl: icon,
+    shadowUrl: iconShadow,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41]
+});
+L.Marker.prototype.options.icon = DefaultIcon;
 
 export default function PublicPropertyPage() {
   const { id } = useParams();
@@ -22,7 +38,7 @@ export default function PublicPropertyPage() {
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [sent, setSent] = useState(false); // Pour afficher "Merci"
+  const [sent, setSent] = useState(false);
 
   useEffect(() => {
     const fetchPublicProperty = async () => {
@@ -78,7 +94,7 @@ export default function PublicPropertyPage() {
         </Badge>
       </Box>
 
-      <Container maxW="800px" mt={-10} position="relative" zIndex={2}>
+      <Container maxW="900px" mt={-10} position="relative" zIndex={2}>
         <Box bg="white" p={8} borderRadius="2xl" shadow="xl">
             
             <Flex align="center" color="gray.500" fontSize="sm" mb={2}>
@@ -96,7 +112,30 @@ export default function PublicPropertyPage() {
                 {property.description || "Aucune description disponible."}
             </Text>
 
-            {/* FORMULAIRE DE CONTACT (LEAD) */}
+            {/* --- LA CARTE (S'affiche seulement si on a les coordonnées) --- */}
+            {property.latitude && property.longitude && (
+                <Box mb={10} h="400px" borderRadius="xl" overflow="hidden" shadow="md" border="1px solid #E2E8F0">
+                    <Heading size="sm" mb={2} px={2}>Localisation</Heading>
+                    <MapContainer 
+                        center={[property.latitude, property.longitude]} 
+                        zoom={15} 
+                        style={{ height: "100%", width: "100%" }}
+                        scrollWheelZoom={false} // Pour ne pas coincer le scroll de la page
+                    >
+                        <TileLayer
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        />
+                        <Marker position={[property.latitude, property.longitude]}>
+                            <Popup>
+                                {property.address} <br /> {property.price.toLocaleString()} €
+                            </Popup>
+                        </Marker>
+                    </MapContainer>
+                </Box>
+            )}
+
+            {/* FORMULAIRE DE CONTACT */}
             <Box bg="blue.50" p={6} borderRadius="xl" borderWidth="1px" borderColor="blue.100">
                 <Heading size="md" mb={4} color="blue.800">Ce bien vous intéresse ?</Heading>
                 
@@ -104,16 +143,16 @@ export default function PublicPropertyPage() {
                     <Box textAlign="center" py={6}>
                         <Icon as={FaPaperPlane} w={10} h={10} color="green.500" mb={4} />
                         <Text fontSize="xl" fontWeight="bold" color="green.600">Message envoyé !</Text>
-                        <Text>L'agent {property.agent?.firstName} va vous recontacter très vite.</Text>
+                        <Text>L'agent va vous recontacter très vite.</Text>
                     </Box>
                 ) : (
                     <form onSubmit={handleSendLead}>
                         <VStack spacing={4}>
-                            <Flex w="full" gap={4}>
+                            <Flex w="full" gap={4} direction={{ base: 'column', md: 'row' }}>
                                 <FormControl isRequired><FormLabel>Prénom</FormLabel><Input bg="white" value={firstName} onChange={(e) => setFirstName(e.target.value)} /></FormControl>
                                 <FormControl isRequired><FormLabel>Nom</FormLabel><Input bg="white" value={lastName} onChange={(e) => setLastName(e.target.value)} /></FormControl>
                             </Flex>
-                            <Flex w="full" gap={4}>
+                            <Flex w="full" gap={4} direction={{ base: 'column', md: 'row' }}>
                                 <FormControl isRequired><FormLabel>Email</FormLabel><Input type="email" bg="white" value={email} onChange={(e) => setEmail(e.target.value)} /></FormControl>
                                 <FormControl isRequired><FormLabel>Téléphone</FormLabel><Input type="tel" bg="white" value={phone} onChange={(e) => setPhone(e.target.value)} /></FormControl>
                             </Flex>
