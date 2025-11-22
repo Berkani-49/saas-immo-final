@@ -1,4 +1,4 @@
-// Fichier : src/Layout.jsx
+// Fichier : src/Layout.jsx (Version Corrigée - Largeur Pleine)
 
 import React from 'react';
 import { Box, Flex, IconButton, useDisclosure, Drawer, DrawerOverlay, DrawerContent, Text } from '@chakra-ui/react';
@@ -26,7 +26,13 @@ export default function Layout({ onLogout }) {
       </Drawer>
 
       {/* --- CONTENU PRINCIPAL --- */}
-      <Box flex="1" ml={{ base: 0, md: "250px" }} transition="margin-left 0.3s">
+      <Box 
+        flex="1" 
+        ml={{ base: 0, md: "250px" }} // Laisse la place à gauche pour la sidebar
+        w={{ base: "100%", md: "calc(100% - 250px)" }} // Force la largeur correcte (IMPORTANT)
+        transition="margin-left 0.3s"
+        overflowX="hidden"
+      >
         
         {/* Header Mobile (Burger) */}
         <Flex
@@ -46,7 +52,7 @@ export default function Layout({ onLogout }) {
         </Flex>
 
         {/* La Page */}
-        <Box p={8}>
+        <Box p={8} maxW="1600px" mx="auto"> {/* Centre le contenu sur les écrans géants */}
           <Outlet />
         </Box>
       </Box>
