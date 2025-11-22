@@ -1,57 +1,49 @@
-// Fichier : src/ContactItem.jsx (Version 3 - Avec Lien)
+// Fichier : src/ContactItem.jsx (Design Carte de Visite)
 
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom'; // <-- 1. Importer Link
-
-// 2. Importer les composants Chakra
+import { Link } from 'react-router-dom';
 import {
-  Box, Flex, Text, Button, IconButton, Tag, Spacer,
+  Box, Text, IconButton, Flex, Badge, Spacer,
   FormControl, FormLabel, Input, Select,
-  Alert, AlertIcon, useToast, Heading, VStack
+  useToast, VStack, HStack, Icon, Avatar
 } from '@chakra-ui/react';
-import { EditIcon, DeleteIcon } from '@chakra-ui/icons';
+import { EditIcon, DeleteIcon, PhoneIcon, EmailIcon } from '@chakra-ui/icons';
+import { FaUserTie } from 'react-icons/fa';
 
 export default function ContactItem({ contact, token, onContactDeleted, onContactUpdated }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({ ...contact });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
   const toast = useToast();
 
+  // --- Suppression ---
   const handleDelete = async () => {
-    if (!window.confirm("Êtes-vous sûr ?")) return;
+    if (!window.confirm("Supprimer ce contact ?")) return;
     setIsLoading(true);
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
       await axios.delete(`https://api-immo-final.onrender.com/api/contacts/${contact.id}`, config);
-      toast({ title: "Contact supprimé.", status: "success", duration: 2000, isClosable: true });
       onContactDeleted(contact.id);
+      toast({ title: "Contact supprimé.", status: "success", duration: 2000 });
     } catch (err) {
-      console.error("Erreur (delete contact):", err);
-      toast({ title: "Erreur suppression", description: err.response?.data?.error || "Impossible de supprimer.", status: "error", duration: 3000, isClosable: true });
+      toast({ title: "Erreur", status: "error" });
       setIsLoading(false);
     }
   };
 
+  // --- Modification ---
   const handleSave = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
-    if (!editData.firstName || !editData.lastName || !editData.type) {
-      setError("Prénom, nom et type sont requis.");
-      setIsLoading(false);
-      return;
-    }
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
       const response = await axios.put(`https://api-immo-final.onrender.com/api/contacts/${contact.id}`, editData, config);
       onContactUpdated(response.data);
       setIsEditing(false);
-      toast({ title: "Contact mis à jour.", status: "success", duration: 2000, isClosable: true });
+      toast({ title: "Contact mis à jour.", status: "success" });
     } catch (err) {
-      console.error("Erreur (update contact):", err);
-      setError(err.response?.data?.error || "Erreur lors de la modification.");
+      toast({ title: "Erreur", status: "error" });
     } finally {
       setIsLoading(false);
     }
@@ -59,79 +51,79 @@ export default function ContactItem({ contact, token, onContactDeleted, onContac
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setEditData(currentData => ({ ...currentData, [name]: value }));
+    setEditData(current => ({ ...current, [name]: value }));
   };
 
-
+  // --- MODE ÉDITION ---
   if (isEditing) {
-    // --- Mode ÉDITION ---
     return (
-      <Box as="li" p={4} borderWidth={1} borderColor="blue.300" borderRadius="md" mb={3} bg="blue.50">
-        <VStack as="form" onSubmit={handleSave} spacing={3} align="stretch">
-          <Flex gap={2}>
-            <FormControl isRequired flex={1}>
-              <FormLabel fontSize="sm">Prénom</FormLabel>
-              <Input size="sm" name="firstName" value={editData.firstName} onChange={handleChange} isDisabled={isLoading} />
-            </FormControl>
-            <FormControl isRequired flex={1}>
-              <FormLabel fontSize="sm">Nom</FormLabel>
-              <Input size="sm" name="lastName" value={editData.lastName} onChange={handleChange} isDisabled={isLoading} />
-            </FormControl>
-          </Flex>
-          <Flex gap={2}>
-            <FormControl flex={1}>
-              <FormLabel fontSize="sm">Email</FormLabel>
-              <Input size="sm" type="email" name="email" value={editData.email || ''} onChange={handleChange} isDisabled={isLoading} />
-            </FormControl>
-            <FormControl flex={1}>
-              <FormLabel fontSize="sm">Téléphone</FormLabel>
-              <Input size="sm" type="tel" name="phoneNumber" value={editData.phoneNumber || ''} onChange={handleChange} isDisabled={isLoading} />
-            </FormControl>
-          </Flex>
-          <FormControl isRequired>
-            <FormLabel fontSize="sm">Type</FormLabel>
-            <Select size="sm" name="type" value={editData.type} onChange={handleChange} isDisabled={isLoading}>
+      <Box p={5} borderWidth={1} borderRadius="xl" bg="white" shadow="md">
+        <form onSubmit={handleSave}>
+          <VStack spacing={3}>
+            <HStack w="full">
+                <Input size="sm" name="firstName" value={editData.firstName} onChange={handleChange} placeholder="Prénom" />
+                <Input size="sm" name="lastName" value={editData.lastName} onChange={handleChange} placeholder="Nom" />
+            </HStack>
+            <Input size="sm" name="email" value={editData.email} onChange={handleChange} placeholder="Email" />
+            <Input size="sm" name="phoneNumber" value={editData.phoneNumber} onChange={handleChange} placeholder="Téléphone" />
+            <Select size="sm" name="type" value={editData.type} onChange={handleChange}>
               <option value="BUYER">Acheteur</option>
               <option value="SELLER">Vendeur</option>
             </Select>
-          </FormControl>
-
-          {error && (
-            <Alert status="error" borderRadius="md" fontSize="sm">
-              <AlertIcon boxSize="16px"/> {error}
-            </Alert>
-          )}
-
-          <Flex>
-            <Button type="submit" colorScheme="green" size="sm" isLoading={isLoading} loadingText="Enreg...">Enregistrer</Button>
-            <Button variant="ghost" size="sm" ml={2} onClick={() => {setIsEditing(false); setError('');}} isDisabled={isLoading}>Annuler</Button>
-          </Flex>
-        </VStack>
+            <Flex w="full" justify="flex-end" gap={2} mt={2}>
+                <Button size="xs" variant="ghost" onClick={() => setIsEditing(false)}>Annuler</Button>
+                <Button type="submit" size="xs" colorScheme="green" isLoading={isLoading}>Sauvegarder</Button>
+            </Flex>
+          </VStack>
+        </form>
       </Box>
     );
   }
 
-  // --- Mode VUE (Chakra UI) ---
+  // --- MODE CARTE ---
   return (
-    <Box as="li" p={3} borderWidth={1} borderRadius="md" mb={3} display="flex" alignItems="center">
-      <Box flexGrow={1} mr={4}>
-        {/* 3. Transformer le nom en Lien */}
-        <Heading as="h4" size="sm">
-          <Link to={`/contact/${contact.id}`} style={{ textDecoration: 'none' }}>
-             <Text color="blue.600" _hover={{ textDecoration: 'underline' }}>
-                {contact.firstName} {contact.lastName}
-             </Text>
-          </Link>
-        </Heading>
-        <Text fontSize="sm" color="gray.600">
-          {contact.email || 'Pas d\'email'} - {contact.phoneNumber || 'Pas de tél.'}
-        </Text>
-      </Box>
-      <Tag size="sm" colorScheme={contact.type === 'BUYER' ? 'blue' : 'green'} mr={3}>
-        {contact.type === 'BUYER' ? 'Acheteur' : 'Vendeur'}
-      </Tag>
-      <IconButton icon={<EditIcon />} size="sm" aria-label="Modifier" variant="outline" colorScheme="yellow" onClick={() => setIsEditing(true)} mr={2} isDisabled={isLoading}/>
-      <IconButton icon={<DeleteIcon />} size="sm" aria-label="Supprimer" variant="outline" colorScheme="red" onClick={handleDelete} isLoading={isLoading}/>
+    <Box 
+      p={6} 
+      borderWidth="1px" 
+      borderRadius="2xl" 
+      bg="white" 
+      shadow="sm" 
+      transition="all 0.2s"
+      _hover={{ shadow: "lg", transform: "translateY(-2px)", borderColor: "blue.200" }}
+      position="relative"
+    >
+      {/* En-tête avec Avatar */}
+      <Flex align="center" mb={4}>
+        <Avatar icon={<FaUserTie fontSize="1.2rem" />} bg={contact.type === 'BUYER' ? 'blue.500' : 'green.500'} color="white" mr={4} />
+        <Box>
+            <Link to={`/contact/${contact.id}`}>
+                <Text fontWeight="bold" fontSize="lg" _hover={{ color: 'blue.500', textDecoration: 'underline' }}>
+                    {contact.firstName} {contact.lastName}
+                </Text>
+            </Link>
+            <Badge colorScheme={contact.type === 'BUYER' ? 'blue' : 'green'} variant="subtle" borderRadius="full" px={2}>
+                {contact.type === 'BUYER' ? 'Acheteur' : 'Vendeur'}
+            </Badge>
+        </Box>
+      </Flex>
+
+      {/* Coordonnées */}
+      <VStack align="start" spacing={2} mb={6} color="gray.600" fontSize="sm">
+        <Flex align="center">
+            <EmailIcon mr={2} color="gray.400" />
+            <Text>{contact.email || "Pas d'email"}</Text>
+        </Flex>
+        <Flex align="center">
+            <PhoneIcon mr={2} color="gray.400" />
+            <Text>{contact.phoneNumber || "Pas de numéro"}</Text>
+        </Flex>
+      </VStack>
+
+      {/* Boutons d'action (en bas à droite) */}
+      <Flex justify="flex-end" pt={4} borderTopWidth={1} borderColor="gray.100">
+        <IconButton icon={<EditIcon />} size="sm" variant="ghost" colorScheme="blue" onClick={() => setIsEditing(true)} aria-label="Modifier" mr={1} />
+        <IconButton icon={<DeleteIcon />} size="sm" variant="ghost" colorScheme="red" onClick={handleDelete} isLoading={isLoading} aria-label="Supprimer" />
+      </Flex>
     </Box>
   );
 }

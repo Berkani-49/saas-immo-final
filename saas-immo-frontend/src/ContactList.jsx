@@ -1,13 +1,11 @@
-// Fichier : src/ContactList.jsx (Version propre pour Sidebar)
+// Fichier : src/ContactList.jsx (Version Grille)
 
 import React from 'react';
-import { List, Alert, AlertIcon, Box } from '@chakra-ui/react';
+import { SimpleGrid, Alert, AlertIcon, Box } from '@chakra-ui/react';
 import ContactItem from './ContactItem.jsx';
 
-// Il reçoit 'contacts' de son parent (la page)
 export default function ContactList({ contacts, token, onContactDeleted, onContactUpdated }) {
   
-  // Si la liste est vide, on le dit
   if (!contacts || contacts.length === 0) {
     return (
       <Box mt={4}>
@@ -19,9 +17,9 @@ export default function ContactList({ contacts, token, onContactDeleted, onConta
     );
   }
 
-  // Sinon, on affiche la liste
+  // ON UTILISE UNE GRILLE (SimpleGrid) AU LIEU D'UNE LISTE
   return (
-    <List spacing={3} mt={4}>
+    <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6} mt={6}>
       {contacts.map(contact => (
         <ContactItem 
           key={contact.id} 
@@ -31,6 +29,6 @@ export default function ContactList({ contacts, token, onContactDeleted, onConta
           onContactUpdated={onContactUpdated}
         />
       ))}
-    </List>
+    </SimpleGrid>
   );
 }
