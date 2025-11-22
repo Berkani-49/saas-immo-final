@@ -3,10 +3,13 @@ html, body {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  width: 100%;
   height: 100%;
-  background-color: #F7FAFC; /* Gris très clair (gray.50) */
+  background-color: #F7FAFC; /* Le gris clair de Chakra UI (gray.50) */
+  overflow-x: hidden; /* Empêche le scroll horizontal global */
 }
 
 #root {
   height: 100%;
+  width: 100%;
 }

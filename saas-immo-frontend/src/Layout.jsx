@@ -1,7 +1,7 @@
-// Fichier : src/Layout.jsx (Version Anti-Débordement)
+// Fichier : src/Layout.jsx (Version Flexbox - Zéro débordement)
 
 import React from 'react';
-import { Box, IconButton, useDisclosure, Drawer, DrawerOverlay, DrawerContent, Text, Flex } from '@chakra-ui/react';
+import { Box, Flex, IconButton, useDisclosure, Drawer, DrawerOverlay, DrawerContent, Text } from '@chakra-ui/react';
 import { HamburgerIcon } from '@chakra-ui/icons';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar.jsx';
@@ -10,36 +10,38 @@ export default function Layout({ onLogout }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   return (
-    // 1. Conteneur Global : On force la largeur max à la taille de l'écran et on coupe tout ce qui dépasse
-    <Box minH="100vh" bg="gray.50" w="100%" maxW="100vw" overflowX="hidden">
+    // 1. Conteneur principal qui empêche tout débordement horizontal
+    <Flex minH="100vh" w="100vw" bg="gray.50" overflowX="hidden">
       
-      {/* --- SIDEBAR ORDI (Fixe à gauche) --- */}
+      {/* --- SIDEBAR ORDI (Fixe) --- */}
       <Box 
         display={{ base: 'none', md: 'block' }} 
         w="250px" 
-        position="fixed" 
-        top="0"
+        minW="250px" // Empêche la sidebar de s'écraser
+        h="100vh"
+        position="fixed"
         left="0"
-        h="100vh" 
+        top="0"
         zIndex="100"
       >
         <Sidebar onLogout={onLogout} />
       </Box>
 
       {/* --- SIDEBAR MOBILE (Tiroir) --- */}
-      <Drawer isOpen={isOpen} placement="left" onClose={onClose} returnFocusOnClose={false} onOverlayClick={onClose}>
+      <Drawer isOpen={isOpen} placement="left" onClose={onClose}>
         <DrawerOverlay />
         <DrawerContent bg="gray.900" maxWidth="250px">
           <Sidebar onLogout={onLogout} onClose={onClose} />
         </DrawerContent>
       </Drawer>
 
-      {/* --- ZONE DE CONTENU (À droite) --- */}
-      <Box 
-        ml={{ base: 0, md: "250px" }} 
-        w="auto"                      
+      {/* --- CONTENU (Partie Droite) --- */}
+      <Flex 
+        direction="column"
+        flex="1" // Prend tout l'espace restant automatiquement
+        ml={{ base: 0, md: "250px" }} // Laisse la place à la sidebar
         minH="100vh"
-        position="relative" // Important pour que le overflow hidden du parent fonctionne bien
+        overflowX="hidden" // Sécurité supplémentaire
       >
         
         {/* Header Mobile */}
@@ -59,12 +61,12 @@ export default function Layout({ onLogout }) {
           <Text fontSize="lg" ml={3} fontWeight="bold" color="gray.800">IMMO PRO</Text>
         </Flex>
 
-        {/* LE VRAI CONTENU DE LA PAGE */}
-        <Box p={{ base: 4, md: 8 }} maxW="100%"> {/* On limite aussi ici */}
+        {/* La Page */}
+        <Box p={{ base: 4, md: 8 }} w="100%">
           <Outlet />
         </Box>
 
-      </Box>
-    </Box>
+      </Flex>
+    </Flex>
   );
 }
