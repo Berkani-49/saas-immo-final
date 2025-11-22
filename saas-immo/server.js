@@ -1,6 +1,7 @@
 // Fichier : server.js (Version FINALE - Leads inclus)
 
 // 1. IMPORTS
+const { Resend } = require('resend'); // <-- NOUVEAU
 const express = require('express');
 const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
@@ -9,6 +10,7 @@ const jwt = require('jsonwebtoken');
 const { OpenAI } = require('openai');
 
 // 2. INITIALISATION
+const resend = new Resend(process.env.RESEND_API_KEY); // <-- NOUVEAU
 const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3000;
@@ -47,19 +49,20 @@ app.get('/api/public/properties/:id', async (req, res) => {
   }
 });
 
-// --- ROUTE PUBLIQUE : Réception de Leads (Formulaire de contact) ---
+// --- ROUTE PUBLIQUE : Réception de Leads + Email ---
 app.post('/api/public/leads', async (req, res) => {
   try {
     const { firstName, lastName, email, phone, message, propertyId } = req.body;
 
-    // 1. Retrouver le bien pour savoir à quel agent il appartient
+    // 1. Retrouver le bien et l'agent
     const property = await prisma.property.findUnique({
-      where: { id: parseInt(propertyId) }
+      where: { id: parseInt(propertyId) },
+      include: { agent: true } // On a besoin de l'email de l'agent
     });
 
     if (!property) return res.status(404).json({ error: "Bien introuvable." });
 
-    // 2. Créer le Contact (Client) ou le retrouver
+    // 2. Gestion du Contact (Client)
     let contact = await prisma.contact.findFirst({
         where: { email: email, agentId: property.agentId }
     });
@@ -67,17 +70,12 @@ app.post('/api/public/leads', async (req, res) => {
     if (!contact) {
         contact = await prisma.contact.create({
             data: {
-                firstName,
-                lastName,
-                email,
-                phoneNumber: phone,
-                type: 'BUYER', // Par défaut
-                agentId: property.agentId
+                firstName, lastName, email, phoneNumber: phone, type: 'BUYER', agentId: property.agentId
             }
         });
     }
 
-    // 3. Créer la Tâche de rappel pour l'agent
+    // 3. Créer la Tâche
     await prisma.task.create({
         data: {
             title: `📢 LEAD ENTRANT : ${firstName} ${lastName} pour ${property.address}`,
@@ -85,9 +83,31 @@ app.post('/api/public/leads', async (req, res) => {
             agentId: property.agentId,
             contactId: contact.id,
             propertyId: property.id,
-            dueDate: new Date() // À faire aujourd'hui !
+            dueDate: new Date()
         }
     });
+
+    // 4. ENVOYER L'EMAIL (NOUVEAU !) 📧
+    try {
+        await resend.emails.send({
+          from: 'onboarding@resend.dev', // Adresse par défaut obligatoire en mode gratuit
+          to: 'amirelattaoui49@gmail.com', // <--- ⚠️ REMPLACE PAR TON ADRESSE EMAIL PERSO (Celle de ton compte Resend)
+          subject: `🔥 Nouveau Lead pour : ${property.address}`,
+          html: `
+            <h1>Nouveau client intéressé !</h1>
+            <p><strong>Client :</strong> ${firstName} ${lastName}</p>
+            <p><strong>Téléphone :</strong> ${phone}</p>
+            <p><strong>Email :</strong> ${email}</p>
+            <p><strong>Message :</strong> ${message}</p>
+            <br/>
+            <p><em>Connectez-vous à votre espace ImmoPro pour traiter ce lead.</em></p>
+          `
+        });
+        console.log("Email envoyé avec succès !");
+    } catch (emailError) {
+        console.error("Erreur envoi email:", emailError);
+        // On ne bloque pas la réponse si l'email échoue, le lead est quand même sauvé
+    }
 
     res.status(200).json({ message: "Demande reçue avec succès." });
 
