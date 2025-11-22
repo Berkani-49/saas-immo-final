@@ -1,4 +1,4 @@
-// Fichier : server.js (Version 22 - COMPLÈTE & CORRIGÉE)
+// Fichier : server.js (Version FINALE - Leads inclus)
 
 // 1. IMPORTS
 const express = require('express');
@@ -22,21 +22,24 @@ const openai = new OpenAI({
 app.use(express.json());
 app.use(cors());
 
-// --- ROUTE PUBLIQUE : Voir un bien (Pour les clients) ---
+// 4. ROUTES PUBLIQUES
+
+// Test
+app.get('/', (req, res) => {
+  res.json({ message: "Le serveur fonctionne parfaitement !" });
+});
+
+// Voir un bien (Public)
 app.get('/api/public/properties/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const property = await prisma.property.findUnique({
       where: { id: parseInt(id) },
       include: { 
-        agent: { // On veut afficher le nom et l'email de l'agent au client
-            select: { firstName: true, lastName: true, email: true } 
-        } 
+        agent: { select: { firstName: true, lastName: true, email: true } } 
       }
     });
-
     if (!property) return res.status(404).json({ error: 'Bien introuvable.' });
-    
     res.status(200).json(property);
   } catch (error) {
     console.error("Erreur Public Property:", error);
@@ -44,6 +47,80 @@ app.get('/api/public/properties/:id', async (req, res) => {
   }
 });
 
+// --- ROUTE PUBLIQUE : Réception de Leads (Formulaire de contact) ---
+app.post('/api/public/leads', async (req, res) => {
+  try {
+    const { firstName, lastName, email, phone, message, propertyId } = req.body;
+
+    // 1. Retrouver le bien pour savoir à quel agent il appartient
+    const property = await prisma.property.findUnique({
+      where: { id: parseInt(propertyId) }
+    });
+
+    if (!property) return res.status(404).json({ error: "Bien introuvable." });
+
+    // 2. Créer le Contact (Client) ou le retrouver
+    let contact = await prisma.contact.findFirst({
+        where: { email: email, agentId: property.agentId }
+    });
+
+    if (!contact) {
+        contact = await prisma.contact.create({
+            data: {
+                firstName,
+                lastName,
+                email,
+                phoneNumber: phone,
+                type: 'BUYER', // Par défaut
+                agentId: property.agentId
+            }
+        });
+    }
+
+    // 3. Créer la Tâche de rappel pour l'agent
+    await prisma.task.create({
+        data: {
+            title: `📢 LEAD ENTRANT : ${firstName} ${lastName} pour ${property.address}`,
+            status: 'PENDING',
+            agentId: property.agentId,
+            contactId: contact.id,
+            propertyId: property.id,
+            dueDate: new Date() // À faire aujourd'hui !
+        }
+    });
+
+    res.status(200).json({ message: "Demande reçue avec succès." });
+
+  } catch (error) {
+    console.error("Erreur Lead:", error);
+    res.status(500).json({ error: "Erreur lors de l'envoi du message." });
+  }
+});
+
+// Inscription (Admin seulement via route secrète front)
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { email, password, firstName, lastName } = req.body;
+    if (!email || !password || !firstName || !lastName) {
+      return res.status(400).json({ error: 'Tous les champs sont requis.' });
+    }
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Cet email est déjà utilisé.' });
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = await prisma.user.create({
+      data: { email, password: hashedPassword, firstName, lastName },
+    });
+    const { password: _, ...userWithoutPassword } = newUser;
+    res.status(201).json(userWithoutPassword);
+  } catch (error) {
+    console.error("Erreur /api/auth/register:", error);
+    res.status(500).json({ error: 'Erreur serveur lors de l\'inscription.' });
+  }
+});
+
+// Connexion
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -94,13 +171,11 @@ app.get('/api/me', authenticateToken, (req, res) => {
   res.json(req.user);
 });
 
-// --- ROUTES BIENS (Properties) - VERSION CORRIGÉE AVEC LOGS ---
-// Route Création Bien (Mise à jour avec Image)
+// --- ROUTES BIENS ---
+
+// Créer
 app.post('/api/properties', authenticateToken, async (req, res) => {
-  console.log("----------------------------------------------------");
-  console.log("🕵️‍♂️ [ESPION] Création bien avec image...");
   try {
-    // On récupère imageUrl en plus
     const { address, city, postalCode, price, area, rooms, bedrooms, description, imageUrl } = req.body;
     if (!address || !price || !area) {
         return res.status(400).json({ error: "Champs requis manquants." });
@@ -111,43 +186,69 @@ app.post('/api/properties', authenticateToken, async (req, res) => {
         price: parseInt(price), area: parseInt(area), 
         rooms: parseInt(rooms) || 0, bedrooms: parseInt(bedrooms) || 0, 
         description,
-        imageUrl, // <--- La voilà !
+        imageUrl,
         agentId: req.user.id
       }
     });
-    console.log("✅ [ESPION] Bien créé avec ID:", newProperty.id);
     res.status(201).json(newProperty);
   } catch (error) {
-    console.error("💥 [ESPION] ERREUR :", error);
+    console.error("Erreur POST Property:", error);
     res.status(500).json({ error: 'Erreur création bien.' });
   }
 });
 
-// Route : Mettre à jour un bien (Avec Image)
+// Lister (Avec Filtres)
+app.get('/api/properties', authenticateToken, async (req, res) => {
+  try {
+    const { minPrice, maxPrice, minRooms, city } = req.query;
+    const filters = {};
+    if (minPrice) filters.price = { gte: parseInt(minPrice) };
+    if (maxPrice) filters.price = { ...filters.price, lte: parseInt(maxPrice) };
+    if (minRooms) filters.rooms = { gte: parseInt(minRooms) };
+    if (city) filters.city = { contains: city, mode: 'insensitive' };
+
+    const properties = await prisma.property.findMany({
+      where: filters,
+      orderBy: { createdAt: 'desc' },
+      include: { agent: { select: { firstName: true, lastName: true } } }
+    });
+    res.status(200).json(properties);
+  } catch (error) {
+    console.error("Erreur GET properties:", error);
+    res.status(500).json({ error: "Erreur serveur." });
+  }
+});
+
+// Détail d'un bien
+app.get('/api/properties/:id', authenticateToken, async (req, res) => {
+  try {
+    const property = await prisma.property.findFirst({
+      where: { id: parseInt(req.params.id) },
+      include: { agent: { select: { firstName: true, lastName: true } } }
+    });
+    if (!property) return res.status(404).json({ error: 'Bien non trouvé.' });
+    res.status(200).json(property);
+  } catch (error) {
+    res.status(500).json({ error: "Erreur serveur." });
+  }
+});
+
+// Modifier
 app.put('/api/properties/:id', authenticateToken, async (req, res) => {
     try {
       const { id } = req.params;
-      // On récupère imageUrl en plus
       const { address, city, postalCode, price, area, rooms, bedrooms, description, imageUrl } = req.body;
       const updatedProperty = await prisma.property.update({
         where: { id: parseInt(id) },
-        data: { 
-            address, city, postalCode, 
-            price: parseInt(price), 
-            area: parseInt(area), 
-            rooms: parseInt(rooms), 
-            bedrooms: parseInt(bedrooms), 
-            description,
-            imageUrl // <--- La voilà !
-        }
+        data: { address, city, postalCode, price: parseInt(price), area: parseInt(area), rooms: parseInt(rooms), bedrooms: parseInt(bedrooms), description, imageUrl }
       });
       res.status(200).json(updatedProperty);
     } catch (error) {
-      console.error("Erreur Update:", error);
       res.status(500).json({ error: "Erreur update bien." });
     }
 });
   
+// Supprimer
 app.delete('/api/properties/:id', authenticateToken, async (req, res) => {
     try {
       await prisma.property.delete({ where: { id: parseInt(req.params.id) } });
@@ -157,72 +258,8 @@ app.delete('/api/properties/:id', authenticateToken, async (req, res) => {
     }
 });
 
-
-// --- LA ROUTE MANQUANTE POUR AFFICHER LA LISTE ---
-// Route : Voir les biens (AVEC FILTRES INTELLIGENTS)
-app.get('/api/properties', authenticateToken, async (req, res) => {
-  try {
-    // 1. On récupère les critères envoyés par le site
-    const { minPrice, maxPrice, minRooms, city } = req.query;
-
-    // 2. On construit le filtre dynamique
-    const filters = {};
-
-    // Si un prix min est demandé
-    if (minPrice) {
-        filters.price = { gte: parseInt(minPrice) }; // gte = Greater Than or Equal (Plus grand ou égal)
-    }
-
-    // Si un prix max est demandé
-    if (maxPrice) {
-        // On fusionne avec le filtre prix existant s'il y en a un
-        filters.price = { ...filters.price, lte: parseInt(maxPrice) }; // lte = Less Than or Equal
-    }
-
-    // Si un nombre de pièces min est demandé
-    if (minRooms) {
-        filters.rooms = { gte: parseInt(minRooms) };
-    }
-
-    // Si une ville est demandée (recherche insensible à la casse : Paris = paris)
-    if (city) {
-        filters.city = { contains: city, mode: 'insensitive' };
-    }
-
-    // 3. On demande à la base de données avec ces filtres
-    const properties = await prisma.property.findMany({
-      where: filters, // <--- C'est ici que la magie opère
-      orderBy: { createdAt: 'desc' },
-      include: { 
-        agent: { select: { firstName: true, lastName: true } } 
-      }
-    });
-
-    res.status(200).json(properties);
-  } catch (error) {
-    console.error("Erreur GET /api/properties:", error);
-    res.status(500).json({ error: "Erreur serveur." });
-  }
-});
-
-// --- NOUVELLE ROUTE (Manquante) : Voir le détail d'UN bien ---
-app.get('/api/properties/:id', authenticateToken, async (req, res) => {
-  try {
-    const property = await prisma.property.findFirst({
-      where: { id: parseInt(req.params.id) }, // Mode Agence: pas de filtre agentId
-      include: { 
-        agent: { select: { firstName: true, lastName: true } }
-      }
-    });
-    if (!property) return res.status(404).json({ error: 'Bien non trouvé.' });
-    res.status(200).json(property);
-  } catch (error) {
-    console.error("Erreur GET /api/properties/:id:", error);
-    res.status(500).json({ error: "Erreur serveur." });
-  }
-});
-
 // --- ROUTES CONTACTS ---
+
 app.post('/api/contacts', authenticateToken, async (req, res) => {
   try {
     const { firstName, lastName, email, phoneNumber, type } = req.body;
@@ -233,17 +270,11 @@ app.post('/api/contacts', authenticateToken, async (req, res) => {
   }
 });
 
-// Route : Voir TOUS les contacts de l'agence (Mode Équipe)
 app.get('/api/contacts', authenticateToken, async (req, res) => {
   try {
     const contacts = await prisma.contact.findMany({ 
-      // ON A ENLEVÉ le filtre agentId
       orderBy: { lastName: 'asc' },
-      include: { 
-        agent: { // On veut savoir à qui appartient ce client
-            select: { firstName: true, lastName: true } 
-        } 
-      }
+      include: { agent: { select: { firstName: true, lastName: true } } }
     });
     res.status(200).json(contacts);
   } catch (error) {
@@ -251,14 +282,11 @@ app.get('/api/contacts', authenticateToken, async (req, res) => {
   }
 });
 
-// --- ROUTE CORRIGÉE : Voir le détail d'UN contact (Mode Agence) ---
 app.get('/api/contacts/:id', authenticateToken, async (req, res) => {
     try {
       const contact = await prisma.contact.findFirst({
-        where: { id: parseInt(req.params.id) }, // On a enlevé le filtre agentId
-        include: { 
-          agent: { select: { firstName: true, lastName: true } }
-        }
+        where: { id: parseInt(req.params.id) },
+        include: { agent: { select: { firstName: true, lastName: true } } }
       });
       if (!contact) return res.status(404).json({ error: 'Contact non trouvé.' });
       res.status(200).json(contact);
@@ -288,7 +316,6 @@ app.delete('/api/contacts/:id', authenticateToken, async (req, res) => {
 
 // --- ROUTES TÂCHES (TASKS) ---
 
-// 1. Créer une tâche
 app.post('/api/tasks', authenticateToken, async (req, res) => {
     try {
         const { title, dueDate, contactId, propertyId } = req.body;
@@ -310,193 +337,105 @@ app.post('/api/tasks', authenticateToken, async (req, res) => {
     }
 });
 
-// --- NOUVELLE ROUTE : LISTER LES TÂCHES (Version Robuste) ---
 app.get('/api/tasks', authenticateToken, async (req, res) => {
-  console.log(`[Stats] Démarrage... Agent ID: ${req.user.id}`);
-  
   try {
     const agentId = req.user.id;
-    console.log(`[Tasks] Recherche des tâches pour l'agent ${agentId}`);
-
     const tasks = await prisma.task.findMany({
-        where: { agentId: agentId }, // On garde les tâches personnelles
+        where: { agentId: agentId },
         include: {
-            contact: { // On inclut le contact
-              select: { // Mais SEULEMENT ce dont on a besoin
-                id: true,
-                firstName: true,
-                lastName: true,
-                phoneNumber: true
-              }
-            },
-            property: { // On inclut le bien
-              select: { // Mais SEULEMENT ce dont on a besoin
-                id: true,
-                address: true
-              }
-            }
+            contact: { select: { id: true, firstName: true, lastName: true, phoneNumber: true } },
+            property: { select: { id: true, address: true } }
         },
         orderBy: { createdAt: 'desc' }
     });
-
-    console.log(`[Tasks] ✅ Succès ! ${tasks.length} tâches trouvées.`);
     res.status(200).json(tasks);
-
   } catch (error) {
-    // Si ça plante, on le verra ENFIN ici
-    console.error("💥💥💥 ERREUR FATALE GET /api/tasks:", error);
+    console.error("Erreur GET tasks:", error);
     res.status(500).json({ error: "Erreur récupération tâches." });
   }
 });
 
-// 3. Mettre à jour une tâche
 app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         const { title, status, dueDate } = req.body;
-
         const updatedTask = await prisma.task.update({
             where: { id: parseInt(id) },
-            data: { 
-                title, 
-                status, 
-                dueDate: dueDate ? new Date(dueDate) : undefined 
-            }
+            data: { title, status, dueDate: dueDate ? new Date(dueDate) : undefined }
         });
         res.status(200).json(updatedTask);
     } catch (error) {
-        console.error("Erreur PUT /api/tasks:", error);
         res.status(500).json({ error: "Erreur mise à jour tâche." });
     }
 });
 
-// 4. Supprimer une tâche
 app.delete('/api/tasks/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         await prisma.task.delete({ where: { id: parseInt(id) } });
         res.status(204).send();
     } catch (error) {
-        console.error("Erreur DELETE /api/tasks:", error);
         res.status(500).json({ error: "Erreur suppression tâche." });
     }
 });
 
+// --- ROUTES IA ---
 
-
-
-// --- ROUTES IA (RETOUR DE L'INTELLIGENCE) ---
-
-// 1. Générer une description
 app.post('/api/properties/:id/generate-description', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const property = await prisma.property.findUnique({ where: { id: parseInt(id) } });
-
     if (!property) return res.status(404).json({ error: 'Bien non trouvé.' });
 
-    const prompt = `Rédige une description d'annonce immobilière attrayante, professionnelle et vendeuse (environ 150 mots) pour ce bien :
-    - Type : Appartement/Maison
-    - Adresse : ${property.address}, ${property.city}
-    - Surface : ${property.area} m²
-    - Pièces : ${property.rooms}
-    - Chambres : ${property.bedrooms}
-    - Prix : ${property.price} €
-    - Infos brutes : ${property.description || "Aucune info supplémentaire"}
-    
-    Ne mets pas de titre, commence directement la description.`;
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini", // Ou "gpt-3.5-turbo"
-      messages: [{ role: "user", content: prompt }],
-      max_tokens: 300,
-    });
-
-    const generatedText = completion.choices[0].message.content;
-    res.json({ description: generatedText });
-
-  } catch (error) {
-    console.error("Erreur IA Description:", error);
-    res.status(500).json({ error: "Erreur lors de la génération de la description." });
-  }
-});
-
-// 2. Estimer un prix
-app.post('/api/estimate-price', authenticateToken, async (req, res) => {
-  try {
-    const { area, city, rooms, bedrooms, propertyType, condition, avgPricePerSqm } = req.body;
-    
-    // Prompt pour l'estimation
-    const prompt = `
-      Agis comme un expert immobilier. Estime la fourchette de prix pour ce bien :
-      - Ville : ${city}
-      - Surface : ${area} m²
-      - Type : ${propertyType}
-      - État : ${condition}
-      - Pièces : ${rooms}, Chambres : ${bedrooms}
-      - Prix moyen secteur : ${avgPricePerSqm} €/m²
-      
-      Réponds UNIQUEMENT au format JSON comme ceci :
-      { "estimationMin": 100000, "estimationMax": 120000 }
-    `;
-
+    const prompt = `Rédige une description immo courte et pro pour : ${property.address}. Surface: ${property.area}m2.`;
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" }, // Force le format JSON
+      max_tokens: 300,
     });
-
-    const result = JSON.parse(completion.choices[0].message.content);
-    res.json(result);
-
+    res.json({ description: completion.choices[0].message.content });
   } catch (error) {
-    console.error("Erreur IA Estimation:", error);
-    res.status(500).json({ error: "Erreur lors de l'estimation." });
+    res.status(500).json({ error: "Erreur IA." });
   }
 });
 
+app.post('/api/estimate-price', authenticateToken, async (req, res) => {
+  try {
+    const { city, area } = req.body;
+    const prompt = `Estime le prix pour un bien à ${city} de ${area}m2. Réponds JSON { "estimationMin": 100000, "estimationMax": 120000 }`;
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+    });
+    res.json(JSON.parse(completion.choices[0].message.content));
+  } catch (error) {
+    res.status(500).json({ error: "Erreur IA." });
+  }
+});
 
-
-// --- NOUVELLE ROUTE : STATISTIQUES (Version "Pas à Pas" - Ultra Robuste) ---
+// --- ROUTE STATISTIQUES (Simplifiée) ---
 app.get('/api/stats', authenticateToken, async (req, res) => {
   try {
     const agentId = req.user.id;
-    console.log(`[Stats] Démarrage... Agent ID: ${agentId}`);
+    const [propertyCount, contactCount, buyerCount, sellerCount, pendingTaskCount] = await Promise.all([
+      prisma.property.count(),
+      prisma.contact.count(),
+      prisma.contact.count({ where: { type: 'BUYER' } }),
+      prisma.contact.count({ where: { type: 'SELLER' } }),
+      prisma.task.count({ where: { agentId: agentId, status: 'PENDING' } })
+    ]);
 
-    // On fait les requêtes UNE PAR UNE pour ne pas surcharger le serveur
-    const propertyCount = await prisma.property.count();
-    console.log(`[Stats] 1/5 - Biens comptés: ${propertyCount}`);
-    
-    const contactCount = await prisma.contact.count();
-    console.log(`[Stats] 2/5 - Contacts comptés: ${contactCount}`);
-    
-    const buyerCount = await prisma.contact.count({ where: { type: 'BUYER' } });
-    console.log(`[Stats] 3/5 - Acheteurs comptés: ${buyerCount}`);
-    
-    const sellerCount = await prisma.contact.count({ where: { type: 'SELLER' } });
-    console.log(`[Stats] 4/5 - Vendeurs comptés: ${sellerCount}`);
-    
-    const pendingTaskCount = await prisma.task.count({ where: { agentId: agentId, status: 'PENDING' } });
-    console.log(`[Stats] 5/5 - Tâches comptées: ${pendingTaskCount}`);
-
-    // Mettre en forme les résultats
     const stats = {
       properties: { total: propertyCount },
       contacts: { total: contactCount, buyers: buyerCount, sellers: sellerCount },
       tasks: { pending: pendingTaskCount, done: 0 }
     };
-    
-    console.log("[Stats] ✅ Succès ! Envoi des données.");
     res.status(200).json(stats);
-
   } catch (error) {
-    // Si ça plante, on le verra ENFIN ici
-    console.error("💥💥💥 ERREUR FATALE GET /api/stats:", error);
-    res.status(500).json({ error: "Erreur lors du chargement des statistiques." });
+    res.status(500).json({ error: "Erreur stats." });
   }
 });
-
-
 
 // 7. DÉMARRAGE
 app.listen(PORT, () => {
