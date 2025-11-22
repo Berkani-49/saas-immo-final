@@ -1,66 +1,55 @@
-// Fichier : src/Layout.jsx (Version Responsive Mobile)
+// Fichier : src/Layout.jsx
 
 import React from 'react';
-import { 
-  Box, Flex, IconButton, useDisclosure, Drawer, DrawerOverlay, DrawerContent 
-} from '@chakra-ui/react';
+import { Box, Flex, IconButton, useDisclosure, Drawer, DrawerOverlay, DrawerContent, Text } from '@chakra-ui/react';
 import { HamburgerIcon } from '@chakra-ui/icons';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar.jsx';
 
 export default function Layout({ onLogout }) {
-  // Gestion de l'ouverture/fermeture du menu mobile
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   return (
-    <Box minH="100vh" bg="gray.100">
+    <Flex minH="100vh" bg="gray.50">
       
-      {/* 1. VERSION ORDI : Sidebar fixe à gauche */}
-      <Box
-        display={{ base: 'none', md: 'block' }} // Caché sur mobile
-        w="250px"
-        position="fixed"
-        h="100vh"
-      >
+      {/* --- SIDEBAR (Desktop) --- */}
+      <Box display={{ base: 'none', md: 'block' }} w="250px" position="fixed" h="100vh" zIndex="100">
         <Sidebar onLogout={onLogout} />
       </Box>
 
-      {/* 2. VERSION MOBILE : Barre en haut avec Burger */}
-      <Flex
-        display={{ base: 'flex', md: 'none' }} // Caché sur ordi
-        bg="white"
-        p={4}
-        alignItems="center"
-        borderBottomWidth="1px"
-        position="sticky"
-        top="0"
-        zIndex="sticky"
-      >
-        <IconButton
-          icon={<HamburgerIcon w={6} h={6} />}
-          onClick={onOpen}
-          variant="ghost"
-          aria-label="Ouvrir le menu"
-        />
-        <Box ml={4} fontWeight="bold" fontSize="lg">Mon Agence</Box>
-      </Flex>
-
-      {/* 3. LE TIROIR (DRAWER) MOBILE */}
-      <Drawer isOpen={isOpen} placement="left" onClose={onClose}>
+      {/* --- SIDEBAR (Mobile Drawer) --- */}
+      <Drawer isOpen={isOpen} placement="left" onClose={onClose} returnFocusOnClose={false} onOverlayClick={onClose}>
         <DrawerOverlay />
-        <DrawerContent bg="gray.800" maxWidth="250px">
-          {/* On réutilise la même Sidebar, mais dans le tiroir */}
+        <DrawerContent bg="gray.900" maxWidth="250px">
           <Sidebar onLogout={onLogout} onClose={onClose} />
         </DrawerContent>
       </Drawer>
 
-      {/* 4. LE CONTENU DES PAGES */}
-      <Box 
-        ml={{ base: 0, md: "250px" }} // Marge à gauche seulement sur ordi
-        p={4}
-      >
-        <Outlet />
+      {/* --- CONTENU PRINCIPAL --- */}
+      <Box flex="1" ml={{ base: 0, md: "250px" }} transition="margin-left 0.3s">
+        
+        {/* Header Mobile (Burger) */}
+        <Flex
+          display={{ base: 'flex', md: 'none' }}
+          h="20"
+          alignItems="center"
+          bg="white"
+          borderBottomWidth="1px"
+          borderBottomColor="gray.200"
+          px={4}
+          position="sticky"
+          top="0"
+          zIndex="90"
+        >
+          <IconButton variant="outline" onClick={onOpen} aria-label="Ouvrir menu" icon={<HamburgerIcon />} />
+          <Text fontSize="lg" ml={4} fontWeight="bold">Mon Agence</Text>
+        </Flex>
+
+        {/* La Page */}
+        <Box p={8}>
+          <Outlet />
+        </Box>
       </Box>
-    </Box>
+    </Flex>
   );
 }
