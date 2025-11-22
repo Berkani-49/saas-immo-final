@@ -1,4 +1,4 @@
-// Fichier: src/App.jsx (Version Finale avec Route Publique)
+// Fichier: src/App.jsx (Version Plein Écran - Layout corrigé)
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -10,10 +10,10 @@ import Layout from './Layout.jsx';
 
 // Import des Pages
 import HomePage from './pages/HomePage.jsx';
-import Dashboard from './Dashboard.jsx'; // Page Biens
+import Dashboard from './Dashboard.jsx';
 import ContactsPage from './pages/ContactsPage.jsx'; 
 import TachesPage from './pages/TachesPage.jsx';
-import PublicPropertyPage from './pages/PublicPropertyPage.jsx'; // <-- La page vitrine
+import PublicPropertyPage from './pages/PublicPropertyPage.jsx';
 
 import PropertyDetail from './pages/PropertyDetail.jsx';
 import ContactDetail from './pages/ContactDetail.jsx';
@@ -57,19 +57,18 @@ export default function App() {
   if (isLoadingToken) return <Center h="100vh"><Spinner size="xl" color="blue.500" /></Center>;
 
   return (
-    <Box maxWidth="1200px" margin="40px auto" p={[3, 6]}>
+    // J'ai enlevé le "maxWidth" et les "margins". Maintenant ça prend tout l'écran.
+    <Box minH="100vh" bg="gray.50"> 
       <Routes>
         
-        {/* 1. LA ROUTE PUBLIQUE (Accessible SANS être connecté) */}
-        {/* C'est ici que le client atterrit quand il clique sur ton lien WhatsApp */}
+        {/* 1. ROUTE PUBLIQUE */}
         <Route path="/share/:id" element={<PublicPropertyPage />} />
 
-        {/* 2. LA ROUTE SECRÈTE INSCRIPTION */}
+        {/* 2. ROUTE SECRÈTE */}
         <Route path="/nouveau-membre-agence" element={<SecretRegister />} />
 
-        {/* 3. LES ROUTES PRIVÉES (Nécessitent le mot de passe) */}
+        {/* 3. ROUTES PRIVÉES (Avec Sidebar) */}
         {token ? (
-          // Si on est connecté, on affiche le Layout avec la Sidebar
           <Route path="/" element={<Layout onLogout={handleLogout} />}>
             <Route index element={<HomePage token={token} />} />
             <Route path="biens" element={<Dashboard token={token} />} />
@@ -81,10 +80,10 @@ export default function App() {
             <Route path="contact/:contactId" element={<ContactDetail token={token} />} />
           </Route>
         ) : (
-          // Si on n'est PAS connecté, on affiche la boîte de login
+          // PAGE DE CONNEXION (Elle reste centrée grâce au composant Center)
           <Route path="/" element={
-            <Center h="80vh">
-              <Box p={8} maxWidth="400px" borderWidth={1} borderRadius="lg" boxShadow="xl" bg="white" width="100%">
+            <Center h="100vh">
+              <Box p={8} maxWidth="400px" w="100%" borderWidth={1} borderRadius="lg" boxShadow="xl" bg="white">
                 <Heading as="h2" size="lg" mb={6} textAlign="center">Connexion Agence</Heading>
                 <form onSubmit={handleLogin}>
                   <FormControl id="email-login" mb={4} isRequired><FormLabel>Email</FormLabel><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></FormControl>
@@ -97,7 +96,6 @@ export default function App() {
           } />
         )}
 
-        {/* Redirection si on tape n'importe quoi */}
         <Route path="*" element={<Navigate to="/" />} />
         
       </Routes>
