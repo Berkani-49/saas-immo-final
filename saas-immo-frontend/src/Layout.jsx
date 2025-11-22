@@ -1,4 +1,4 @@
-// Fichier : src/Layout.jsx (Version Stable & Simple)
+// Fichier : src/Layout.jsx (Version Anti-Débordement)
 
 import React from 'react';
 import { Box, IconButton, useDisclosure, Drawer, DrawerOverlay, DrawerContent, Text, Flex } from '@chakra-ui/react';
@@ -10,8 +10,8 @@ export default function Layout({ onLogout }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   return (
-    // 1. Le Conteneur Global (Tout le fond est gris)
-    <Box minH="100vh" bg="gray.50">
+    // 1. Conteneur Global : On force la largeur max à la taille de l'écran et on coupe tout ce qui dépasse
+    <Box minH="100vh" bg="gray.50" w="100%" maxW="100vw" overflowX="hidden">
       
       {/* --- SIDEBAR ORDI (Fixe à gauche) --- */}
       <Box 
@@ -36,13 +36,13 @@ export default function Layout({ onLogout }) {
 
       {/* --- ZONE DE CONTENU (À droite) --- */}
       <Box 
-        ml={{ base: 0, md: "250px" }} // Sur ordi, on pousse le contenu de 250px
-        w="auto"                      // On laisse la largeur se faire toute seule (C'est la clé !)
-        minH="100vh"                  // Force le fond gris à aller tout en bas
-        transition="all 0.3s"
+        ml={{ base: 0, md: "250px" }} 
+        w="auto"                      
+        minH="100vh"
+        position="relative" // Important pour que le overflow hidden du parent fonctionne bien
       >
         
-        {/* Header Mobile (Visible uniquement sur petit écran) */}
+        {/* Header Mobile */}
         <Flex
           display={{ base: 'flex', md: 'none' }}
           h="60px"
@@ -60,7 +60,7 @@ export default function Layout({ onLogout }) {
         </Flex>
 
         {/* LE VRAI CONTENU DE LA PAGE */}
-        <Box p={{ base: 4, md: 8 }}> {/* Marges intérieures confortables */}
+        <Box p={{ base: 4, md: 8 }} maxW="100%"> {/* On limite aussi ici */}
           <Outlet />
         </Box>
 
