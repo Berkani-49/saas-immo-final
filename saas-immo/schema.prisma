@@ -39,6 +39,8 @@ model Property {
   rooms       Int
   bedrooms    Int
   description String?
+  latitude    Float?   // Chiffre à virgule (ex: 48.8566)
+  longitude   Float?   // Chiffre à virgule (ex: 2.3522)
   createdAt   DateTime @default(now())
 
 // AJOUTE CETTE LIGNE :

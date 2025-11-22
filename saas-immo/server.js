@@ -1,6 +1,7 @@
 // Fichier : server.js (Version FINALE - Leads inclus)
 
 // 1. IMPORTS
+const axios = require('axios'); // <-- AJOUTE ÇA AVEC LES AUTRES IMPORTS
 const { Resend } = require('resend'); // <-- NOUVEAU
 const express = require('express');
 const cors = require('cors');
@@ -192,14 +193,37 @@ app.get('/api/me', authenticateToken, (req, res) => {
 });
 
 // --- ROUTES BIENS ---
-
-// Créer
+// Route Création Bien (Avec Geocoding Automatique 🌍)
 app.post('/api/properties', authenticateToken, async (req, res) => {
   try {
     const { address, city, postalCode, price, area, rooms, bedrooms, description, imageUrl } = req.body;
+
     if (!address || !price || !area) {
         return res.status(400).json({ error: "Champs requis manquants." });
     }
+
+    // --- DÉBUT GEOCODING (La Magie) ---
+    let lat = null;
+    let lon = null;
+
+    try {
+        // On construit l'adresse complète pour la recherche
+        const query = `${address}, ${postalCode} ${city}`;
+        // On interroge OpenStreetMap (Nominatim)
+        const geoRes = await axios.get(`https://nominatim.openstreetmap.org/search`, {
+            params: { q: query, format: 'json', limit: 1 }
+        });
+
+        if (geoRes.data && geoRes.data.length > 0) {
+            lat = parseFloat(geoRes.data[0].lat);
+            lon = parseFloat(geoRes.data[0].lon);
+            console.log(`🌍 Adresse trouvée : Lat ${lat}, Lon ${lon}`);
+        }
+    } catch (geoError) {
+        console.error("Erreur Geocoding (pas grave, on continue sans carte):", geoError.message);
+    }
+    // --- FIN GEOCODING ---
+
     const newProperty = await prisma.property.create({
       data: {
         address, city, postalCode, 
@@ -207,12 +231,16 @@ app.post('/api/properties', authenticateToken, async (req, res) => {
         rooms: parseInt(rooms) || 0, bedrooms: parseInt(bedrooms) || 0, 
         description,
         imageUrl,
+        latitude: lat,  // On sauvegarde les coordonnées !
+        longitude: lon,
         agentId: req.user.id
       }
     });
+
     res.status(201).json(newProperty);
+
   } catch (error) {
-    console.error("Erreur POST Property:", error);
+    console.error("Erreur Création Bien:", error);
     res.status(500).json({ error: 'Erreur création bien.' });
   }
 });
