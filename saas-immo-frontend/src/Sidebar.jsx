@@ -1,17 +1,18 @@
-// Fichier : src/Sidebar.jsx (Design Pro avec Icônes)
-import { FiHome, FiList, FiUsers, FiCheckSquare, FiTrendingUp, FiLogOut, FiFileText } from 'react-icons/fi';
+// Fichier : src/Sidebar.jsx (Version avec Factures)
+
 import React from 'react';
 import { Box, VStack, Button, Heading, Spacer, CloseButton, Flex, Icon, Text, Divider } from '@chakra-ui/react';
 import { NavLink as RouterNavLink } from 'react-router-dom';
-import { FiHome, FiList, FiUsers, FiCheckSquare, FiTrendingUp, FiLogOut } from 'react-icons/fi'; // Icônes modernes
+// J'ai ajouté FiFileText pour l'icône facture
+import { FiHome, FiList, FiUsers, FiCheckSquare, FiTrendingUp, FiLogOut, FiFileText } from 'react-icons/fi';
 
-// Liste des liens pour le menu (plus facile à gérer)
+// Liste des liens mise à jour
 const LinkItems = [
   { name: 'Accueil', icon: FiHome, path: '/' },
   { name: 'Mes Biens', icon: FiList, path: '/biens' },
   { name: 'Mes Contacts', icon: FiUsers, path: '/contacts' },
   { name: 'Mes Tâches', icon: FiCheckSquare, path: '/taches' },
-  { name: 'Factures', icon: FiFileText, path: '/factures' },
+  { name: 'Factures', icon: FiFileText, path: '/factures' }, // <-- LE NOUVEAU LIEN
   { name: 'Estimer', icon: FiTrendingUp, path: '/estimate' },
 ];
 
@@ -27,8 +28,8 @@ export default function Sidebar({ onLogout, onClose }) {
           borderRadius="lg"
           role="group"
           cursor="pointer"
-          bg={isActive ? 'blue.500' : 'transparent'} // Fond bleu si actif
-          color={isActive ? 'white' : 'gray.400'}    // Texte blanc si actif
+          bg={isActive ? 'blue.500' : 'transparent'}
+          color={isActive ? 'white' : 'gray.400'}
           _hover={{
             bg: isActive ? 'blue.600' : 'gray.700',
             color: 'white',
@@ -52,7 +53,7 @@ export default function Sidebar({ onLogout, onClose }) {
 
   return (
     <Box
-      bg="gray.900" // Noir/Gris très profond
+      bg="gray.900"
       color="white"
       h="100vh"
       w="100%"
@@ -61,8 +62,9 @@ export default function Sidebar({ onLogout, onClose }) {
       flexDirection="column"
       borderRight="1px"
       borderRightColor="gray.700"
+      overflowY="auto" // Pour scroller si le menu est trop long
+      pb={24} // Espace pour le bouton déconnexion
     >
-      {/* En-tête du menu */}
       <Flex h="20" alignItems="center" mx="8" justifyContent="space-between">
         <Heading fontSize="xl" fontWeight="bold" letterSpacing="tight">
           IMMO<Text as="span" color="blue.400">PRO</Text>
@@ -72,7 +74,6 @@ export default function Sidebar({ onLogout, onClose }) {
 
       <Divider borderColor="gray.700" mb={4} />
 
-      {/* Les Liens */}
       <VStack align="stretch" spacing={1}>
         {LinkItems.map((link) => (
           <NavItem key={link.name} icon={link.icon} to={link.path}>
@@ -83,8 +84,7 @@ export default function Sidebar({ onLogout, onClose }) {
 
       <Spacer />
 
-      {/* Bouton Déconnexion (en bas) */}
-      <Box p={6}>
+      <Box p={6} mt="auto">
         <Button 
           onClick={onLogout} 
           width="full" 
