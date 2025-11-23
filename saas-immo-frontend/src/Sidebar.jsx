@@ -1,5 +1,5 @@
 // Fichier : src/Sidebar.jsx (Design Pro avec Icônes)
-
+import { FiHome, FiList, FiUsers, FiCheckSquare, FiTrendingUp, FiLogOut, FiFileText } from 'react-icons/fi';
 import React from 'react';
 import { Box, VStack, Button, Heading, Spacer, CloseButton, Flex, Icon, Text, Divider } from '@chakra-ui/react';
 import { NavLink as RouterNavLink } from 'react-router-dom';
@@ -11,6 +11,7 @@ const LinkItems = [
   { name: 'Mes Biens', icon: FiList, path: '/biens' },
   { name: 'Mes Contacts', icon: FiUsers, path: '/contacts' },
   { name: 'Mes Tâches', icon: FiCheckSquare, path: '/taches' },
+  { name: 'Factures', icon: FiFileText, path: '/factures' },
   { name: 'Estimer', icon: FiTrendingUp, path: '/estimate' },
 ];
 
