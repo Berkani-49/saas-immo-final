@@ -1,4 +1,4 @@
-// Fichier : prisma/schema.prisma (Version 2 - Corrigée)
+// Fichier : prisma/schema.prisma (Version FINALE avec Factures + Photos + Carte)
 
 datasource db {
   provider  = "postgresql"
@@ -20,12 +20,13 @@ model User {
   lastName    String
   createdAt   DateTime @default(now())
 
-  // Relations existantes
+  // Relations
   properties Property[]
   contacts   Contact[]
-
-  // NOUVELLE LIGNE AJOUTÉE (le champ opposé)
   tasks      Task[]
+  
+  // 👇 C'est ici qu'on ajoute la ligne pour les factures
+  invoices   Invoice[] 
 }
 
 // --- MODÈLE PROPERTY ---
@@ -39,20 +40,16 @@ model Property {
   rooms       Int
   bedrooms    Int
   description String?
-  latitude    Float?   // Chiffre à virgule (ex: 48.8566)
-  longitude   Float?   // Chiffre à virgule (ex: 2.3522)
+  
+  // Nos ajouts précédents (Photos et Carte)
+  imageUrl    String?
+  latitude    Float?
+  longitude   Float?
+
   createdAt   DateTime @default(now())
 
-// AJOUTE CETTE LIGNE :
-  imageUrl    String?  // Le lien de la photo (optionnel)
-
- 
-
-  // Relation existante
   agent     User @relation(fields: [agentId], references: [id], onDelete: Cascade)
   agentId   Int
-
-  // NOUVELLE LIGNE AJOUTÉE (le champ opposé)
   tasks     Task[]
 
   @@index([agentId])
@@ -68,29 +65,27 @@ model Contact {
   type        String   // "BUYER" ou "SELLER"
   createdAt   DateTime @default(now())
 
-  // Relation existante
   agent     User @relation(fields: [agentId], references: [id], onDelete: Cascade)
   agentId   Int
-
-  // NOUVELLE LIGNE AJOUTÉE (le champ opposé)
   tasks     Task[]
+
+  // 👇 C'est ici qu'on ajoute la ligne pour les factures
+  invoices  Invoice[]
 
   @@index([agentId])
 }
 
-// --- NOTRE NOUVEAU MODÈLE TASK ---
+// --- MODÈLE TASK ---
 model Task {
   id          Int      @id @default(autoincrement())
-  title       String   // Le nom de la tâche (ex: "Appeler M. Dupont")
-  dueDate     DateTime? // La date d'échéance (optionnelle)
-  status      String   @default("PENDING") // "PENDING" ou "DONE"
+  title       String
+  dueDate     DateTime?
+  status      String   @default("PENDING")
   createdAt   DateTime @default(now())
 
-  // Le lien avec l'agent
   agent     User @relation(fields: [agentId], references: [id], onDelete: Cascade)
   agentId   Int
 
-  // Les liens optionnels
   contact     Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
   contactId   Int?
 
@@ -100,4 +95,21 @@ model Task {
   @@index([agentId])
   @@index([contactId])
   @@index([propertyId])
+}
+
+// --- NOUVEAU MODÈLE FACTURE (INVOICE) ---
+model Invoice {
+  id          Int      @id @default(autoincrement())
+  ref         String   // Numéro de facture
+  amount      Int      // Montant
+  description String   // Motif
+  status      String   @default("PENDING") // PENDING ou PAID
+  createdAt   DateTime @default(now())
+
+  // Liens
+  contact     Contact @relation(fields: [contactId], references: [id])
+  contactId   Int
+
+  agent       User    @relation(fields: [agentId], references: [id])
+  agentId     Int
 }
