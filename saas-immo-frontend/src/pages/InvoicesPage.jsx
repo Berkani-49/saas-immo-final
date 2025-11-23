@@ -1,16 +1,16 @@
-// Fichier : src/pages/InvoicesPage.jsx
+// Fichier : src/pages/InvoicesPage.jsx (Version Corrigée - Chargement Contacts)
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
   Box, Heading, Spinner, Flex, Alert, AlertIcon, Table, Thead, Tbody, Tr, Th, Td, 
-  Badge, Button, FormControl, FormLabel, Input, Select, VStack, HStack, useToast, Text 
+  Badge, Button, FormControl, FormLabel, Input, Select, VStack, HStack, useToast
 } from '@chakra-ui/react';
 import { AddIcon } from '@chakra-ui/icons';
 
 export default function InvoicesPage({ token }) {
   const [invoices, setInvoices] = useState([]);
-  const [contacts, setContacts] = useState([]); // On a besoin des contacts pour la liste déroulante
+  const [contacts, setContacts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
   // Formulaire
@@ -21,15 +21,18 @@ export default function InvoicesPage({ token }) {
 
   const toast = useToast();
 
-  // --- CHARGEMENT ---
+  // --- CHARGEMENT DES DONNÉES ---
   useEffect(() => {
     if (!token) return;
+    
     const fetchData = async () => {
       setIsLoading(true);
       try {
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
         
-        // On charge les factures ET les contacts en parallèle
+        // On récupère les factures ET les contacts
+        console.log("Chargement Factures & Contacts...");
+        
         const [invoicesRes, contactsRes] = await Promise.all([
             axios.get('https://api-immo-final.onrender.com/api/invoices', config),
             axios.get('https://api-immo-final.onrender.com/api/contacts', config)
@@ -37,8 +40,11 @@ export default function InvoicesPage({ token }) {
 
         setInvoices(invoicesRes.data);
         setContacts(contactsRes.data);
+        console.log("Contacts chargés :", contactsRes.data.length);
+
       } catch (error) {
         console.error("Erreur chargement:", error);
+        toast({ title: "Erreur", description: "Impossible de charger les données.", status: "error" });
       } finally {
         setIsLoading(false);
       }
@@ -56,14 +62,13 @@ export default function InvoicesPage({ token }) {
     setIsSubmitting(true);
     try {
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
-        const response = await axios.post('https://api-immo-final.onrender.com/api/invoices', {
+        await axios.post('https://api-immo-final.onrender.com/api/invoices', {
             amount,
             description,
             contactId: selectedContact
         }, config);
 
-        // On recharge la page pour voir la nouvelle facture (plus simple ici)
-        // Idéalement on ajouterait à la liste manuellement, mais comme on a besoin des infos contact...
+        // Rechargement complet pour voir la nouvelle facture
         window.location.reload(); 
         
     } catch (error) {
@@ -84,9 +89,16 @@ export default function InvoicesPage({ token }) {
                 <HStack width="full" alignItems="end">
                     <FormControl isRequired flex={2}>
                         <FormLabel>Client à facturer</FormLabel>
-                        <Select placeholder="Choisir un client" value={selectedContact} onChange={(e) => setSelectedContact(e.target.value)}>
+                        <Select 
+                            placeholder={contacts.length > 0 ? "Choisir un client" : "Aucun contact trouvé"} 
+                            value={selectedContact} 
+                            onChange={(e) => setSelectedContact(e.target.value)}
+                            isDisabled={contacts.length === 0}
+                        >
                             {contacts.map(c => (
-                                <option key={c.id} value={c.id}>{c.firstName} {c.lastName}</option>
+                                <option key={c.id} value={c.id}>
+                                    {c.firstName} {c.lastName} ({c.type === 'BUYER' ? 'Acheteur' : 'Vendeur'})
+                                </option>
                             ))}
                         </Select>
                     </FormControl>
@@ -120,10 +132,10 @@ export default function InvoicesPage({ token }) {
             <Table variant="simple">
                 <Thead bg="gray.50">
                     <Tr>
-                        <Th>Référence</Th>
+                        <Th>Réf</Th>
                         <Th>Client</Th>
                         <Th>Date</Th>
-                        <Th>Montant</Th>
+                        <Th isNumeric>Montant</Th>
                         <Th>Statut</Th>
                         <Th>Action</Th>
                     </Tr>
@@ -131,17 +143,17 @@ export default function InvoicesPage({ token }) {
                 <Tbody>
                     {invoices.map(inv => (
                         <Tr key={inv.id}>
-                            <Td fontWeight="bold">{inv.ref}</Td>
+                            <Td fontWeight="bold" fontSize="sm">{inv.ref}</Td>
                             <Td>{inv.contact?.firstName} {inv.contact?.lastName}</Td>
                             <Td>{new Date(inv.createdAt).toLocaleDateString()}</Td>
-                            <Td fontWeight="bold">{inv.amount.toLocaleString()} €</Td>
+                            <Td isNumeric fontWeight="bold">{inv.amount.toLocaleString()} €</Td>
                             <Td>
                                 <Badge colorScheme={inv.status === 'PAID' ? 'green' : 'orange'}>
                                     {inv.status === 'PAID' ? 'Payée' : 'En attente'}
                                 </Badge>
                             </Td>
                             <Td>
-                                <Button size="sm" variant="outline">PDF (Bientôt)</Button>
+                                <Button size="xs" variant="outline">PDF</Button>
                             </Td>
                         </Tr>
                     ))}
