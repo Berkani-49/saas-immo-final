@@ -1,15 +1,20 @@
 /* Fichier : src/index.css */
+:root {
+  background-color: #F7FAFC; /* gray.50 */
+}
+
 html, body {
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
   width: 100%;
-  height: 100%;
-  background-color: #F7FAFC; /* Le gris clair de Chakra UI (gray.50) */
-  overflow-x: hidden; /* Empêche le scroll horizontal global */
+  min-height: 100vh;
+  background-color: #F7FAFC; /* Force le gris clair */
+  color: #1A202C; /* Force le texte en gris foncé (gray.900) */
+  overflow-x: hidden; /* Empêche le défilement horizontal */
 }
 
 #root {
-  height: 100%;
+  min-height: 100vh;
   width: 100%;
+  isolation: isolate; /* Crée un nouveau contexte d'empilement */
 }
