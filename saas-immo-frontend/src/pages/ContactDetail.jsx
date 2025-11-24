@@ -1,37 +1,41 @@
-// Fichier : src/pages/ContactDetail.jsx (Version Robuste)
+// Fichier : src/pages/ContactDetail.jsx (Version Corrigée & Stable)
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
   Box, Heading, Text, Button, Spinner, Alert, AlertIcon,
-  FormControl, FormLabel, Input, Select, Flex, VStack
+  FormControl, FormLabel, Input, Select, Flex, Spacer,
+  VStack, useToast, Center, Container
 } from '@chakra-ui/react';
 
-// On n'utilise pas d'icônes complexes pour éviter les crashs d'import
 export default function ContactDetail({ token }) {
   const { contactId } = useParams();
   const navigate = useNavigate();
+  const toast = useToast();
 
   const [contact, setContact] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   
+  // Mode Édition
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  // --- Chargement du contact ---
   useEffect(() => {
     if (!token) return;
     const fetchContact = async () => {
       setIsLoading(true);
       try {
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
+        // Utilisation de la BONNE adresse serveur
         const response = await axios.get(`https://api-immo-final.onrender.com/api/contacts/${contactId}`, config);
         setContact(response.data);
         setEditFormData(response.data);
       } catch (err) {
-        console.error("Erreur contact:", err);
+        console.error("Erreur chargement:", err);
         setError("Impossible de charger ce contact.");
       } finally {
         setIsLoading(false);
@@ -40,16 +44,20 @@ export default function ContactDetail({ token }) {
     fetchContact();
   }, [contactId, token]);
 
+  // --- Sauvegarde des modifications ---
   const handleSave = async (e) => {
     e.preventDefault();
     setIsSaving(true);
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
       const response = await axios.put(`https://api-immo-final.onrender.com/api/contacts/${contactId}`, editFormData, config);
+      
       setContact(response.data);
+      setEditFormData(response.data);
       setIsEditing(false);
+      toast({ title: "Contact mis à jour.", status: "success", duration: 2000 });
     } catch (err) {
-      alert("Erreur lors de la sauvegarde");
+      toast({ title: "Erreur sauvegarde", status: "error" });
     } finally {
       setIsSaving(false);
     }
@@ -60,58 +68,88 @@ export default function ContactDetail({ token }) {
     setEditFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  if (isLoading) return <Flex justify="center" p={10}><Spinner /></Flex>;
+  if (isLoading) return <Center h="50vh"><Spinner size="xl" color="blue.500" /></Center>;
   if (error) return <Alert status="error"><AlertIcon />{error}</Alert>;
   if (!contact) return <Text>Contact introuvable.</Text>;
 
   return (
-    <Box bg="white" p={6} borderRadius="lg" shadow="sm" borderWidth="1px" maxW="800px" mx="auto">
+    <Container maxW="container.md">
       <Button onClick={() => navigate('/contacts')} mb={6} size="sm" variant="outline">
-        ← Retour
+        Retour
       </Button>
 
-      <Flex mb={6} align="center" justify="space-between">
-        <Heading size="lg">{contact.firstName} {contact.lastName}</Heading>
-        {!isEditing && <Button colorScheme="blue" onClick={() => setIsEditing(true)}>Modifier</Button>}
-      </Flex>
+      <Box p={8} shadow="lg" borderWidth="1px" borderRadius="2xl" bg="white">
+        <Flex mb={6} align="center">
+          <Heading as="h2" size="lg">
+            {isEditing ? "Modifier le contact" : `${contact.firstName} ${contact.lastName}`}
+          </Heading>
+          <Spacer />
+          {!isEditing && (
+            <Button colorScheme="blue" onClick={() => setIsEditing(true)}>
+              Modifier
+            </Button>
+          )}
+        </Flex>
 
-      {isEditing ? (
-        <form onSubmit={handleSave}>
-          <VStack spacing={4}>
-            <Flex w="full" gap={4}>
-                <FormControl><FormLabel>Prénom</FormLabel><Input name="firstName" value={editFormData.firstName} onChange={handleChange} /></FormControl>
-                <FormControl><FormLabel>Nom</FormLabel><Input name="lastName" value={editFormData.lastName} onChange={handleChange} /></FormControl>
-            </Flex>
-            <FormControl><FormLabel>Email</FormLabel><Input name="email" value={editFormData.email} onChange={handleChange} /></FormControl>
-            <FormControl><FormLabel>Téléphone</FormLabel><Input name="phoneNumber" value={editFormData.phoneNumber} onChange={handleChange} /></FormControl>
-            <FormControl><FormLabel>Type</FormLabel>
+        {isEditing ? (
+          // --- FORMULAIRE ---
+          <form onSubmit={handleSave}>
+            <VStack spacing={4}>
+              <Flex w="full" gap={4}>
+                <FormControl>
+                    <FormLabel>Prénom</FormLabel>
+                    <Input name="firstName" value={editFormData.firstName} onChange={handleChange} />
+                </FormControl>
+                <FormControl>
+                    <FormLabel>Nom</FormLabel>
+                    <Input name="lastName" value={editFormData.lastName} onChange={handleChange} />
+                </FormControl>
+              </Flex>
+              
+              <FormControl>
+                <FormLabel>Email</FormLabel>
+                <Input name="email" value={editFormData.email} onChange={handleChange} />
+              </FormControl>
+              
+              <FormControl>
+                <FormLabel>Téléphone</FormLabel>
+                <Input name="phoneNumber" value={editFormData.phoneNumber} onChange={handleChange} />
+              </FormControl>
+
+              <FormControl>
+                <FormLabel>Type</FormLabel>
                 <Select name="type" value={editFormData.type} onChange={handleChange}>
                   <option value="BUYER">Acheteur</option>
                   <option value="SELLER">Vendeur</option>
                 </Select>
-            </FormControl>
-            <Flex w="full" gap={4} mt={4}>
-                <Button onClick={() => setIsEditing(false)} flex={1} variant="ghost">Annuler</Button>
-                <Button type="submit" colorScheme="green" flex={1} isLoading={isSaving}>Enregistrer</Button>
-            </Flex>
+              </FormControl>
+
+              <Flex w="full" gap={4} mt={4}>
+                <Button onClick={() => setIsEditing(false)} variant="ghost" flex={1}>Annuler</Button>
+                <Button type="submit" colorScheme="green" isLoading={isSaving} flex={1}>Enregistrer</Button>
+              </Flex>
+            </VStack>
+          </form>
+        ) : (
+          // --- VUE ---
+          <VStack align="start" spacing={4}>
+            <Box>
+                <Text fontWeight="bold" color="gray.500" fontSize="sm">EMAIL</Text>
+                <Text fontSize="lg">{contact.email || "Non renseigné"}</Text>
+            </Box>
+            <Box>
+                <Text fontWeight="bold" color="gray.500" fontSize="sm">TÉLÉPHONE</Text>
+                <Text fontSize="lg">{contact.phoneNumber || "Non renseigné"}</Text>
+            </Box>
+            <Box>
+                <Text fontWeight="bold" color="gray.500" fontSize="sm">TYPE</Text>
+                <Text fontSize="md" fontWeight="bold" color={contact.type === 'BUYER' ? 'blue.500' : 'green.500'}>
+                    {contact.type === 'BUYER' ? 'Acheteur' : 'Vendeur'}
+                </Text>
+            </Box>
           </VStack>
-        </form>
-      ) : (
-        <VStack align="start" spacing={4}>
-            <Box>
-                <Text fontWeight="bold" color="gray.500" fontSize="xs">EMAIL</Text>
-                <Text fontSize="md">{contact.email || "-"}</Text>
-            </Box>
-            <Box>
-                <Text fontWeight="bold" color="gray.500" fontSize="xs">TÉLÉPHONE</Text>
-                <Text fontSize="md">{contact.phoneNumber || "-"}</Text>
-            </Box>
-            <Box>
-                <Text fontWeight="bold" color="gray.500" fontSize="xs">TYPE</Text>
-                <Text fontSize="md">{contact.type === 'BUYER' ? 'Acheteur' : 'Vendeur'}</Text>
-            </Box>
-        </VStack>
-      )}
-    </Box>
+        )}
+      </Box>
+    </Container>
   );
 }
