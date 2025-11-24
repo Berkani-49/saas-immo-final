@@ -1,11 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  // 👇 C'EST CETTE PARTIE QUI SAUVE LES PDF
   define: {
+    // Cette ligne remplace "global" par "window" pour que le PDF ne plante pas
     global: 'window',
   },
 })
