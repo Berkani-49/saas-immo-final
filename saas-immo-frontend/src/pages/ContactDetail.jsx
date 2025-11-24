@@ -1,129 +1,155 @@
-// Fichier : src/ContactItem.jsx (Version Corrigée - Import Button ajouté)
+// Fichier : src/pages/ContactDetail.jsx (Version Réparée & Complète)
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
 import {
-  Box, Text, IconButton, Flex, Badge, Spacer,
-  FormControl, FormLabel, Input, Select,
-  useToast, VStack, HStack, Icon, Avatar, Button // <--- J'AI AJOUTÉ 'Button' ICI
+  Box, Heading, Text, Button, Spinner, Alert, AlertIcon,
+  FormControl, FormLabel, Input, Select, Flex, Spacer,
+  VStack, useToast, Center, Container, Badge
 } from '@chakra-ui/react';
-import { EditIcon, DeleteIcon, PhoneIcon, EmailIcon } from '@chakra-ui/icons';
-import { FaUserTie } from 'react-icons/fa';
+import { ArrowBackIcon } from '@chakra-ui/icons';
 
-export default function ContactItem({ contact, token, onContactDeleted, onContactUpdated }) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({ ...contact });
-  const [isLoading, setIsLoading] = useState(false);
+export default function ContactDetail({ token }) {
+  const { contactId } = useParams();
+  const navigate = useNavigate();
   const toast = useToast();
 
-  // --- Suppression ---
-  const handleDelete = async () => {
-    if (!window.confirm("Supprimer ce contact ?")) return;
-    setIsLoading(true);
-    try {
-      const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      await axios.delete(`https://api-immo-final.onrender.com/api/contacts/${contact.id}`, config);
-      onContactDeleted(contact.id);
-      toast({ title: "Contact supprimé.", status: "success", duration: 2000 });
-    } catch (err) {
-      toast({ title: "Erreur", status: "error" });
-      setIsLoading(false);
-    }
-  };
+  const [contact, setContact] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  
+  // Mode Édition
+  const [isEditing, setIsEditing] = useState(false);
+  const [editFormData, setEditFormData] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
-  // --- Modification ---
+  // --- Chargement ---
+  useEffect(() => {
+    if (!token) return;
+    const fetchContact = async () => {
+      setIsLoading(true);
+      try {
+        const config = { headers: { 'Authorization': `Bearer ${token}` } };
+        const response = await axios.get(`https://api-immo-final.onrender.com/api/contacts/${contactId}`, config);
+        setContact(response.data);
+        setEditFormData(response.data);
+      } catch (err) {
+        console.error("Erreur chargement:", err);
+        setError("Impossible de charger ce contact.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchContact();
+  }, [contactId, token]);
+
+  // --- Sauvegarde ---
   const handleSave = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsSaving(true);
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      const response = await axios.put(`https://api-immo-final.onrender.com/api/contacts/${contact.id}`, editData, config);
-      onContactUpdated(response.data);
+      const response = await axios.put(`https://api-immo-final.onrender.com/api/contacts/${contactId}`, editFormData, config);
+      
+      setContact(response.data);
+      setEditFormData(response.data);
       setIsEditing(false);
-      toast({ title: "Contact mis à jour.", status: "success" });
+      toast({ title: "Contact mis à jour.", status: "success", duration: 2000 });
     } catch (err) {
-      toast({ title: "Erreur", status: "error" });
+      toast({ title: "Erreur sauvegarde", status: "error" });
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setEditData(current => ({ ...current, [name]: value }));
+    setEditFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // --- MODE ÉDITION ---
-  if (isEditing) {
-    return (
-      <Box p={5} borderWidth={1} borderRadius="xl" bg="white" shadow="md">
-        <form onSubmit={handleSave}>
-          <VStack spacing={3}>
-            <HStack w="full">
-                <Input size="sm" name="firstName" value={editData.firstName} onChange={handleChange} placeholder="Prénom" />
-                <Input size="sm" name="lastName" value={editData.lastName} onChange={handleChange} placeholder="Nom" />
-            </HStack>
-            <Input size="sm" name="email" value={editData.email} onChange={handleChange} placeholder="Email" />
-            <Input size="sm" name="phoneNumber" value={editData.phoneNumber} onChange={handleChange} placeholder="Téléphone" />
-            <Select size="sm" name="type" value={editData.type} onChange={handleChange}>
-              <option value="BUYER">Acheteur</option>
-              <option value="SELLER">Vendeur</option>
-            </Select>
-            <Flex w="full" justify="flex-end" gap={2} mt={2}>
-                <Button size="xs" variant="ghost" onClick={() => setIsEditing(false)}>Annuler</Button>
-                <Button type="submit" size="xs" colorScheme="green" isLoading={isLoading}>Sauvegarder</Button>
-            </Flex>
-          </VStack>
-        </form>
-      </Box>
-    );
-  }
+  if (isLoading) return <Center h="50vh"><Spinner size="xl" color="blue.500" /></Center>;
+  if (error) return <Alert status="error"><AlertIcon />{error}</Alert>;
+  if (!contact) return <Text>Contact introuvable.</Text>;
 
-  // --- MODE CARTE ---
   return (
-    <Box 
-      p={6} 
-      borderWidth="1px" 
-      borderRadius="2xl" 
-      bg="white" 
-      shadow="sm" 
-      transition="all 0.2s"
-      _hover={{ shadow: "lg", transform: "translateY(-2px)", borderColor: "blue.200" }}
-      position="relative"
-    >
-      {/* En-tête avec Avatar */}
-      <Flex align="center" mb={4}>
-        <Avatar icon={<FaUserTie fontSize="1.2rem" />} bg={contact.type === 'BUYER' ? 'blue.500' : 'green.500'} color="white" mr={4} />
-        <Box>
-            <Link to={`/contact/${contact.id}`}>
-                <Text fontWeight="bold" fontSize="lg" _hover={{ color: 'blue.500', textDecoration: 'underline' }}>
-                    {contact.firstName} {contact.lastName}
-                </Text>
-            </Link>
-            <Badge colorScheme={contact.type === 'BUYER' ? 'blue' : 'green'} variant="subtle" borderRadius="full" px={2}>
-                {contact.type === 'BUYER' ? 'Acheteur' : 'Vendeur'}
-            </Badge>
-        </Box>
-      </Flex>
+    <Container maxW="container.md" py={8}>
+      <Button leftIcon={<ArrowBackIcon />} onClick={() => navigate('/contacts')} mb={6} variant="ghost">
+        Retour aux contacts
+      </Button>
 
-      {/* Coordonnées */}
-      <VStack align="start" spacing={2} mb={6} color="gray.600" fontSize="sm">
-        <Flex align="center">
-            <EmailIcon mr={2} color="gray.400" />
-            <Text>{contact.email || "Pas d'email"}</Text>
+      <Box p={8} shadow="lg" borderWidth="1px" borderRadius="2xl" bg="white">
+        <Flex mb={6} align="center">
+          <Heading as="h2" size="lg">
+            {isEditing ? "Modifier le contact" : `${contact.firstName} ${contact.lastName}`}
+          </Heading>
+          <Spacer />
+          {!isEditing && (
+            <Button colorScheme="blue" onClick={() => setIsEditing(true)}>
+              Modifier
+            </Button>
+          )}
         </Flex>
-        <Flex align="center">
-            <PhoneIcon mr={2} color="gray.400" />
-            <Text>{contact.phoneNumber || "Pas de numéro"}</Text>
-        </Flex>
-      </VStack>
 
-      {/* Boutons d'action */}
-      <Flex justify="flex-end" pt={4} borderTopWidth={1} borderColor="gray.100">
-        <IconButton icon={<EditIcon />} size="sm" variant="ghost" colorScheme="blue" onClick={() => setIsEditing(true)} aria-label="Modifier" mr={1} />
-        <IconButton icon={<DeleteIcon />} size="sm" variant="ghost" colorScheme="red" onClick={handleDelete} isLoading={isLoading} aria-label="Supprimer" />
-      </Flex>
-    </Box>
+        {isEditing ? (
+          // --- FORMULAIRE ---
+          <form onSubmit={handleSave}>
+            <VStack spacing={4}>
+              <Flex w="full" gap={4}>
+                <FormControl>
+                    <FormLabel>Prénom</FormLabel>
+                    <Input name="firstName" value={editFormData.firstName} onChange={handleChange} />
+                </FormControl>
+                <FormControl>
+                    <FormLabel>Nom</FormLabel>
+                    <Input name="lastName" value={editFormData.lastName} onChange={handleChange} />
+                </FormControl>
+              </Flex>
+              
+              <FormControl>
+                <FormLabel>Email</FormLabel>
+                <Input name="email" value={editFormData.email} onChange={handleChange} />
+              </FormControl>
+              
+              <FormControl>
+                <FormLabel>Téléphone</FormLabel>
+                <Input name="phoneNumber" value={editFormData.phoneNumber} onChange={handleChange} />
+              </FormControl>
+
+              <FormControl>
+                <FormLabel>Type</FormLabel>
+                <Select name="type" value={editFormData.type} onChange={handleChange}>
+                  <option value="BUYER">Acheteur</option>
+                  <option value="SELLER">Vendeur</option>
+                </Select>
+              </FormControl>
+
+              <Flex w="full" gap={4} mt={4}>
+                <Button onClick={() => setIsEditing(false)} variant="ghost" flex={1}>Annuler</Button>
+                <Button type="submit" colorScheme="green" isLoading={isSaving} flex={1}>Enregistrer</Button>
+              </Flex>
+            </VStack>
+          </form>
+        ) : (
+          // --- VUE ---
+          <VStack align="start" spacing={6}>
+            <Box w="full" p={4} bg="gray.50" borderRadius="md">
+                <Text fontWeight="bold" color="gray.500" fontSize="xs" mb={1}>EMAIL</Text>
+                <Text fontSize="lg">{contact.email || "Non renseigné"}</Text>
+            </Box>
+            <Box w="full" p={4} bg="gray.50" borderRadius="md">
+                <Text fontWeight="bold" color="gray.500" fontSize="xs" mb={1}>TÉLÉPHONE</Text>
+                <Text fontSize="lg">{contact.phoneNumber || "Non renseigné"}</Text>
+            </Box>
+            <Box w="full" p={4} bg="gray.50" borderRadius="md">
+                <Text fontWeight="bold" color="gray.500" fontSize="xs" mb={1}>TYPE</Text>
+                <Badge colorScheme={contact.type === 'BUYER' ? 'blue' : 'green'} fontSize="md" px={3} py={1} borderRadius="full">
+                    {contact.type === 'BUYER' ? 'Acheteur' : 'Vendeur'}
+                </Badge>
+            </Box>
+          </VStack>
+        )}
+      </Box>
+    </Container>
   );
 }
