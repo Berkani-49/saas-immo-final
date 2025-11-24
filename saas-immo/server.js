@@ -306,18 +306,27 @@ app.delete('/api/properties/:id', authenticateToken, async (req, res) => {
     }
 });
 
-// --- ROUTES CONTACTS ---
+// --- ROUTES CONTACTS (Version Debuggée) ---
 
+// 1. Créer un contact
 app.post('/api/contacts', authenticateToken, async (req, res) => {
   try {
     const { firstName, lastName, email, phoneNumber, type } = req.body;
-    const newContact = await prisma.contact.create({ data: { firstName, lastName, email, phoneNumber, type, agentId: req.user.id }});
+    // On vérifie que les champs obligatoires sont là
+    if (!firstName || !lastName) {
+        return res.status(400).json({ error: "Nom et Prénom requis." });
+    }
+    const newContact = await prisma.contact.create({ 
+        data: { firstName, lastName, email, phoneNumber, type, agentId: req.user.id }
+    });
     res.status(201).json(newContact);
   } catch (error) {
-    res.status(500).json({ error: "Erreur création contact." });
+    console.error("Erreur Création Contact:", error);
+    res.status(500).json({ error: "Erreur serveur." });
   }
 });
 
+// 2. Lister les contacts
 app.get('/api/contacts', authenticateToken, async (req, res) => {
   try {
     const contacts = await prisma.contact.findMany({ 
@@ -330,32 +339,47 @@ app.get('/api/contacts', authenticateToken, async (req, res) => {
   }
 });
 
+// 3. Voir UN contact (Détail)
 app.get('/api/contacts/:id', authenticateToken, async (req, res) => {
     try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
+
       const contact = await prisma.contact.findFirst({
-        where: { id: parseInt(req.params.id) },
+        where: { id: id },
         include: { agent: { select: { firstName: true, lastName: true } } }
       });
+
       if (!contact) return res.status(404).json({ error: 'Contact non trouvé.' });
       res.status(200).json(contact);
     } catch (error) {
+      console.error("Erreur GET Contact:", error);
       res.status(500).json({ error: "Erreur serveur." });
     }
 });
 
+// 4. Modifier un contact (PUT)
 app.put('/api/contacts/:id', authenticateToken, async (req, res) => {
     try {
+      const id = parseInt(req.params.id);
       const { firstName, lastName, email, phoneNumber, type } = req.body;
-      const updatedContact = await prisma.contact.update({ where: { id: parseInt(req.params.id) }, data: { firstName, lastName, email, phoneNumber, type }});
+      
+      const updatedContact = await prisma.contact.update({ 
+          where: { id: id }, 
+          data: { firstName, lastName, email, phoneNumber, type }
+      });
       res.status(200).json(updatedContact);
     } catch (error) {
+      console.error("Erreur PUT Contact:", error);
       res.status(500).json({ error: "Erreur update contact." });
     }
 });
   
+// 5. Supprimer un contact
 app.delete('/api/contacts/:id', authenticateToken, async (req, res) => {
     try {
-      await prisma.contact.delete({ where: { id: parseInt(req.params.id) } });
+      const id = parseInt(req.params.id);
+      await prisma.contact.delete({ where: { id: id } });
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ error: "Erreur delete contact." });
