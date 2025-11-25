@@ -1,4 +1,5 @@
 // Fichier: src/App.jsx (Version Finale - Connexion Centrée)
+import ActivitiesPage from './pages/ActivitiesPage.jsx';
 import InvoicesPage from './pages/InvoicesPage.jsx';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -63,6 +64,7 @@ export default function App() {
             <Route path="contacts" element={<ContactsPage token={token} />} /> 
             <Route path="taches" element={<TachesPage token={token} />} />
             <Route path="factures" element={<InvoicesPage token={token} />} />
+            <Route path="activites" element={<ActivitiesPage token={token} />} />
             <Route path="estimate" element={<PriceEstimator token={token} />} />
             <Route path="property/:propertyId" element={<PropertyDetail token={token} />} />
             <Route path="contact/:contactId" element={<ContactDetail token={token} />} />

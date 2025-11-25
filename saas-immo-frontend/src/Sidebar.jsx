@@ -1,5 +1,5 @@
 // Fichier : src/Sidebar.jsx (Version avec Factures)
-
+import { FiHome, FiList, FiUsers, FiCheckSquare, FiTrendingUp, FiLogOut, FiFileText, FiActivity } from 'react-icons/fi';
 import React from 'react';
 import { Box, VStack, Button, Heading, Spacer, CloseButton, Flex, Icon, Text, Divider } from '@chakra-ui/react';
 import { NavLink as RouterNavLink } from 'react-router-dom';
@@ -8,6 +8,7 @@ import { FiHome, FiList, FiUsers, FiCheckSquare, FiTrendingUp, FiLogOut, FiFileT
 
 // Liste des liens mise à jour
 const LinkItems = [
+  { name: 'Activité', icon: FiActivity, path: '/activites' },
   { name: 'Accueil', icon: FiHome, path: '/' },
   { name: 'Mes Biens', icon: FiList, path: '/biens' },
   { name: 'Mes Contacts', icon: FiUsers, path: '/contacts' },
