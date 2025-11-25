@@ -20,20 +20,30 @@ export default function InvoicesPage({ token }) {
 
   const toast = useToast();
 
+  // --- CHARGEMENT SÉPARÉ (Plus robuste) ---
   useEffect(() => {
     if (!token) return;
+    
     const fetchData = async () => {
       setIsLoading(true);
+      const config = { headers: { 'Authorization': `Bearer ${token}` } };
+
+      // 1. Charger les Contacts (Vital pour le formulaire)
       try {
-        const config = { headers: { 'Authorization': `Bearer ${token}` } };
-        const [invoicesRes, contactsRes] = await Promise.all([
-            axios.get('https://api-immo-final.onrender.com/api/invoices', config),
-            axios.get('https://api-immo-final.onrender.com/api/contacts', config)
-        ]);
-        setInvoices(invoicesRes.data);
+        const contactsRes = await axios.get('https://api-immo-final.onrender.com/api/contacts', config);
         setContacts(contactsRes.data);
       } catch (error) {
-        console.error("Erreur chargement:", error);
+        console.error("Erreur chargement contacts:", error);
+        toast({ title: "Erreur", description: "Impossible de charger les clients.", status: "error" });
+      }
+
+      // 2. Charger les Factures (Si ça plante, c'est pas grave pour le formulaire)
+      try {
+        const invoicesRes = await axios.get('https://api-immo-final.onrender.com/api/invoices', config);
+        setInvoices(invoicesRes.data);
+      } catch (error) {
+        console.error("Erreur chargement factures:", error);
+        // On ne met pas d'alerte ici pour ne pas spammer si la table est juste vide/nouvelle
       } finally {
         setIsLoading(false);
       }
