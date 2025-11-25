@@ -306,13 +306,13 @@ app.delete('/api/properties/:id', authenticateToken, async (req, res) => {
     }
 });
 
-// --- ROUTES CONTACTS (Version Debuggée) ---
+// --- ROUTES CONTACTS (Version Corrigée & Robuste) ---
 
 // 1. Créer un contact
 app.post('/api/contacts', authenticateToken, async (req, res) => {
   try {
     const { firstName, lastName, email, phoneNumber, type } = req.body;
-    // On vérifie que les champs obligatoires sont là
+    // Vérification stricte
     if (!firstName || !lastName) {
         return res.status(400).json({ error: "Nom et Prénom requis." });
     }
@@ -322,7 +322,7 @@ app.post('/api/contacts', authenticateToken, async (req, res) => {
     res.status(201).json(newContact);
   } catch (error) {
     console.error("Erreur Création Contact:", error);
-    res.status(500).json({ error: "Erreur serveur." });
+    res.status(500).json({ error: "Erreur serveur lors de la création." });
   }
 });
 
@@ -335,6 +335,7 @@ app.get('/api/contacts', authenticateToken, async (req, res) => {
     });
     res.status(200).json(contacts);
   } catch (error) {
+    console.error("Erreur Liste Contacts:", error);
     res.status(500).json({ error: "Erreur serveur." });
   }
 });
@@ -362,6 +363,8 @@ app.get('/api/contacts/:id', authenticateToken, async (req, res) => {
 app.put('/api/contacts/:id', authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
+
       const { firstName, lastName, email, phoneNumber, type } = req.body;
       
       const updatedContact = await prisma.contact.update({ 
@@ -379,9 +382,12 @@ app.put('/api/contacts/:id', authenticateToken, async (req, res) => {
 app.delete('/api/contacts/:id', authenticateToken, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
+
       await prisma.contact.delete({ where: { id: id } });
       res.status(204).send();
     } catch (error) {
+      console.error("Erreur DELETE Contact:", error);
       res.status(500).json({ error: "Erreur delete contact." });
     }
 });
