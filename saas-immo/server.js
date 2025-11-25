@@ -213,17 +213,33 @@ app.delete('/api/tasks/:id', authenticateToken, async (req, res) => {
     res.status(204).send();
 });
 
-// --- ROUTES FACTURES ---
-app.get('/api/invoices', authenticateToken, async (req, res) => {
-    const i = await prisma.invoice.findMany({ include: { contact: true }, orderBy: { createdAt: 'desc' } });
-    res.json(i);
-});
-
+// 1. Créer une facture (Version Corrigée : Conversion des nombres)
 app.post('/api/invoices', authenticateToken, async (req, res) => {
-    const ref = `FAC-${Date.now().toString().slice(-6)}`;
-    const i = await prisma.invoice.create({ data: { ...req.body, ref, agentId: req.user.id } });
-    logActivity(req.user.id, "CRÉATION_FACTURE", `Facture créée : ${ref} (${req.body.amount}€)`);
-    res.json(i);
+    try {
+        const { amount, description, contactId, status } = req.body;
+        
+        // Génération référence
+        const ref = `FAC-${Date.now().toString().slice(-6)}`; 
+
+        if (!amount || !contactId) {
+            return res.status(400).json({ error: "Montant et Contact requis." });
+        }
+
+        const newInvoice = await prisma.invoice.create({
+            data: {
+                ref,
+                amount: parseInt(amount),      // <--- ICI : On force en Nombre
+                description: description || "Honoraires",
+                status: status || "PENDING",
+                agentId: req.user.id,
+                contactId: parseInt(contactId) // <--- ICI AUSSI : L'ID doit être un nombre
+            }
+        });
+        res.status(201).json(newInvoice);
+    } catch (error) {
+        console.error("Erreur Création Facture:", error);
+        res.status(500).json({ error: "Erreur création facture." });
+    }
 });
 
 // --- ROUTE : RÉCUPÉRER L'HISTORIQUE (POUR L'AFFICHAGE) ---
