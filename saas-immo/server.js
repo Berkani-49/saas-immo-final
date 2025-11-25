@@ -141,42 +141,20 @@ app.get('/api/properties/:id', authenticateToken, async (req, res) => {
     p ? res.json(p) : res.status(404).json({ error: "Non trouvé" });
 });
 
-// --- ROUTES CONTACTS ---
+// Route : Voir TOUS les contacts
 app.get('/api/contacts', authenticateToken, async (req, res) => {
-    const c = await prisma.contact.findMany({ orderBy: { lastName: 'asc' }, include: { agent: true } });
-    res.json(c);
-});
-
-app.post('/api/contacts', authenticateToken, async (req, res) => {
-    try {
-        const newContact = await prisma.contact.create({ data: { ...req.body, agentId: req.user.id } });
-        // LOG
-        logActivity(req.user.id, "CRÉATION_CONTACT", `Nouveau contact : ${req.body.firstName} ${req.body.lastName}`);
-        res.json(newContact);
-    } catch (e) { res.status(500).json({ error: "Erreur" }); }
-});
-
-app.put('/api/contacts/:id', authenticateToken, async (req, res) => {
-    try {
-        const updated = await prisma.contact.update({ where: { id: parseInt(req.params.id) }, data: req.body });
-        // LOG
-        logActivity(req.user.id, "MODIF_CONTACT", `Modification contact : ${updated.lastName}`);
-        res.json(updated);
-    } catch (e) { res.status(500).json({ error: "Erreur" }); }
-});
-
-app.delete('/api/contacts/:id', authenticateToken, async (req, res) => {
-    try {
-        await prisma.contact.delete({ where: { id: parseInt(req.params.id) } });
-        // LOG
-        logActivity(req.user.id, "SUPPRESSION_CONTACT", `Suppression contact (ID ${req.params.id})`);
-        res.status(204).send();
-    } catch (e) { res.status(500).json({ error: "Erreur" }); }
-});
-
-app.get('/api/contacts/:id', authenticateToken, async (req, res) => {
-    const c = await prisma.contact.findUnique({ where: { id: parseInt(req.params.id) }, include: { agent: true } });
-    c ? res.json(c) : res.status(404).json({ error: "Non trouvé" });
+  try {
+    const contacts = await prisma.contact.findMany({ 
+      orderBy: { lastName: 'asc' },
+      include: { 
+        agent: { select: { firstName: true, lastName: true } } 
+      }
+    });
+    res.status(200).json(contacts);
+  } catch (error) {
+    console.error("Erreur GET contacts:", error); // <--- Ajoute ce log pour voir si ça plante
+    res.status(500).json({ error: "Erreur serveur." });
+  }
 });
 
 // --- ROUTES TACHES ---
