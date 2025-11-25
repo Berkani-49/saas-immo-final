@@ -157,6 +157,56 @@ app.get('/api/contacts', authenticateToken, async (req, res) => {
   }
 });
 
+// --- ROUTES FACTURES (INVOICES) ---
+
+// 1. Créer une facture
+app.post('/api/invoices', authenticateToken, async (req, res) => {
+    try {
+        const { amount, description, contactId, status } = req.body;
+        
+        // On génère un numéro de facture simple
+        const ref = `FAC-${Date.now().toString().slice(-6)}`; 
+
+        if (!amount || !contactId) {
+            return res.status(400).json({ error: "Montant et Contact requis." });
+        }
+
+        const newInvoice = await prisma.invoice.create({
+            data: {
+                ref,
+                amount: parseInt(amount), // On s'assure que c'est un nombre
+                description: description || "Honoraires",
+                status: status || "PENDING",
+                agentId: req.user.id,
+                contactId: parseInt(contactId)
+            }
+        });
+        res.status(201).json(newInvoice);
+    } catch (error) {
+        console.error("Erreur Création Facture:", error);
+        res.status(500).json({ error: "Erreur création facture." });
+    }
+});
+
+// 2. Lister les factures
+app.get('/api/invoices', authenticateToken, async (req, res) => {
+    try {
+        const invoices = await prisma.invoice.findMany({
+            where: { agentId: req.user.id }, 
+            include: {
+                contact: {
+                    select: { firstName: true, lastName: true, email: true }
+                }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.status(200).json(invoices);
+    } catch (error) {
+        console.error("Erreur Liste Factures:", error);
+        res.status(500).json({ error: "Erreur chargement factures." });
+    }
+});
+
 // --- ROUTES TACHES ---
 app.get('/api/tasks', authenticateToken, async (req, res) => {
     const t = await prisma.task.findMany({ 
