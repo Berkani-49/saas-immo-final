@@ -1,19 +1,17 @@
-// Fichier : src/Sidebar.jsx (Version avec Factures)
-import { FiHome, FiList, FiUsers, FiCheckSquare, FiTrendingUp, FiLogOut, FiFileText, FiActivity } from 'react-icons/fi';
+// Fichier : src/Sidebar.jsx
+
 import React from 'react';
 import { Box, VStack, Button, Heading, Spacer, CloseButton, Flex, Icon, Text, Divider } from '@chakra-ui/react';
 import { NavLink as RouterNavLink } from 'react-router-dom';
-// J'ai ajouté FiFileText pour l'icône facture
-import { FiHome, FiList, FiUsers, FiCheckSquare, FiTrendingUp, FiLogOut, FiFileText } from 'react-icons/fi';
+import { FiHome, FiList, FiUsers, FiCheckSquare, FiTrendingUp, FiLogOut, FiFileText, FiActivity } from 'react-icons/fi';
 
-// Liste des liens mise à jour
 const LinkItems = [
-  { name: 'Activité', icon: FiActivity, path: '/activites' },
   { name: 'Accueil', icon: FiHome, path: '/' },
   { name: 'Mes Biens', icon: FiList, path: '/biens' },
   { name: 'Mes Contacts', icon: FiUsers, path: '/contacts' },
   { name: 'Mes Tâches', icon: FiCheckSquare, path: '/taches' },
-  { name: 'Factures', icon: FiFileText, path: '/factures' }, // <-- LE NOUVEAU LIEN
+  { name: 'Factures', icon: FiFileText, path: '/factures' },
+  { name: 'Activité', icon: FiActivity, path: '/activites' }, // <-- Le nouveau lien
   { name: 'Estimer', icon: FiTrendingUp, path: '/estimate' },
 ];
 
@@ -23,29 +21,14 @@ export default function Sidebar({ onLogout, onClose }) {
     <RouterNavLink to={to} onClick={onClose} style={{ textDecoration: 'none' }}>
       {({ isActive }) => (
         <Flex
-          align="center"
-          p="4"
-          mx="4"
-          borderRadius="lg"
-          role="group"
-          cursor="pointer"
+          align="center" p="4" mx="4" borderRadius="lg" role="group" cursor="pointer"
           bg={isActive ? 'blue.500' : 'transparent'}
           color={isActive ? 'white' : 'gray.400'}
-          _hover={{
-            bg: isActive ? 'blue.600' : 'gray.700',
-            color: 'white',
-          }}
+          _hover={{ bg: isActive ? 'blue.600' : 'gray.700', color: 'white' }}
           transition="all 0.2s"
           {...rest}
         >
-          {icon && (
-            <Icon
-              mr="4"
-              fontSize="16"
-              as={icon}
-              _groupHover={{ color: 'white' }}
-            />
-          )}
+          {icon && <Icon mr="4" fontSize="16" as={icon} _groupHover={{ color: 'white' }} />}
           <Text fontSize="sm" fontWeight="medium">{children}</Text>
         </Flex>
       )}
@@ -53,47 +36,20 @@ export default function Sidebar({ onLogout, onClose }) {
   );
 
   return (
-    <Box
-      bg="gray.900"
-      color="white"
-      h="100vh"
-      w="100%"
-      pos="relative"
-      display="flex"
-      flexDirection="column"
-      borderRight="1px"
-      borderRightColor="gray.700"
-      overflowY="auto" // Pour scroller si le menu est trop long
-      pb={24} // Espace pour le bouton déconnexion
-    >
+    <Box bg="gray.900" color="white" h="100vh" w="100%" pos="relative" display="flex" flexDirection="column" borderRight="1px" borderRightColor="gray.700" overflowY="auto" pb={24}>
       <Flex h="20" alignItems="center" mx="8" justifyContent="space-between">
-        <Heading fontSize="xl" fontWeight="bold" letterSpacing="tight">
-          IMMO<Text as="span" color="blue.400">PRO</Text>
-        </Heading>
+        <Heading fontSize="xl" fontWeight="bold" letterSpacing="tight">IMMO<Text as="span" color="blue.400">PRO</Text></Heading>
         {onClose && <CloseButton display={{ base: 'flex', md: 'none' }} onClick={onClose} />}
       </Flex>
-
       <Divider borderColor="gray.700" mb={4} />
-
       <VStack align="stretch" spacing={1}>
         {LinkItems.map((link) => (
-          <NavItem key={link.name} icon={link.icon} to={link.path}>
-            {link.name}
-          </NavItem>
+          <NavItem key={link.name} icon={link.icon} to={link.path}>{link.name}</NavItem>
         ))}
       </VStack>
-
       <Spacer />
-
       <Box p={6} mt="auto">
-        <Button 
-          onClick={onLogout} 
-          width="full" 
-          variant="outline" 
-          colorScheme="red" 
-          leftIcon={<Icon as={FiLogOut} />}
-          _hover={{ bg: 'red.500', color: 'white', borderColor: 'red.500' }}
-        >
+        <Button onClick={onLogout} width="full" variant="outline" colorScheme="red" leftIcon={<Icon as={FiLogOut} />} _hover={{ bg: 'red.500', color: 'white', borderColor: 'red.500' }}>
           Déconnexion
         </Button>
       </Box>
