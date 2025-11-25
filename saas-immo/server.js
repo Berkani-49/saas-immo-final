@@ -157,6 +157,27 @@ app.get('/api/contacts', authenticateToken, async (req, res) => {
   }
 });
 
+// --- AJOUTE CECI ---
+// 3. Voir UN contact (Détail)
+app.get('/api/contacts/:id', authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
+
+      const contact = await prisma.contact.findFirst({
+        where: { id: id },
+        include: { agent: { select: { firstName: true, lastName: true } } }
+      });
+
+      if (!contact) return res.status(404).json({ error: 'Contact non trouvé.' });
+      res.status(200).json(contact);
+    } catch (error) {
+      console.error("Erreur GET Contact:", error);
+      res.status(500).json({ error: "Erreur serveur." });
+    }
+});
+// -------------------
+
 // --- ROUTES FACTURES (INVOICES) ---
 
 // 1. Créer une facture
