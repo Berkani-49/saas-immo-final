@@ -24,6 +24,7 @@ model User {
   properties Property[]
   contacts   Contact[]
   tasks      Task[]
+  activities ActivityLog[]
   
   // 👇 C'est ici qu'on ajoute la ligne pour les factures
   invoices   Invoice[] 
@@ -112,4 +113,17 @@ model Invoice {
 
   agent       User    @relation(fields: [agentId], references: [id])
   agentId     Int
+}
+
+// --- MODÈLE HISTORIQUE D'ACTIVITÉ ---
+model ActivityLog {
+  id          Int      @id @default(autoincrement())
+  action      String   // Ex: "CRÉATION_BIEN", "SUPPRESSION_CONTACT"
+  description String   // Ex: "A ajouté le bien 10 rue de la Paix"
+  createdAt   DateTime @default(now())
+
+  agent       User     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agentId     Int
+
+  @@index([agentId])
 }
