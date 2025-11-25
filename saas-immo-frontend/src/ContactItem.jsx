@@ -1,19 +1,15 @@
-// Fichier : src/ContactItem.jsx (Design Carte de Visite)
+// Fichier : src/ContactItem.jsx (Version Simplifiée & Robuste)
 
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import {
-  Box, Text, IconButton, Flex, Badge, Spacer,
-  FormControl, FormLabel, Input, Select,
-  useToast, VStack, HStack, Icon, Avatar
+  Box, Text, IconButton, Flex, Badge, VStack, Icon, Avatar, useToast
 } from '@chakra-ui/react';
 import { EditIcon, DeleteIcon, PhoneIcon, EmailIcon } from '@chakra-ui/icons';
 import { FaUserTie } from 'react-icons/fa';
 
-export default function ContactItem({ contact, token, onContactDeleted, onContactUpdated }) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({ ...contact });
+export default function ContactItem({ contact, token, onContactDeleted }) {
   const [isLoading, setIsLoading] = useState(false);
   const toast = useToast();
 
@@ -27,60 +23,11 @@ export default function ContactItem({ contact, token, onContactDeleted, onContac
       onContactDeleted(contact.id);
       toast({ title: "Contact supprimé.", status: "success", duration: 2000 });
     } catch (err) {
-      toast({ title: "Erreur", status: "error" });
+      toast({ title: "Erreur suppression", status: "error" });
       setIsLoading(false);
     }
   };
 
-  // --- Modification ---
-  const handleSave = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    try {
-      const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      const response = await axios.put(`https://api-immo-final.onrender.com/api/contacts/${contact.id}`, editData, config);
-      onContactUpdated(response.data);
-      setIsEditing(false);
-      toast({ title: "Contact mis à jour.", status: "success" });
-    } catch (err) {
-      toast({ title: "Erreur", status: "error" });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setEditData(current => ({ ...current, [name]: value }));
-  };
-
-  // --- MODE ÉDITION ---
-  if (isEditing) {
-    return (
-      <Box p={5} borderWidth={1} borderRadius="xl" bg="white" shadow="md">
-        <form onSubmit={handleSave}>
-          <VStack spacing={3}>
-            <HStack w="full">
-                <Input size="sm" name="firstName" value={editData.firstName} onChange={handleChange} placeholder="Prénom" />
-                <Input size="sm" name="lastName" value={editData.lastName} onChange={handleChange} placeholder="Nom" />
-            </HStack>
-            <Input size="sm" name="email" value={editData.email} onChange={handleChange} placeholder="Email" />
-            <Input size="sm" name="phoneNumber" value={editData.phoneNumber} onChange={handleChange} placeholder="Téléphone" />
-            <Select size="sm" name="type" value={editData.type} onChange={handleChange}>
-              <option value="BUYER">Acheteur</option>
-              <option value="SELLER">Vendeur</option>
-            </Select>
-            <Flex w="full" justify="flex-end" gap={2} mt={2}>
-                <Button size="xs" variant="ghost" onClick={() => setIsEditing(false)}>Annuler</Button>
-                <Button type="submit" size="xs" colorScheme="green" isLoading={isLoading}>Sauvegarder</Button>
-            </Flex>
-          </VStack>
-        </form>
-      </Box>
-    );
-  }
-
-  // --- MODE CARTE ---
   return (
     <Box 
       p={6} 
@@ -119,10 +66,31 @@ export default function ContactItem({ contact, token, onContactDeleted, onContac
         </Flex>
       </VStack>
 
-      {/* Boutons d'action (en bas à droite) */}
+      {/* Boutons d'action */}
       <Flex justify="flex-end" pt={4} borderTopWidth={1} borderColor="gray.100">
-        <IconButton icon={<EditIcon />} size="sm" variant="ghost" colorScheme="blue" onClick={() => setIsEditing(true)} aria-label="Modifier" mr={1} />
-        <IconButton icon={<DeleteIcon />} size="sm" variant="ghost" colorScheme="red" onClick={handleDelete} isLoading={isLoading} aria-label="Supprimer" />
+        
+        {/* BOUTON MODIFIER (Stylo) : Redirige vers la page détail */}
+        <Link to={`/contact/${contact.id}`}>
+            <IconButton 
+                icon={<EditIcon />} 
+                size="sm" 
+                variant="ghost" 
+                colorScheme="blue" 
+                aria-label="Modifier" 
+                mr={1} 
+            />
+        </Link>
+
+        {/* BOUTON SUPPRIMER */}
+        <IconButton 
+            icon={<DeleteIcon />} 
+            size="sm" 
+            variant="ghost" 
+            colorScheme="red" 
+            onClick={handleDelete} 
+            isLoading={isLoading} 
+            aria-label="Supprimer" 
+        />
       </Flex>
     </Box>
   );
