@@ -22,7 +22,7 @@ export default function Sidebar({ onLogout, onClose }) {
       {({ isActive }) => (
         <Flex
           align="center" p="4" mx="4" borderRadius="lg" role="group" cursor="pointer"
-          bg={isActive ? 'blue.500' : 'transparent'}
+          bg={isActive ? 'brand.500' : 'transparent'}
           color={isActive ? 'white' : 'gray.400'}
           _hover={{ bg: isActive ? 'blue.600' : 'gray.700', color: 'white' }}
           transition="all 0.2s"

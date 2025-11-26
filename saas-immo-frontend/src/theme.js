@@ -1,43 +1,50 @@
-// Fichier : src/theme.js
+// Fichier : src/theme.js (Version Gold & Prestige)
+
 import { extendTheme } from '@chakra-ui/react';
 
 const theme = extendTheme({
   colors: {
+    // On définit notre couleur "brand" (Or / Beige Doré)
     brand: {
-      900: '#0B1120', // Bleu Nuit très foncé (Sidebar)
-      800: '#152036', // Bleu Nuit (Survol)
-      700: '#1E2D4A',
-      600: '#2A3F66',
-      500: '#C6A87C', // OR / BEIGE DORÉ (Couleur principale boutons)
-      400: '#D4B98F', // Or clair (Survol boutons)
-      300: '#E3CQA2',
-      100: '#F7F3E8', // Fond très clair teinté or
+      50: '#F9F6F0',
+      100: '#EEDDC2',
+      200: '#E3CQA2', // (Note: code approximatif pour la nuance claire)
+      300: '#D8B98E',
+      400: '#D4AF37', // Or classique
+      500: '#C6A87C', // <--- LA COULEUR PRINCIPALE (Celle du site exemple)
+      600: '#A38860', // Pour le survol (hover)
+      700: '#806845',
+      800: '#5E4B30',
+      900: '#0B1120', // Bleu Nuit très foncé (pour le menu)
     },
-  },
-  fonts: {
-    heading: `'Helvetica Neue', sans-serif`,
-    body: `'Helvetica Neue', sans-serif`,
+    // On remplace aussi le bleu par défaut par notre Or, comme ça tout change d'un coup
+    blue: {
+      50: '#F9F6F0',
+      100: '#EEDDC2',
+      500: '#C6A87C', // Le bouton "blue" deviendra Or
+      600: '#A38860', // Le survol deviendra Or foncé
+    }
   },
   styles: {
     global: {
       'html, body': {
-        backgroundColor: '#F7F8FA', // Gris très pâle, presque blanc
-        color: '#2D3748', // Texte gris foncé
+        backgroundColor: '#F7F8FA', // Gris très pâle pro
+        color: '#2D3748',
       },
     },
   },
   components: {
     Button: {
-      variants: {
-        solid: (props) => ({
-          bg: props.colorScheme === 'blue' ? 'brand.500' : undefined, // Remplace le bleu par l'Or par défaut
-          color: 'white',
-          _hover: {
-            bg: props.colorScheme === 'blue' ? 'brand.400' : undefined,
-          },
-        }),
+      baseStyle: {
+        fontWeight: 'bold',
+        borderRadius: 'lg', // Boutons un peu plus arrondis
       },
     },
+    Badge: {
+      baseStyle: {
+        borderRadius: 'md',
+      }
+    }
   },
 });
 
