@@ -1,4 +1,5 @@
 // Fichier: src/App.jsx (Version Finale - Connexion Centrée)
+
 import ActivitiesPage from './pages/ActivitiesPage.jsx';
 import InvoicesPage from './pages/InvoicesPage.jsx';
 import React, { useState, useEffect } from 'react';
@@ -17,6 +18,7 @@ import SecretRegister from './pages/SecretRegister.jsx';
 import PriceEstimator from './PriceEstimator.jsx';
 import { Box, Heading, FormControl, FormLabel, Input, Button, Alert, Spinner, Center } from '@chakra-ui/react';
 import { AlertIcon } from '@chakra-ui/icons';
+import TeamPage from './pages/TeamPage.jsx';
 
 export default function App() {
   const [email, setEmail] = useState('');
@@ -65,6 +67,7 @@ export default function App() {
             <Route path="taches" element={<TachesPage token={token} />} />
             <Route path="factures" element={<InvoicesPage token={token} />} />
             <Route path="activites" element={<ActivitiesPage token={token} />} />
+            <Route path="equipe" element={<TeamPage token={token} />} />
             <Route path="estimate" element={<PriceEstimator token={token} />} />
             <Route path="property/:propertyId" element={<PropertyDetail token={token} />} />
             <Route path="contact/:contactId" element={<ContactDetail token={token} />} />

@@ -1,11 +1,12 @@
 // Fichier : src/Sidebar.jsx
-
+import { FiHome, FiList, FiUsers, FiCheckSquare, FiTrendingUp, FiLogOut, FiFileText, FiActivity, FiBriefcase } from 'react-icons/fi';
 import React from 'react';
 import { Box, VStack, Button, Heading, Spacer, CloseButton, Flex, Icon, Text, Divider } from '@chakra-ui/react';
 import { NavLink as RouterNavLink } from 'react-router-dom';
 import { FiHome, FiList, FiUsers, FiCheckSquare, FiTrendingUp, FiLogOut, FiFileText, FiActivity } from 'react-icons/fi';
 
 const LinkItems = [
+  { name: 'Mon Équipe', icon: FiBriefcase, path: '/equipe' },
   { name: 'Accueil', icon: FiHome, path: '/' },
   { name: 'Mes Biens', icon: FiList, path: '/biens' },
   { name: 'Mes Contacts', icon: FiUsers, path: '/contacts' },
