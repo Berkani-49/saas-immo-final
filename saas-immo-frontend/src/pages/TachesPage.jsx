@@ -77,7 +77,7 @@ export default function TachesPage({ token }) {
           />
 
           <Box mt={8}>
-            <Tabs variant="soft-rounded" colorScheme="brand.900">
+            <Tabs variant="soft-rounded" colorScheme="brand">
               <TabList mb={4}>
                 <Tab><Icon as={FaList} mr={2} /> Vue Liste ({tasksTodoCount})</Tab>
                 <Tab><Icon as={FaCalendarAlt} mr={2} /> Vue Calendrier</Tab>

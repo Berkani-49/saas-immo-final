@@ -105,7 +105,7 @@ export default function AddTaskForm({ token, onTaskAdded, contacts, properties }
             </Select>
           </FormControl>
 
-          <Button type="submit" colorScheme="purple" width="full" isLoading={isSubmitting}>
+          <Button type="submit" colorScheme="brand" width="full" isLoading={isSubmitting}>
             Ajouter la tâche
           </Button>
         </VStack>

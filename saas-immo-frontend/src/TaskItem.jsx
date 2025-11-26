@@ -136,7 +136,7 @@ export default function TaskItem({ task, token, onTaskUpdated, onTaskDeleted }) 
           icon={<DeleteIcon />} 
           size="sm" 
           variant="ghost" 
-          colorScheme="gray" 
+          colorScheme="brand" 
           _hover={{ color: "red.500", bg: "red.50" }}
           onClick={handleDelete}
           isLoading={isLoading}

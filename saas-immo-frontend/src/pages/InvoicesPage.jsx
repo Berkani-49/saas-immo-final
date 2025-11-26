@@ -147,7 +147,7 @@ export default function InvoicesPage({ token }) {
                     </FormControl>
                 </HStack>
                 <FormControl><FormLabel>Description</FormLabel><Input value={description} onChange={(e) => setDescription(e.target.value)} /></FormControl>
-                <Button type="submit" leftIcon={<AddIcon />} colorScheme="purple" width="full" isLoading={isSubmitting}>Générer la facture</Button>
+                <Button type="submit" leftIcon={<AddIcon />} colorScheme="brand" width="full" isLoading={isSubmitting}>Générer la facture</Button>
             </VStack>
         </form>
       </Box>
@@ -157,7 +157,7 @@ export default function InvoicesPage({ token }) {
       {isLoading ? ( <Flex justify="center"><Spinner size="xl" /></Flex> ) : (
         <Box overflowX="auto" bg="white" borderRadius="lg" shadow="sm" borderWidth="1px">
             <Table variant="simple">
-                <Thead bg="gray.50">
+                <Thead bg="brand.50">
                     <Tr><Th>Réf</Th><Th>Client</Th><Th>Date</Th><Th isNumeric>Montant</Th><Th>Statut</Th><Th>Action</Th></Tr>
                 </Thead>
                 <Tbody>
