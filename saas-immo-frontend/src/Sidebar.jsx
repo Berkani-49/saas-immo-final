@@ -36,7 +36,7 @@ export default function Sidebar({ onLogout, onClose }) {
   );
 
   return (
-    <Box bg="gray.900" color="white" h="100vh" w="100%" pos="relative" display="flex" flexDirection="column" borderRight="1px" borderRightColor="gray.700" overflowY="auto" pb={24}>
+    <Box bg="brand.900" color="white" h="100vh" w="100%" pos="relative" display="flex" flexDirection="column" borderRight="1px" borderRightColor="gray.700" overflowY="auto" pb={24}>
       <Flex h="20" alignItems="center" mx="8" justifyContent="space-between">
         <Heading fontSize="xl" fontWeight="bold" letterSpacing="tight">IMMO<Text as="span" color="blue.400">PRO</Text></Heading>
         {onClose && <CloseButton display={{ base: 'flex', md: 'none' }} onClick={onClose} />}
