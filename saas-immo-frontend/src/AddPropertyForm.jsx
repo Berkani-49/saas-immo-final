@@ -58,7 +58,7 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
         imageUrl: finalImageUrl
       };
 
-      const response = await axios.post('https://api-immo-final.onrender.com/api/properties', payload, config);
+      const response = await axios.post('https://saas-immo-final.onrender.com/api/properties', payload, config);
       onPropertyAdded(response.data);
 
       // Reset

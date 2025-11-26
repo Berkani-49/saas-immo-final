@@ -26,7 +26,7 @@ export default function AddContactForm({ token, onContactAdded }) {
     setIsSubmitting(true);
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      const response = await axios.post('https://api-immo-final.onrender.com/api/contacts', {
+      const response = await axios.post('https://saas-immo-final.onrender.com/api/contacts', {
         firstName, lastName, email, phoneNumber, type
       }, config);
 

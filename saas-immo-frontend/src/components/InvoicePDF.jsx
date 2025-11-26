@@ -35,8 +35,8 @@ export default function InvoicesPage({ token }) {
       try {
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
         const [invoicesRes, contactsRes] = await Promise.all([
-            axios.get('https://api-immo-final.onrender.com/api/invoices', config),
-            axios.get('https://api-immo-final.onrender.com/api/contacts', config)
+            axios.get('https://saas-immo-final.onrender.com/api/invoices', config),
+            axios.get('https://saas-immo-final.onrender.com/api/contacts', config)
         ]);
         setInvoices(invoicesRes.data);
         setContacts(contactsRes.data);
@@ -55,7 +55,7 @@ export default function InvoicesPage({ token }) {
     setIsSubmitting(true);
     try {
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
-        await axios.post('https://api-immo-final.onrender.com/api/invoices', {
+        await axios.post('https://saas-immo-final.onrender.com/api/invoices', {
             amount, description, contactId: selectedContact
         }, config);
         window.location.reload(); 

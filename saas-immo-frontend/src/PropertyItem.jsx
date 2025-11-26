@@ -34,7 +34,7 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
     setIsLoading(true);
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      await axios.delete(`https://api-immo-final.onrender.com/api/properties/${property.id}`, config);
+      await axios.delete(`https://saas-immo-final.onrender.com/api/properties/${property.id}`, config);
       onPropertyDeleted(property.id);
       toast({ title: "Bien supprimé.", status: "success", duration: 2000 });
     } catch (err) {
@@ -63,7 +63,7 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
 
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
       const payload = { ...editData, imageUrl: finalImageUrl };
-      const response = await axios.put(`https://api-immo-final.onrender.com/api/properties/${property.id}`, payload, config);
+      const response = await axios.put(`https://saas-immo-final.onrender.com/api/properties/${property.id}`, payload, config);
       
       onPropertyUpdated(response.data);
       setIsEditing(false);

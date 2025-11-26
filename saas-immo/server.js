@@ -17,7 +17,15 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 app.use(express.json());
-app.use(cors());
+// Configuration CORS permissive (pour éviter les erreurs Preflight)
+app.use(cors({
+  origin: '*', // Accepte tout le monde (Vercel, Localhost...)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Toutes les méthodes
+  allowedHeaders: ['Content-Type', 'Authorization'] // Les en-têtes autorisés
+}));
+
+// Petit fix pour les requêtes OPTIONS (Preflight) qui bloquent parfois
+app.options('*', cors());
 
 // --- FONCTION D'AIDE : ENREGISTRER UNE ACTIVITÉ ---
 async function logActivity(agentId, action, description) {
