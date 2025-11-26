@@ -232,12 +232,31 @@ app.get('/api/tasks', authenticateToken, async (req, res) => {
     res.json(t);
 });
 
+// --- CRÉATION TÂCHE SÉCURISÉE ---
 app.post('/api/tasks', authenticateToken, async (req, res) => {
     try {
-        const t = await prisma.task.create({ data: { ...req.body, agentId: req.user.id } });
-        logActivity(req.user.id, "CRÉATION_TÂCHE", `Tâche : ${req.body.title}`);
-        res.json(t);
-    } catch (e) { res.status(500).json({ error: "Erreur" }); }
+        const { title, dueDate, contactId, propertyId } = req.body;
+        if (!title) return res.status(400).json({ error: "Le titre est requis." });
+
+        const newTask = await prisma.task.create({
+            data: {
+                title,
+                dueDate: dueDate ? new Date(dueDate) : null,
+                agentId: req.user.id,
+                // ICI : On force la conversion en entier (Int) ou null
+                contactId: contactId ? parseInt(contactId) : null,
+                propertyId: propertyId ? parseInt(propertyId) : null
+            }
+        });
+        
+        // Log pour vérifier
+        logActivity(req.user.id, "CRÉATION_TÂCHE", `Nouvelle tâche : ${title}`);
+        
+        res.status(201).json(newTask);
+    } catch (error) {
+        console.error("Erreur POST /api/tasks:", error); // On verra l'erreur dans les logs Render
+        res.status(500).json({ error: "Erreur création tâche." });
+    }
 });
 
 app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
