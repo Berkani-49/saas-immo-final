@@ -358,6 +358,24 @@ app.post('/api/estimate-price', authenticateToken, async (req, res) => {
     res.json({ estimationMin: 100000, estimationMax: 120000 });
 });
 
+// --- ROUTE ÉQUIPE (LISTE DES AGENTS) ---
+app.get('/api/agents', authenticateToken, async (req, res) => {
+  try {
+    const agents = await prisma.user.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: { // IMPORTANT : On ne sélectionne PAS le mot de passe !
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        createdAt: true
+      }
+    });
+    res.json(agents);
+  } catch (error) {
+    res.status(500).json({ error: "Erreur chargement équipe." });
+  }
+});
 
 // DÉMARRAGE
 app.listen(PORT, () => console.log(`Serveur OK sur ${PORT}`));
