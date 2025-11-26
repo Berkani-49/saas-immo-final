@@ -1,10 +1,11 @@
-// Fichier : src/AddTaskForm.jsx
+// Fichier : src/AddTaskForm.jsx (Version Sécurisée)
 
 import React, { useState } from 'react';
 import axios from 'axios';
 import {
   Box, Button, FormControl, FormLabel, Input, Select, VStack, useToast, Heading, HStack
 } from '@chakra-ui/react';
+import { AddIcon } from '@chakra-ui/icons';
 
 export default function AddTaskForm({ token, onTaskAdded, contacts, properties }) {
   const [title, setTitle] = useState('');
@@ -17,36 +18,35 @@ export default function AddTaskForm({ token, onTaskAdded, contacts, properties }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title) return;
+    if (!title) {
+        toast({ title: "Le titre est obligatoire", status: "warning" });
+        return;
+    }
     
     setIsSubmitting(true);
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      // On prépare les données
+      
+      // PRÉPARATION DES DONNÉES SÉCURISÉE
       const payload = {
         title,
-        dueDate: dueDate || null,
-        contactId: contactId ? parseInt(contactId) : null,
-        propertyId: propertyId ? parseInt(propertyId) : null
+        dueDate: dueDate ? new Date(dueDate) : null,
+        
+        // On force la conversion en Entier (Base 10) ou on envoie null
+        contactId: contactId ? parseInt(contactId, 10) : null,
+        propertyId: propertyId ? parseInt(propertyId, 10) : null
       };
 
-      const response = await axios.post('https://saas-immo-final.onrender.com/api/tasks', payload, config);
+      const response = await axios.post('https://api-immo-final.onrender.com/api/tasks', payload, config);
       
-      // On recharge la tâche avec les infos complètes (pour avoir les noms des contacts/biens)
-      // Petite astuce : Le backend nous renvoie déjà l'objet créé, mais sans les relations incluses 
-      // Pour faire simple, on va juste ajouter la nouvelle tâche à la liste
-      // Idéalement il faudrait que le backend renvoie le include, mais on gérera ça.
-      
-      // On ajoute manuellement les objets liés pour l'affichage immédiat
       const newTask = { 
         ...response.data, 
-        contact: contacts.find(c => c.id === parseInt(contactId)),
-        property: properties.find(p => p.id === parseInt(propertyId))
+        contact: contacts.find(c => c.id === payload.contactId),
+        property: properties.find(p => p.id === payload.propertyId)
       };
 
       onTaskAdded(newTask);
       
-      // Reset form
       setTitle('');
       setDueDate('');
       setContactId('');
@@ -70,20 +70,16 @@ export default function AddTaskForm({ token, onTaskAdded, contacts, properties }
           <FormControl isRequired>
             <FormLabel>À faire</FormLabel>
             <Input 
-              placeholder="Ex: Rappeler M. Dupont pour la visite..." 
+              placeholder="Ex: Rappeler M. Dupont..." 
               value={title} 
               onChange={(e) => setTitle(e.target.value)} 
             />
           </FormControl>
 
-          <HStack width="100%" alignItems="start">
+          <HStack width="100%" alignItems="start" spacing={4} direction={{ base: 'column', md: 'row' }}>
              <FormControl>
                 <FormLabel>Échéance</FormLabel>
-                <Input 
-                  type="date" 
-                  value={dueDate} 
-                  onChange={(e) => setDueDate(e.target.value)} 
-                />
+                <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
              </FormControl>
 
              <FormControl>
@@ -105,7 +101,7 @@ export default function AddTaskForm({ token, onTaskAdded, contacts, properties }
             </Select>
           </FormControl>
 
-          <Button type="submit" colorScheme="brand" width="full" isLoading={isSubmitting}>
+          <Button leftIcon={<AddIcon />} type="submit" colorScheme="purple" width="full" isLoading={isSubmitting}>
             Ajouter la tâche
           </Button>
         </VStack>
