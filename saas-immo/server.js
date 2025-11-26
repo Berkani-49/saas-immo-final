@@ -113,28 +113,36 @@ app.post('/api/properties', authenticateToken, async (req, res) => {
     } catch (e) { console.error(e); res.status(500).json({ error: "Erreur" }); }
 });
 
+// Route : Mettre à jour un bien (Version Blindée)
 app.put('/api/properties/:id', authenticateToken, async (req, res) => {
     try {
-        const updated = await prisma.property.update({ 
-            where: { id: parseInt(req.params.id) }, 
-            data: { ...req.body, 
-                price: parseInt(req.body.price), 
-                area: parseInt(req.body.area),
-                rooms: parseInt(req.body.rooms),
-                bedrooms: parseInt(req.body.bedrooms)
-            } 
-        });
-        logActivity(req.user.id, "MODIF_BIEN", `Modification du bien : ${updated.address}`);
-        res.json(updated);
-    } catch (e) { res.status(500).json({ error: "Erreur" }); }
-});
+      const id = parseInt(req.params.id); // On s'assure que l'ID est un nombre
+      if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
 
-app.delete('/api/properties/:id', authenticateToken, async (req, res) => {
-    try {
-        await prisma.property.delete({ where: { id: parseInt(req.params.id) } });
-        logActivity(req.user.id, "SUPPRESSION_BIEN", `Suppression d'un bien`);
-        res.status(204).send();
-    } catch (e) { res.status(500).json({ error: "Erreur" }); }
+      const { address, city, postalCode, price, area, rooms, bedrooms, description, imageUrl } = req.body;
+      
+      const updatedProperty = await prisma.property.update({
+        where: { id: id },
+        data: { 
+            address, 
+            city, 
+            postalCode, 
+            price: parseInt(price),        // <--- Conversion forcée
+            area: parseInt(area),          // <--- Conversion forcée
+            rooms: parseInt(rooms),        // <--- Conversion forcée
+            bedrooms: parseInt(bedrooms),  // <--- Conversion forcée
+            description,
+            imageUrl
+        }
+      });
+      // LOG pour vérifier que ça marche
+      console.log(`✅ Bien modifié (ID: ${id})`);
+      res.status(200).json(updatedProperty);
+
+    } catch (error) {
+      console.error("💥 Erreur Update Bien:", error);
+      res.status(500).json({ error: "Erreur lors de la modification." });
+    }
 });
 
 app.get('/api/properties/:id', authenticateToken, async (req, res) => {
