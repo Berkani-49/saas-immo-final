@@ -64,7 +64,7 @@ export default function TachesPage({ token }) {
       <Heading mb={6}>Agenda & Tâches</Heading>
 
       {isLoading ? (
-        <Flex justify="center"><Spinner size="xl" color="#0B1120" /></Flex>
+        <Flex justify="center"><Spinner size="xl" color="brand.900" /></Flex>
       ) : error ? (
         <Alert status="error"><AlertIcon />{error}</Alert>
       ) : (
@@ -77,7 +77,7 @@ export default function TachesPage({ token }) {
           />
 
           <Box mt={8}>
-            <Tabs variant="soft-rounded" colorScheme="#0B1120">
+            <Tabs variant="soft-rounded" colorScheme="brand.900">
               <TabList mb={4}>
                 <Tab><Icon as={FaList} mr={2} /> Vue Liste ({tasksTodoCount})</Tab>
                 <Tab><Icon as={FaCalendarAlt} mr={2} /> Vue Calendrier</Tab>
