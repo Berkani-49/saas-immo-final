@@ -150,6 +150,26 @@ app.get('/api/properties/:id', authenticateToken, async (req, res) => {
     p ? res.json(p) : res.status(404).json({ error: "Non trouvé" });
 });
 
+// Supprimer un bien
+app.delete('/api/properties/:id', authenticateToken, async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
+
+        await prisma.property.delete({ where: { id: id } });
+        
+        // On essaie de loguer, mais si ça rate, on ne bloque pas la suppression
+        try {
+             logActivity(req.user.id, "SUPPRESSION_BIEN", `Suppression d'un bien (ID ${id})`);
+        } catch (e) {}
+
+        res.status(204).send();
+    } catch (error) {
+        console.error("Erreur DELETE Property:", error);
+        res.status(500).json({ error: "Erreur lors de la suppression." });
+    }
+});
+
 // --- ROUTES CONTACTS ---
 app.get('/api/contacts', authenticateToken, async (req, res) => {
     const c = await prisma.contact.findMany({ orderBy: { lastName: 'asc' }, include: { agent: true } });
