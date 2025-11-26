@@ -170,12 +170,27 @@ app.get('/api/contacts/:id', authenticateToken, async (req, res) => {
     c ? res.json(c) : res.status(404).json({ error: "Non trouvé" });
 });
 
+// Route : Modifier un contact (Version Corrigée avec parseInt)
 app.put('/api/contacts/:id', authenticateToken, async (req, res) => {
     try {
-        const updated = await prisma.contact.update({ where: { id: parseInt(req.params.id) }, data: req.body });
-        logActivity(req.user.id, "MODIF_CONTACT", `Modification contact : ${updated.lastName}`);
-        res.json(updated);
-    } catch (e) { res.status(500).json({ error: "Erreur" }); }
+      // On force la conversion de l'ID en nombre
+      const id = parseInt(req.params.id);
+
+      if (isNaN(id)) {
+          return res.status(400).json({ error: "ID de contact invalide." });
+      }
+
+      const { firstName, lastName, email, phoneNumber, type } = req.body;
+      
+      const updatedContact = await prisma.contact.update({ 
+          where: { id: id }, 
+          data: { firstName, lastName, email, phoneNumber, type }
+      });
+      res.status(200).json(updatedContact);
+    } catch (error) {
+      console.error("Erreur PUT Contact:", error);
+      res.status(500).json({ error: "Erreur lors de la mise à jour du contact." });
+    }
 });
 
 app.delete('/api/contacts/:id', authenticateToken, async (req, res) => {
