@@ -19,7 +19,7 @@ export default function SecretRegister() {
     setIsLoading(true);
     try {
       // On utilise l'URL complète de Render pour être sûr
-      await axios.post('https://saas-immo-final.onrender.com/api/auth/register', {
+      await await axios.post('https://api-immo-final.onrender.com/api/auth/register', {
         firstName,
         lastName,
         email,
