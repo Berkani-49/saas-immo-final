@@ -60,13 +60,37 @@ app.post('/api/auth/login', async (req, res) => {
   res.json({ token });
 });
 
+// --- ROUTE INSCRIPTION (Indispensable) ---
 app.post('/api/auth/register', async (req, res) => {
-    try {
-      const { email, password, firstName, lastName } = req.body;
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const newUser = await prisma.user.create({ data: { email, password: hashedPassword, firstName, lastName } });
-      res.status(201).json(newUser);
-    } catch (e) { res.status(500).json({ error: "Erreur" }); }
+  try {
+    const { email, password, firstName, lastName } = req.body;
+    
+    if (!email || !password || !firstName || !lastName) {
+      return res.status(400).json({ error: 'Tous les champs sont requis.' });
+    }
+    
+    // Vérif si existe déjà
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Cet email est déjà utilisé.' });
+    }
+
+    // Hash du mot de passe
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Création
+    const newUser = await prisma.user.create({
+      data: { email, password: hashedPassword, firstName, lastName },
+    });
+
+    // On retire le mot de passe de la réponse
+    const { password: _, ...userWithoutPassword } = newUser;
+    res.status(201).json(userWithoutPassword);
+
+  } catch (error) {
+    console.error("Erreur /api/auth/register:", error);
+    res.status(500).json({ error: 'Erreur serveur lors de l\'inscription.' });
+  }
 });
 
 app.get('/api/me', authenticateToken, (req, res) => res.json(req.user));
