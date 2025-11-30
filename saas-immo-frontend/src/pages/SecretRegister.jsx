@@ -18,8 +18,8 @@ export default function SecretRegister() {
     setMessage('');
     setIsLoading(true);
     try {
-      // On utilise l'URL complète de Render pour être sûr
-      await await axios.post('https://api-immo-final.onrender.com/api/auth/register', {
+      // 👇 VÉRIFIE BIEN CETTE LIGNE
+      await axios.post('https://api-immo-final.onrender.com/api/auth/register', {
         firstName,
         lastName,
         email,
@@ -27,11 +27,12 @@ export default function SecretRegister() {
       });
       
       setMessage('Compte créé avec succès ! Redirection...');
-      setTimeout(() => navigate('/'), 2000); // Renvoie vers la page de connexion après 2s
+      setTimeout(() => navigate('/'), 2000);
 
     } catch (error) {
       console.error('Échec inscription:', error);
-      setMessage(`Erreur : ${error.response?.data?.error || 'Une erreur est survenue.'}`);
+      // On affiche le vrai message d'erreur si possible
+      setMessage(`Erreur : ${error.response?.data?.error || error.message}`);
     } finally {
       setIsLoading(false);
     }
