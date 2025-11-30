@@ -1,4 +1,4 @@
-// Fichier: src/pages/SecretRegister.jsx
+// Fichier: src/pages/SecretRegister.jsx (Version Design Gold)
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Box, Heading, FormControl, FormLabel, Input, Button, Alert, AlertIcon, VStack, HStack } from '@chakra-ui/react';
@@ -18,7 +18,7 @@ export default function SecretRegister() {
     setMessage('');
     setIsLoading(true);
     try {
-      // 👇 VÉRIFIE BIEN CETTE LIGNE
+      // URL Correcte
       await axios.post('https://api-immo-final.onrender.com/api/auth/register', {
         firstName,
         lastName,
@@ -31,7 +31,6 @@ export default function SecretRegister() {
 
     } catch (error) {
       console.error('Échec inscription:', error);
-      // On affiche le vrai message d'erreur si possible
       setMessage(`Erreur : ${error.response?.data?.error || error.message}`);
     } finally {
       setIsLoading(false);
@@ -39,9 +38,10 @@ export default function SecretRegister() {
   };
 
   return (
-    <Box maxWidth="500px" margin="50px auto" p={6} borderWidth={1} borderRadius="lg" boxShadow="xl" bg="white">
-      <Heading as="h2" size="lg" mb={6} textAlign="center" color="red.500">
-        🤫 Inscription Staff
+    <Box maxWidth="500px" margin="50px auto" p={8} borderWidth={1} borderRadius="2xl" boxShadow="xl" bg="white">
+      {/* Titre en couleur MARQUE (Or) au lieu de rouge */}
+      <Heading as="h2" size="lg" mb={6} textAlign="center" color="brand.500">
+        🔐 Inscription Staff
       </Heading>
       
       {message && (
@@ -52,26 +52,30 @@ export default function SecretRegister() {
       )}
 
       <form onSubmit={handleRegister}>
-        <VStack spacing={4}>
+        <VStack spacing={5}>
           <HStack width="full">
             <FormControl isRequired>
               <FormLabel>Prénom</FormLabel>
-              <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+              <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} focusBorderColor="brand.500" />
             </FormControl>
             <FormControl isRequired>
               <FormLabel>Nom</FormLabel>
-              <Input value={lastName} onChange={(e) => setLastName(e.target.value)} />
+              <Input value={lastName} onChange={(e) => setLastName(e.target.value)} focusBorderColor="brand.500" />
             </FormControl>
           </HStack>
+          
           <FormControl isRequired>
             <FormLabel>Email Pro</FormLabel>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} focusBorderColor="brand.500" />
           </FormControl>
+          
           <FormControl isRequired>
             <FormLabel>Mot de passe</FormLabel>
-            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} focusBorderColor="brand.500" />
           </FormControl>
-          <Button type="submit" colorScheme="red" width="full" isLoading={isLoading}>
+          
+          {/* Bouton en couleur MARQUE (Or) au lieu de rouge */}
+          <Button type="submit" colorScheme="brand" width="full" size="lg" isLoading={isLoading}>
             Créer l'accès agent
           </Button>
         </VStack>
