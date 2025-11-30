@@ -17,15 +17,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 app.use(express.json());
-// Configuration CORS permissive (pour éviter les erreurs Preflight)
-app.use(cors({
-  origin: '*', // Accepte tout le monde (Vercel, Localhost...)
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Toutes les méthodes
-  allowedHeaders: ['Content-Type', 'Authorization'] // Les en-têtes autorisés
-}));
-
-// Petit fix pour les requêtes OPTIONS (Preflight) qui bloquent parfois
-app.options('*', cors());
+app.use(cors());
 
 // --- FONCTION D'AIDE : ENREGISTRER UNE ACTIVITÉ ---
 async function logActivity(agentId, action, description) {
@@ -60,40 +52,17 @@ app.post('/api/auth/login', async (req, res) => {
   res.json({ token });
 });
 
-// --- ROUTE INSCRIPTION (Indispensable) ---
 app.post('/api/auth/register', async (req, res) => {
-  try {
-    const { email, password, firstName, lastName } = req.body;
-    
-    if (!email || !password || !firstName || !lastName) {
-      return res.status(400).json({ error: 'Tous les champs sont requis.' });
-    }
-    
-    // Vérif si existe déjà
-    const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
-      return res.status(400).json({ error: 'Cet email est déjà utilisé.' });
-    }
-
-    // Hash du mot de passe
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Création
-    const newUser = await prisma.user.create({
-      data: { email, password: hashedPassword, firstName, lastName },
-    });
-
-    // On retire le mot de passe de la réponse
-    const { password: _, ...userWithoutPassword } = newUser;
-    res.status(201).json(userWithoutPassword);
-
-  } catch (error) {
-    console.error("Erreur /api/auth/register:", error);
-    res.status(500).json({ error: 'Erreur serveur lors de l\'inscription.' });
-  }
+    try {
+      const { email, password, firstName, lastName } = req.body;
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const newUser = await prisma.user.create({ data: { email, password: hashedPassword, firstName, lastName } });
+      res.status(201).json(newUser);
+    } catch (e) { res.status(500).json({ error: "Erreur" }); }
 });
 
 app.get('/api/me', authenticateToken, (req, res) => res.json(req.user));
+
 
 // --- ROUTES BIENS ---
 app.get('/api/properties', authenticateToken, async (req, res) => {
@@ -137,36 +106,28 @@ app.post('/api/properties', authenticateToken, async (req, res) => {
     } catch (e) { console.error(e); res.status(500).json({ error: "Erreur" }); }
 });
 
-// Route : Mettre à jour un bien (Version Blindée)
 app.put('/api/properties/:id', authenticateToken, async (req, res) => {
     try {
-      const id = parseInt(req.params.id); // On s'assure que l'ID est un nombre
-      if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
+        const updated = await prisma.property.update({ 
+            where: { id: parseInt(req.params.id) }, 
+            data: { ...req.body, 
+                price: parseInt(req.body.price), 
+                area: parseInt(req.body.area),
+                rooms: parseInt(req.body.rooms),
+                bedrooms: parseInt(req.body.bedrooms)
+            } 
+        });
+        logActivity(req.user.id, "MODIF_BIEN", `Modification du bien : ${updated.address}`);
+        res.json(updated);
+    } catch (e) { res.status(500).json({ error: "Erreur" }); }
+});
 
-      const { address, city, postalCode, price, area, rooms, bedrooms, description, imageUrl } = req.body;
-      
-      const updatedProperty = await prisma.property.update({
-        where: { id: id },
-        data: { 
-            address, 
-            city, 
-            postalCode, 
-            price: parseInt(price),        // <--- Conversion forcée
-            area: parseInt(area),          // <--- Conversion forcée
-            rooms: parseInt(rooms),        // <--- Conversion forcée
-            bedrooms: parseInt(bedrooms),  // <--- Conversion forcée
-            description,
-            imageUrl
-        }
-      });
-      // LOG pour vérifier que ça marche
-      console.log(`✅ Bien modifié (ID: ${id})`);
-      res.status(200).json(updatedProperty);
-
-    } catch (error) {
-      console.error("💥 Erreur Update Bien:", error);
-      res.status(500).json({ error: "Erreur lors de la modification." });
-    }
+app.delete('/api/properties/:id', authenticateToken, async (req, res) => {
+    try {
+        await prisma.property.delete({ where: { id: parseInt(req.params.id) } });
+        logActivity(req.user.id, "SUPPRESSION_BIEN", `Suppression d'un bien`);
+        res.status(204).send();
+    } catch (e) { res.status(500).json({ error: "Erreur" }); }
 });
 
 app.get('/api/properties/:id', authenticateToken, async (req, res) => {
@@ -174,25 +135,6 @@ app.get('/api/properties/:id', authenticateToken, async (req, res) => {
     p ? res.json(p) : res.status(404).json({ error: "Non trouvé" });
 });
 
-// Supprimer un bien
-app.delete('/api/properties/:id', authenticateToken, async (req, res) => {
-    try {
-        const id = parseInt(req.params.id);
-        if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
-
-        await prisma.property.delete({ where: { id: id } });
-        
-        // On essaie de loguer, mais si ça rate, on ne bloque pas la suppression
-        try {
-             logActivity(req.user.id, "SUPPRESSION_BIEN", `Suppression d'un bien (ID ${id})`);
-        } catch (e) {}
-
-        res.status(204).send();
-    } catch (error) {
-        console.error("Erreur DELETE Property:", error);
-        res.status(500).json({ error: "Erreur lors de la suppression." });
-    }
-});
 
 // --- ROUTES CONTACTS ---
 app.get('/api/contacts', authenticateToken, async (req, res) => {
@@ -208,33 +150,17 @@ app.post('/api/contacts', authenticateToken, async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Erreur" }); }
 });
 
-// Route DETAIL Contact
 app.get('/api/contacts/:id', authenticateToken, async (req, res) => {
     const c = await prisma.contact.findUnique({ where: { id: parseInt(req.params.id) }, include: { agent: true } });
     c ? res.json(c) : res.status(404).json({ error: "Non trouvé" });
 });
 
-// Route : Modifier un contact (Version Corrigée avec parseInt)
 app.put('/api/contacts/:id', authenticateToken, async (req, res) => {
     try {
-      // On force la conversion de l'ID en nombre
-      const id = parseInt(req.params.id);
-
-      if (isNaN(id)) {
-          return res.status(400).json({ error: "ID de contact invalide." });
-      }
-
-      const { firstName, lastName, email, phoneNumber, type } = req.body;
-      
-      const updatedContact = await prisma.contact.update({ 
-          where: { id: id }, 
-          data: { firstName, lastName, email, phoneNumber, type }
-      });
-      res.status(200).json(updatedContact);
-    } catch (error) {
-      console.error("Erreur PUT Contact:", error);
-      res.status(500).json({ error: "Erreur lors de la mise à jour du contact." });
-    }
+        const updated = await prisma.contact.update({ where: { id: parseInt(req.params.id) }, data: req.body });
+        logActivity(req.user.id, "MODIF_CONTACT", `Modification contact : ${updated.lastName}`);
+        res.json(updated);
+    } catch (e) { res.status(500).json({ error: "Erreur" }); }
 });
 
 app.delete('/api/contacts/:id', authenticateToken, async (req, res) => {
@@ -256,31 +182,20 @@ app.get('/api/tasks', authenticateToken, async (req, res) => {
     res.json(t);
 });
 
-// --- CRÉATION TÂCHE SÉCURISÉE ---
 app.post('/api/tasks', authenticateToken, async (req, res) => {
     try {
-        const { title, dueDate, contactId, propertyId } = req.body;
-        if (!title) return res.status(400).json({ error: "Le titre est requis." });
-
-        const newTask = await prisma.task.create({
-            data: {
-                title,
-                dueDate: dueDate ? new Date(dueDate) : null,
-                agentId: req.user.id,
-                // ICI : On force la conversion en entier (Int) ou null
-                contactId: contactId ? parseInt(contactId) : null,
-                propertyId: propertyId ? parseInt(propertyId) : null
-            }
+        const t = await prisma.task.create({ 
+            data: { 
+                ...req.body,
+                // Conversion en entiers sécurisée
+                contactId: req.body.contactId ? parseInt(req.body.contactId) : null,
+                propertyId: req.body.propertyId ? parseInt(req.body.propertyId) : null,
+                agentId: req.user.id 
+            } 
         });
-        
-        // Log pour vérifier
-        logActivity(req.user.id, "CRÉATION_TÂCHE", `Nouvelle tâche : ${title}`);
-        
-        res.status(201).json(newTask);
-    } catch (error) {
-        console.error("Erreur POST /api/tasks:", error); // On verra l'erreur dans les logs Render
-        res.status(500).json({ error: "Erreur création tâche." });
-    }
+        logActivity(req.user.id, "CRÉATION_TÂCHE", `Tâche : ${req.body.title}`);
+        res.json(t);
+    } catch (e) { res.status(500).json({ error: "Erreur" }); }
 });
 
 app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
@@ -392,12 +307,10 @@ app.get('/api/stats', authenticateToken, async (req, res) => {
 });
 
 app.post('/api/properties/:id/generate-description', authenticateToken, async (req, res) => {
-    // ... (Ton code IA, je le laisse vide pour raccourcir, mais tu peux le remettre si besoin)
     res.json({ description: "Description IA..." }); 
 });
 
 app.post('/api/estimate-price', authenticateToken, async (req, res) => {
-    // ... (Ton code IA)
     res.json({ estimationMin: 100000, estimationMax: 120000 });
 });
 
@@ -406,7 +319,7 @@ app.get('/api/agents', authenticateToken, async (req, res) => {
   try {
     const agents = await prisma.user.findMany({
       orderBy: { createdAt: 'desc' },
-      select: { // IMPORTANT : On ne sélectionne PAS le mot de passe !
+      select: {
         id: true,
         firstName: true,
         lastName: true,
