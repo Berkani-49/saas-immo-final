@@ -1,4 +1,4 @@
-// Fichier : server.js (Version FINALE & NETTOYÉE)
+// Fichier : server.js (Version FINALE - Inscription Réparée)
 
 const express = require('express');
 const cors = require('cors');
@@ -16,265 +16,76 @@ const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 const resend = new Resend(process.env.RESEND_API_KEY);
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-app.use(express.json());
-app.use(cors());
+// --- 1. CONFIGURATION DE SÉCURITÉ (CORS) - EN PREMIER ---
+// C'est ici qu'on autorise le site à parler au serveur
+app.use(cors({
+  origin: '*', // Accepte tout le monde (Vercel, etc.)
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
-// --- FONCTION D'AIDE : ENREGISTRER UNE ACTIVITÉ ---
+// Gère les demandes "Preflight" (OPTIONS) pour toutes les routes
+app.options('*', cors());
+
+// --- 2. MIDDLEWARES ---
+app.use(express.json());
+
+
+// --- FONCTION LOG ---
 async function logActivity(agentId, action, description) {
   try {
-    // On vérifie que l'agent existe avant de loguer
     if (!agentId) return; 
-    await prisma.activityLog.create({
-      data: { agentId, action, description }
-    });
-    console.log(`📝 Activité enregistrée : ${action}`);
-  } catch (e) {
-    console.error("Erreur enregistrement activité:", e);
-  }
+    await prisma.activityLog.create({ data: { agentId, action, description } });
+    console.log(`📝 Activité : ${action}`);
+  } catch (e) { console.error("Log erreur:", e); }
 }
 
-// --- AUTHENTIFICATION ---
-const authenticateToken = async (req, res, next) => {
-  const token = req.headers['authorization']?.split(' ')[1];
-  if (!token) return res.sendStatus(401);
-  try {
-    const payload = jwt.verify(token, JWT_SECRET);
-    req.user = { id: payload.id };
-    next();
-  } catch (e) { res.sendStatus(403); }
-};
+// --- 3. ROUTES PUBLIQUES (Sans mot de passe) ---
 
-app.post('/api/auth/login', async (req, res) => {
-  const { email, password } = req.body;
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || !(await bcrypt.compare(password, user.password))) return res.status(401).json({ error: 'Erreur' });
-  const token = jwt.sign({ id: user.id }, JWT_SECRET);
-  res.json({ token });
-});
+app.get('/', (req, res) => res.json({ message: "Serveur en ligne !" }));
 
+// INSCRIPTION AGENT (La route qui posait problème)
 app.post('/api/auth/register', async (req, res) => {
-    try {
-      const { email, password, firstName, lastName } = req.body;
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const newUser = await prisma.user.create({ data: { email, password: hashedPassword, firstName, lastName } });
-      res.status(201).json(newUser);
-    } catch (e) { res.status(500).json({ error: "Erreur" }); }
-});
-
-app.get('/api/me', authenticateToken, (req, res) => res.json(req.user));
-
-
-// --- ROUTES BIENS ---
-app.get('/api/properties', authenticateToken, async (req, res) => {
-    const { minPrice, maxPrice, minRooms, city } = req.query;
-    const filters = {};
-    if (minPrice) filters.price = { gte: parseInt(minPrice) };
-    if (maxPrice) filters.price = { ...filters.price, lte: parseInt(maxPrice) };
-    if (minRooms) filters.rooms = { gte: parseInt(minRooms) };
-    if (city) filters.city = { contains: city, mode: 'insensitive' };
-
-    const properties = await prisma.property.findMany({ where: filters, orderBy: { createdAt: 'desc' }, include: { agent: true } });
-    res.json(properties);
-});
-
-app.post('/api/properties', authenticateToken, async (req, res) => {
-    try {
-        // Geocoding automatique
-        let lat = null;
-        let lon = null;
-        try {
-            const query = `${req.body.address} ${req.body.postalCode} ${req.body.city}`;
-            const geoRes = await axios.get(`https://nominatim.openstreetmap.org/search`, { params: { q: query, format: 'json', limit: 1 } });
-            if (geoRes.data.length > 0) {
-                lat = parseFloat(geoRes.data[0].lat);
-                lon = parseFloat(geoRes.data[0].lon);
-            }
-        } catch(e) {}
-
-        const newProperty = await prisma.property.create({ 
-            data: { ...req.body, 
-                price: parseInt(req.body.price), 
-                area: parseInt(req.body.area),
-                rooms: parseInt(req.body.rooms),
-                bedrooms: parseInt(req.body.bedrooms),
-                latitude: lat, longitude: lon,
-                agentId: req.user.id 
-            } 
-        });
-        logActivity(req.user.id, "CRÉATION_BIEN", `Ajout du bien : ${req.body.address}`);
-        res.status(201).json(newProperty);
-    } catch (e) { console.error(e); res.status(500).json({ error: "Erreur" }); }
-});
-
-app.put('/api/properties/:id', authenticateToken, async (req, res) => {
-    try {
-        const updated = await prisma.property.update({ 
-            where: { id: parseInt(req.params.id) }, 
-            data: { ...req.body, 
-                price: parseInt(req.body.price), 
-                area: parseInt(req.body.area),
-                rooms: parseInt(req.body.rooms),
-                bedrooms: parseInt(req.body.bedrooms)
-            } 
-        });
-        logActivity(req.user.id, "MODIF_BIEN", `Modification du bien : ${updated.address}`);
-        res.json(updated);
-    } catch (e) { res.status(500).json({ error: "Erreur" }); }
-});
-
-app.delete('/api/properties/:id', authenticateToken, async (req, res) => {
-    try {
-        await prisma.property.delete({ where: { id: parseInt(req.params.id) } });
-        logActivity(req.user.id, "SUPPRESSION_BIEN", `Suppression d'un bien`);
-        res.status(204).send();
-    } catch (e) { res.status(500).json({ error: "Erreur" }); }
-});
-
-app.get('/api/properties/:id', authenticateToken, async (req, res) => {
-    const p = await prisma.property.findUnique({ where: { id: parseInt(req.params.id) }, include: { agent: true } });
-    p ? res.json(p) : res.status(404).json({ error: "Non trouvé" });
-});
-
-
-// --- ROUTES CONTACTS ---
-app.get('/api/contacts', authenticateToken, async (req, res) => {
-    const c = await prisma.contact.findMany({ orderBy: { lastName: 'asc' }, include: { agent: true } });
-    res.json(c);
-});
-
-app.post('/api/contacts', authenticateToken, async (req, res) => {
-    try {
-        const newContact = await prisma.contact.create({ data: { ...req.body, agentId: req.user.id } });
-        logActivity(req.user.id, "CRÉATION_CONTACT", `Nouveau contact : ${req.body.firstName}`);
-        res.json(newContact);
-    } catch (e) { res.status(500).json({ error: "Erreur" }); }
-});
-
-app.get('/api/contacts/:id', authenticateToken, async (req, res) => {
-    const c = await prisma.contact.findUnique({ where: { id: parseInt(req.params.id) }, include: { agent: true } });
-    c ? res.json(c) : res.status(404).json({ error: "Non trouvé" });
-});
-
-// Route : Modifier un contact (Version Corrigée & Stricte)
-app.put('/api/contacts/:id', authenticateToken, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
-
-      // 1. On extrait SEULEMENT ce qu'on veut modifier
-      // (On ignore id, createdAt, agent, etc. qui feraient planter)
-      const { firstName, lastName, email, phoneNumber, type } = req.body;
-      
-      const updatedContact = await prisma.contact.update({ 
-          where: { id: id }, 
-          data: { 
-              firstName, 
-              lastName, 
-              email, 
-              phoneNumber, 
-              type 
-          }
-      });
-
-      // 2. Log
-      try {
-        await logActivity(req.user.id, "MODIF_CONTACT", `Modification contact : ${lastName}`);
-      } catch(e) {}
-
-      res.json(updatedContact);
-
-    } catch (error) {
-      console.error("Erreur PUT Contact:", error);
-      res.status(500).json({ error: "Erreur lors de la mise à jour." });
+  try {
+    const { email, password, firstName, lastName } = req.body;
+    
+    if (!email || !password || !firstName || !lastName) {
+      return res.status(400).json({ error: 'Tous les champs sont requis.' });
     }
-});
+    
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Cet email est déjà utilisé.' });
+    }
 
-app.delete('/api/contacts/:id', authenticateToken, async (req, res) => {
-    try {
-        await prisma.contact.delete({ where: { id: parseInt(req.params.id) } });
-        logActivity(req.user.id, "SUPPRESSION_CONTACT", `Suppression contact`);
-        res.status(204).send();
-    } catch (e) { res.status(500).json({ error: "Erreur" }); }
-});
-
-
-// --- ROUTES TÂCHES ---
-app.get('/api/tasks', authenticateToken, async (req, res) => {
-    const t = await prisma.task.findMany({ 
-        where: { agentId: req.user.id }, 
-        include: { contact: true, property: true },
-        orderBy: { createdAt: 'desc' }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = await prisma.user.create({
+      data: { email, password: hashedPassword, firstName, lastName },
     });
-    res.json(t);
+
+    const { password: _, ...userWithoutPassword } = newUser;
+    res.status(201).json(userWithoutPassword);
+
+  } catch (error) {
+    console.error("Erreur Register:", error);
+    res.status(500).json({ error: 'Erreur serveur inscription.' });
+  }
 });
 
-app.post('/api/tasks', authenticateToken, async (req, res) => {
-    try {
-        const t = await prisma.task.create({ 
-            data: { 
-                ...req.body,
-                // Conversion en entiers sécurisée
-                contactId: req.body.contactId ? parseInt(req.body.contactId) : null,
-                propertyId: req.body.propertyId ? parseInt(req.body.propertyId) : null,
-                agentId: req.user.id 
-            } 
-        });
-        logActivity(req.user.id, "CRÉATION_TÂCHE", `Tâche : ${req.body.title}`);
-        res.json(t);
-    } catch (e) { res.status(500).json({ error: "Erreur" }); }
-});
-
-app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
-    try {
-        const t = await prisma.task.update({ where: { id: parseInt(req.params.id) }, data: req.body });
-        if (req.body.status === 'DONE') {
-             logActivity(req.user.id, "TÂCHE_TERMINÉE", `Tâche finie : ${t.title}`);
-        }
-        res.json(t);
-    } catch (e) { res.status(500).json({ error: "Erreur" }); }
-});
-
-app.delete('/api/tasks/:id', authenticateToken, async (req, res) => {
-    await prisma.task.delete({ where: { id: parseInt(req.params.id) } });
-    res.status(204).send();
-});
-
-
-// --- ROUTES FACTURES ---
-app.get('/api/invoices', authenticateToken, async (req, res) => {
-    const i = await prisma.invoice.findMany({ include: { contact: true }, orderBy: { createdAt: 'desc' } });
-    res.json(i);
-});
-
-app.post('/api/invoices', authenticateToken, async (req, res) => {
-    try {
-        const { amount, description, contactId, status } = req.body;
-        const ref = `FAC-${Date.now().toString().slice(-6)}`; 
-        const newInvoice = await prisma.invoice.create({
-            data: {
-                ref,
-                amount: parseInt(amount), // IMPORTANT
-                description: description || "Honoraires",
-                status: status || "PENDING",
-                agentId: req.user.id,
-                contactId: parseInt(contactId) // IMPORTANT
-            }
-        });
-        logActivity(req.user.id, "CRÉATION_FACTURE", `Facture : ${ref}`);
-        res.status(201).json(newInvoice);
-    } catch(e) {
-        console.error(e);
-        res.status(500).json({ error: "Erreur facture" });
+// CONNEXION
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+        return res.status(401).json({ error: 'Identifiants incorrects' });
     }
+    const token = jwt.sign({ id: user.id }, JWT_SECRET);
+    res.json({ token });
+  } catch (e) { res.status(500).json({ error: "Erreur connexion" }); }
 });
 
-
-// --- ROUTES PUBLIQUES (Leads) ---
-app.get('/api/public/properties/:id', async (req, res) => {
-  const p = await prisma.property.findUnique({ where: { id: parseInt(req.params.id) }, include: { agent: true }});
-  p ? res.json(p) : res.status(404).json({error: "Introuvable"});
-});
-
+// CAPTURE DE LEADS
 app.post('/api/public/leads', async (req, res) => {
   try {
     const { firstName, lastName, email, phone, message, propertyId } = req.body;
@@ -298,6 +109,7 @@ app.post('/api/public/leads', async (req, res) => {
     logActivity(property.agentId, "NOUVEAU_LEAD", `Lead pour ${property.address}`);
 
     try {
+        // Remplace par ton email si besoin
         await resend.emails.send({
           from: 'onboarding@resend.dev', to: 'amirelattaoui49@gmail.com', 
           subject: `🔥 Lead: ${property.address}`,
@@ -309,8 +121,206 @@ app.post('/api/public/leads', async (req, res) => {
   } catch (e) { res.status(500).json({error: "Erreur"}); }
 });
 
+// VOIR UN BIEN PUBLIC
+app.get('/api/public/properties/:id', async (req, res) => {
+  const p = await prisma.property.findUnique({ where: { id: parseInt(req.params.id) }, include: { agent: true }});
+  p ? res.json(p) : res.status(404).json({error: "Introuvable"});
+});
 
-// --- AUTRES ROUTES ---
+
+// --- 4. MIDDLEWARE D'AUTHENTIFICATION ---
+const authenticateToken = async (req, res, next) => {
+  const token = req.headers['authorization']?.split(' ')[1];
+  if (!token) return res.sendStatus(401);
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    req.user = { id: payload.id };
+    next();
+  } catch (e) { res.sendStatus(403); }
+};
+
+app.get('/api/me', authenticateToken, (req, res) => res.json(req.user));
+
+
+// --- 5. ROUTES PROTÉGÉES (Biens, Contacts, Tâches, Factures) ---
+
+// BIENS
+app.get('/api/properties', authenticateToken, async (req, res) => {
+    const { minPrice, maxPrice, minRooms, city } = req.query;
+    const filters = {};
+    if (minPrice) filters.price = { gte: parseInt(minPrice) };
+    if (maxPrice) filters.price = { ...filters.price, lte: parseInt(maxPrice) };
+    if (minRooms) filters.rooms = { gte: parseInt(minRooms) };
+    if (city) filters.city = { contains: city, mode: 'insensitive' };
+
+    const properties = await prisma.property.findMany({ where: filters, orderBy: { createdAt: 'desc' }, include: { agent: true } });
+    res.json(properties);
+});
+
+app.post('/api/properties', authenticateToken, async (req, res) => {
+    try {
+        let lat = null, lon = null;
+        try {
+            const query = `${req.body.address} ${req.body.postalCode} ${req.body.city}`;
+            const geoRes = await axios.get(`https://nominatim.openstreetmap.org/search`, { params: { q: query, format: 'json', limit: 1 } });
+            if (geoRes.data.length > 0) {
+                lat = parseFloat(geoRes.data[0].lat);
+                lon = parseFloat(geoRes.data[0].lon);
+            }
+        } catch(e) {}
+
+        const newProperty = await prisma.property.create({ 
+            data: { ...req.body, 
+                price: parseInt(req.body.price), 
+                area: parseInt(req.body.area),
+                rooms: parseInt(req.body.rooms),
+                bedrooms: parseInt(req.body.bedrooms),
+                latitude: lat, longitude: lon,
+                agentId: req.user.id 
+            } 
+        });
+        logActivity(req.user.id, "CRÉATION_BIEN", `Ajout du bien : ${req.body.address}`);
+        res.status(201).json(newProperty);
+    } catch (e) { res.status(500).json({ error: "Erreur" }); }
+});
+
+app.put('/api/properties/:id', authenticateToken, async (req, res) => {
+    try {
+        const updated = await prisma.property.update({ 
+            where: { id: parseInt(req.params.id) }, 
+            data: { ...req.body, 
+                price: parseInt(req.body.price), 
+                area: parseInt(req.body.area),
+                rooms: parseInt(req.body.rooms),
+                bedrooms: parseInt(req.body.bedrooms)
+            } 
+        });
+        logActivity(req.user.id, "MODIF_BIEN", `Modification : ${updated.address}`);
+        res.json(updated);
+    } catch (e) { res.status(500).json({ error: "Erreur" }); }
+});
+
+app.delete('/api/properties/:id', authenticateToken, async (req, res) => {
+    try {
+        await prisma.property.delete({ where: { id: parseInt(req.params.id) } });
+        logActivity(req.user.id, "SUPPRESSION_BIEN", `Suppression bien`);
+        res.status(204).send();
+    } catch (e) { res.status(500).json({ error: "Erreur" }); }
+});
+
+app.get('/api/properties/:id', authenticateToken, async (req, res) => {
+    const p = await prisma.property.findUnique({ where: { id: parseInt(req.params.id) }, include: { agent: true } });
+    p ? res.json(p) : res.status(404).json({ error: "Non trouvé" });
+});
+
+// CONTACTS
+app.get('/api/contacts', authenticateToken, async (req, res) => {
+    const c = await prisma.contact.findMany({ orderBy: { lastName: 'asc' }, include: { agent: true } });
+    res.json(c);
+});
+
+app.post('/api/contacts', authenticateToken, async (req, res) => {
+    try {
+        const newContact = await prisma.contact.create({ data: { ...req.body, agentId: req.user.id } });
+        logActivity(req.user.id, "CRÉATION_CONTACT", `Nouveau contact : ${req.body.firstName}`);
+        res.json(newContact);
+    } catch (e) { res.status(500).json({ error: "Erreur" }); }
+});
+
+app.get('/api/contacts/:id', authenticateToken, async (req, res) => {
+    const c = await prisma.contact.findUnique({ where: { id: parseInt(req.params.id) }, include: { agent: true } });
+    c ? res.json(c) : res.status(404).json({ error: "Non trouvé" });
+});
+
+app.put('/api/contacts/:id', authenticateToken, async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const updated = await prisma.contact.update({ 
+            where: { id: id }, 
+            data: { 
+                firstName: req.body.firstName, 
+                lastName: req.body.lastName, 
+                email: req.body.email, 
+                phoneNumber: req.body.phoneNumber, 
+                type: req.body.type 
+            } 
+        });
+        logActivity(req.user.id, "MODIF_CONTACT", `Modification contact : ${updated.lastName}`);
+        res.json(updated);
+    } catch (e) { res.status(500).json({ error: "Erreur" }); }
+});
+
+app.delete('/api/contacts/:id', authenticateToken, async (req, res) => {
+    try {
+        await prisma.contact.delete({ where: { id: parseInt(req.params.id) } });
+        logActivity(req.user.id, "SUPPRESSION_CONTACT", `Suppression contact`);
+        res.status(204).send();
+    } catch (e) { res.status(500).json({ error: "Erreur" }); }
+});
+
+// TÂCHES
+app.get('/api/tasks', authenticateToken, async (req, res) => {
+    const t = await prisma.task.findMany({ 
+        where: { agentId: req.user.id }, 
+        include: { contact: true, property: true },
+        orderBy: { createdAt: 'desc' }
+    });
+    res.json(t);
+});
+
+app.post('/api/tasks', authenticateToken, async (req, res) => {
+    try {
+        const t = await prisma.task.create({ 
+            data: { 
+                ...req.body,
+                contactId: req.body.contactId ? parseInt(req.body.contactId) : null,
+                propertyId: req.body.propertyId ? parseInt(req.body.propertyId) : null,
+                agentId: req.user.id 
+            } 
+        });
+        logActivity(req.user.id, "CRÉATION_TÂCHE", `Tâche : ${req.body.title}`);
+        res.json(t);
+    } catch (e) { res.status(500).json({ error: "Erreur" }); }
+});
+
+app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
+    try {
+        const t = await prisma.task.update({ where: { id: parseInt(req.params.id) }, data: req.body });
+        if (req.body.status === 'DONE') logActivity(req.user.id, "TÂCHE_TERMINÉE", `Tâche finie : ${t.title}`);
+        res.json(t);
+    } catch (e) { res.status(500).json({ error: "Erreur" }); }
+});
+
+app.delete('/api/tasks/:id', authenticateToken, async (req, res) => {
+    await prisma.task.delete({ where: { id: parseInt(req.params.id) } });
+    res.status(204).send();
+});
+
+// FACTURES
+app.get('/api/invoices', authenticateToken, async (req, res) => {
+    const i = await prisma.invoice.findMany({ include: { contact: true }, orderBy: { createdAt: 'desc' } });
+    res.json(i);
+});
+
+app.post('/api/invoices', authenticateToken, async (req, res) => {
+    try {
+        const ref = `FAC-${Date.now().toString().slice(-6)}`; 
+        const newInvoice = await prisma.invoice.create({
+            data: {
+                ref,
+                amount: parseInt(req.body.amount),
+                description: req.body.description || "Honoraires",
+                status: req.body.status || "PENDING",
+                agentId: req.user.id,
+                contactId: parseInt(req.body.contactId)
+            }
+        });
+        logActivity(req.user.id, "CRÉATION_FACTURE", `Facture : ${ref}`);
+        res.status(201).json(newInvoice);
+    } catch(e) { res.status(500).json({ error: "Erreur facture" }); }
+});
+
+// ACTIVITÉS & STATS
 app.get('/api/activities', authenticateToken, async (req, res) => {
     const logs = await prisma.activityLog.findMany({
         orderBy: { createdAt: 'desc' }, take: 50,
@@ -332,31 +342,13 @@ app.get('/api/stats', authenticateToken, async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Erreur" }); }
 });
 
-app.post('/api/properties/:id/generate-description', authenticateToken, async (req, res) => {
-    res.json({ description: "Description IA..." }); 
-});
-
-app.post('/api/estimate-price', authenticateToken, async (req, res) => {
-    res.json({ estimationMin: 100000, estimationMax: 120000 });
-});
-
-// --- ROUTE ÉQUIPE (LISTE DES AGENTS) ---
+// ÉQUIPE
 app.get('/api/agents', authenticateToken, async (req, res) => {
-  try {
     const agents = await prisma.user.findMany({
       orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        createdAt: true
-      }
+      select: { id: true, firstName: true, lastName: true, email: true, createdAt: true }
     });
     res.json(agents);
-  } catch (error) {
-    res.status(500).json({ error: "Erreur chargement équipe." });
-  }
 });
 
 // DÉMARRAGE
