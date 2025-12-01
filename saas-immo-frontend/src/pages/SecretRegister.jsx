@@ -19,7 +19,7 @@ export default function SecretRegister() {
     setIsLoading(true);
     try {
       // URL Correcte
-      await axios.post('https://api-immo-final.onrender.com/api/auth/register', {
+      await axios.post('https://saas-immo-final.onrender.com/api/auth/register', {
         firstName,
         lastName,
         email,
