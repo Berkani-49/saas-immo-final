@@ -40,7 +40,7 @@ export default function App() {
     setMessage('');
     setIsLoggingIn(true);
     try {
-      const response = await axios.post('https://saas-immo-final.onrender.com/api/auth/login', {
+      const response = await axios.post('https://api-immo-final.onrender.com/api/auth/login', {
         email: email,
         password: password
       });

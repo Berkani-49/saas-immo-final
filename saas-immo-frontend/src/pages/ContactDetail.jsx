@@ -31,7 +31,7 @@ export default function ContactDetail({ token }) {
       setIsLoading(true);
       try {
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
-        const response = await axios.get(`https://saas-immo-final.onrender.com/api/contacts/${contactId}`, config);
+        const response = await axios.get(`https://api-immo-final.onrender.com/api/contacts/${contactId}`, config);
         setContact(response.data);
         setEditFormData(response.data);
       } catch (err) {
@@ -50,7 +50,7 @@ export default function ContactDetail({ token }) {
     setIsSaving(true);
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      const response = await axios.put(`https://saas-immo-final.onrender.com/api/contacts/${contactId}`, editFormData, config);
+      const response = await axios.put(`https://api-immo-final.onrender.com/api/contacts/${contactId}`, editFormData, config);
       
       setContact(response.data);
       setEditFormData(response.data);
