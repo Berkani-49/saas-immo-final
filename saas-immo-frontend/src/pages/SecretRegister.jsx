@@ -18,7 +18,7 @@ export default function SecretRegister() {
     setMessage('');
     setIsLoading(true);
     try {
-      // URL Correcte
+      // 👇 C'est "saas-immo-final", comme sur ton dashboard Render
       await axios.post('https://saas-immo-final.onrender.com/api/auth/register', {
         firstName,
         lastName,
