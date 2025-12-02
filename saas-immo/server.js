@@ -24,6 +24,35 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// INSCRIPTION AGENT (La route qui posait problème)
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { email, password, firstName, lastName } = req.body;
+    
+    if (!email || !password || !firstName || !lastName) {
+      return res.status(400).json({ error: 'Tous les champs sont requis.' });
+    }
+    
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Cet email est déjà utilisé.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = await prisma.user.create({
+      data: { email, password: hashedPassword, firstName, lastName },
+    });
+
+    const { password: _, ...userWithoutPassword } = newUser;
+    res.status(201).json(userWithoutPassword);
+
+  } catch (error) {
+    console.error("Erreur Register:", error);
+    res.status(500).json({ error: 'Erreur serveur inscription.' });
+  }
+});
+
+
 // Gère les demandes "Preflight" (OPTIONS) pour toutes les routes
 app.options('*', cors());
 
@@ -250,12 +279,35 @@ app.put('/api/contacts/:id', authenticateToken, async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Erreur" }); }
 });
 
+// 5. Supprimer un contact (Version "Nettoyeur")
 app.delete('/api/contacts/:id', authenticateToken, async (req, res) => {
     try {
-        await prisma.contact.delete({ where: { id: parseInt(req.params.id) } });
-        logActivity(req.user.id, "SUPPRESSION_CONTACT", `Suppression contact`);
-        res.status(204).send();
-    } catch (e) { res.status(500).json({ error: "Erreur" }); }
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
+
+      // ÉTAPE 1 : On supprime d'abord les factures de ce client
+      // (Comme ça, plus rien ne retient le contact)
+      await prisma.invoice.deleteMany({
+        where: { contactId: id }
+      });
+
+      // ÉTAPE 2 : On supprime le contact (maintenant qu'il est libre)
+      await prisma.contact.delete({ 
+        where: { id: id } 
+      });
+
+      // Log
+      try {
+        await logActivity(req.user.id, "SUPPRESSION_CONTACT", `Suppression contact (et ses factures)`);
+      } catch(e) {}
+
+      res.status(204).send();
+
+    } catch (error) {
+      console.error("Erreur DELETE Contact:", error);
+      // On renvoie le vrai message d'erreur pour comprendre si ça plante encore
+      res.status(500).json({ error: "Erreur : " + error.message });
+    }
 });
 
 // TÂCHES
