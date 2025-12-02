@@ -320,19 +320,43 @@ app.get('/api/tasks', authenticateToken, async (req, res) => {
     res.json(t);
 });
 
+// 1. Créer une tâche (Version Sécurisée)
 app.post('/api/tasks', authenticateToken, async (req, res) => {
     try {
-        const t = await prisma.task.create({ 
-            data: { 
-                ...req.body,
-                contactId: req.body.contactId ? parseInt(req.body.contactId) : null,
-                propertyId: req.body.propertyId ? parseInt(req.body.propertyId) : null,
-                agentId: req.user.id 
-            } 
+        const { title, dueDate, contactId, propertyId } = req.body;
+        
+        if (!title) {
+            return res.status(400).json({ error: "Le titre est requis." });
+        }
+
+        // 1. On crée la tâche
+        const newTask = await prisma.task.create({
+            data: {
+                title: title,
+                dueDate: dueDate ? new Date(dueDate) : null,
+                agentId: req.user.id,
+                // On s'assure que les IDs sont bien des nombres ou null
+                contactId: contactId ? parseInt(contactId) : null,
+                propertyId: propertyId ? parseInt(propertyId) : null
+            }
         });
-        logActivity(req.user.id, "CRÉATION_TÂCHE", `Tâche : ${req.body.title}`);
-        res.json(t);
-    } catch (e) { res.status(500).json({ error: "Erreur" }); }
+        
+        // 2. On essaie d'enregistrer l'activité (mais on ne plante pas si ça rate)
+        try {
+            // Vérifie que la fonction existe avant de l'appeler
+            if (typeof logActivity === 'function') {
+                await logActivity(req.user.id, "CRÉATION_TÂCHE", `Tâche : ${title}`);
+            }
+        } catch (logError) {
+            console.error("Erreur optionnelle (Log):", logError);
+        }
+        
+        res.status(201).json(newTask);
+
+    } catch (error) {
+        console.error("Erreur POST /api/tasks:", error); // Regarde les logs Render si ça plante ici
+        res.status(500).json({ error: "Erreur création tâche : " + error.message });
+    }
 });
 
 app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
