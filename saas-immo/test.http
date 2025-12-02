@@ -1,5 +1,5 @@
 ### 1. Inscrire un nouvel utilisateur
-POST https://saas-immo-final.onrender.com/api/auth/register
+POST https://api-immo-final.onrender.com/api/auth/register
 Content-Type: application/json
 
 {
@@ -11,7 +11,7 @@ Content-Type: application/json
 
 ###
 ### 2. Se connecter avec cet utilisateur
-POST https://saas-immo-final.onrender.com/api/auth/login
+POST https://api-immo-final.onrender.com/api/auth/login
 Content-Type: application/json
 
 {
@@ -20,18 +20,18 @@ Content-Type: application/json
 }
 ###
 ### 3. Tenter d'accéder à la route protégée (DOIT ÉCHOUER)
-GET https://saas-immo-final.onrender.com/api/me
+GET https://api-immo-final.onrender.com/api/me
 
 ###
 ### 4. Accéder à la route protégée (DOIT RÉUSSIR)
 # (Il faut copier/coller le token du test n°2 ici)
-GET https://saas-immo-final.onrender.com/api/me
+GET https://api-immo-final.onrender.com/api/me
 Authorization: Bearer Votre_Token_JWT_vient_ici
 ###
 ### 5. Créer un nouveau bien (DOIT RÉUSSIR)
 # (Pense à d'abord relancer le test n°2 pour avoir un token frais
 #  et à le coller ci-dessous)
-POST https://saas-immo-final.onrender.com/api/properties
+POST https://api-immo-final.onrender.com/api/properties
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzYxMzI2Mjc3LCJleHAiOjE3NjE5MzEwNzd9.RJIyD3VWR4lGQ0FAw2QXDmowhsJWa1lmsmbpWPzUChs
 Content-Type: application/json
 
@@ -48,13 +48,13 @@ Content-Type: application/json
 ###
 ### 6. Récupérer la liste de MES biens
 # (Pense à coller un token valide ci-dessous)
-GET https://saas-immo-final.onrender.com/api/properties
+GET https://api-immo-final.onrender.com/api/properties
 Authorization: Bearer Votre_Token_JWT_vient_ici
 
 ###
 ### 7. Créer un nouveau contact (client)
 # (Pense à coller un token valide ci-dessous)
-POST https://saas-immo-final.onrender.com/api/contacts
+POST https://api-immo-final.onrender.com/api/contacts
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzYxMjk2OTkzLCJleHAiOjE3NjE5MDE3OTN9.tlxFMmKd54JaeQtc5kaDNhRUNTlEZwLsh0j0VNSflXM
 Content-Type: application/json
 
@@ -69,7 +69,7 @@ Content-Type: application/json
 ###
 ### 8. Créer un deuxième contact (vendeur)
 # (Pense à coller un token valide ci-dessous)
-POST https://saas-immo-final.onrender.com/api/contacts
+POST https://api-immo-final.onrender.com/api/contacts
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzYxMjk3MDQxLCJleHAiOjE3NjE5MDE4NDF9.qNPCN2bU3xziUcbU0cMW1WgrICZJEfGwizmVaz5wlJM
 Content-Type: application/json
 
@@ -83,12 +83,12 @@ Content-Type: application/json
 ###
 ### 9. Récupérer la liste de TOUS MES contacts
 # (Pense à coller un token valide ci-dessous)
-GET https://saas-immo-final.onrender.com/api/contacts
+GET https://api-immo-final.onrender.com/api/contacts
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzYxMjk4ODg5LCJleHAiOjE3NjE5MDM2ODl9.Q8q9NQOEvq_lttf-ksP2o-y6ifSaI9Z0T5M6q22WW
 
 ###
 ### 10. Générer une description IA pour un bien
 # (REMPLACE LE "1" DANS L'URL PAR L'ID DE TON BIEN)
 # (Pense à coller un token valide ci-dessous)
-POST https://saas-immo-final.onrender.com/api/properties/3/generate-description
+POST https://api-immo-final.onrender.com/api/properties/3/generate-description
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzYxMzI2Mjc3LCJleHAiOjE3NjE5MzEwNzd9.RJIyD3VWR4lGQ0FAw2QXDmowhsJWa1lmsmbpWPzUChs
