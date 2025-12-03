@@ -62,10 +62,10 @@ export default function Layout({ onLogout }) {
         position="fixed" bottom={0} left={0} w="100%"
         bg="white" 
         borderTopWidth="1px" borderTopColor="gray.100"
-        zIndex="999" pb="env(safe-area-inset-bottom)"
+        zIndex="999" pb={`calc(env(safe-area-inset-bottom) + 10px)`}
         boxShadow="0px -5px 20px rgba(0,0,0,0.03)"
       >
-        <SimpleGrid columns={6} h="60px" alignItems="center">
+        <SimpleGrid columns={6} h="70px" alignItems="center">
           {MobileNavItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
