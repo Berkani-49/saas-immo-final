@@ -1,23 +1,19 @@
-// Fichier : src/Layout.jsx (Version Mobile avec Équipe)
-import { FiHome, FiList, FiUsers, FiCheckSquare, FiFileText, FiBriefcase, FiLogOut } from 'react-icons/fi';
-// N'oublie pas d'importer IconButton aussi si ce n'est pas déjà fait dans @chakra-ui/react
-import { Box, Flex, Text, Icon, SimpleGrid, IconButton } from '@chakra-ui/react';
+// Fichier : src/Layout.jsx (Version Finale Corrigée)
+
 import React from 'react';
-import { Box, Flex, Text, Icon, SimpleGrid } from '@chakra-ui/react';
+import { Box, Flex, Text, Icon, SimpleGrid, IconButton } from '@chakra-ui/react';
 import { Outlet, NavLink as RouterNavLink, useLocation } from 'react-router-dom';
-// 1. On ajoute l'icône FiBriefcase
-import { FiHome, FiList, FiUsers, FiCheckSquare, FiFileText, FiBriefcase, FiCreditCard } from 'react-icons/fi';
+// UNE SEULE LIGNE D'IMPORT POUR TOUTES LES ICÔNES :
+import { FiHome, FiList, FiUsers, FiCheckSquare, FiFileText, FiBriefcase, FiLogOut, FiCreditCard } from 'react-icons/fi';
 import Sidebar from './Sidebar.jsx';
 
-// 2. On ajoute "Équipe" dans la liste mobile
 const MobileNavItems = [
-  { name: 'Premium', icon: FiCreditCard, path: '/abonnement' },
   { name: 'Accueil', icon: FiHome, path: '/' },
   { name: 'Biens', icon: FiList, path: '/biens' },
   { name: 'Clients', icon: FiUsers, path: '/contacts' },
   { name: 'Tâches', icon: FiCheckSquare, path: '/taches' },
   { name: 'Factures', icon: FiFileText, path: '/factures' },
-  { name: 'Équipe', icon: FiBriefcase, path: '/equipe' }, // <-- Le voilà !
+  { name: 'Équipe', icon: FiBriefcase, path: '/equipe' },
 ];
 
 export default function Layout({ onLogout }) {
@@ -36,23 +32,30 @@ export default function Layout({ onLogout }) {
         <Sidebar onLogout={onLogout} />
       </Box>
 
-      {/* --- 2. HEADER MOBILE --- */}
+      {/* --- HEADER MOBILE --- */}
       <Flex
         display={{ base: 'flex', md: 'none' }}
-        h="60px" alignItems="center" justifyContent="center"
+        h="60px" alignItems="center" justifyContent="space-between"
         bg="white" borderBottomWidth="1px" borderBottomColor="gray.200"
         px={4} position="sticky" top="0" zIndex="90"
       >
-        {/* Le titre devient un bouton de déconnexion secret */}
+        {/* Titre cliquable pour déconnexion rapide (alternative) */}
         <Text 
             fontSize="lg" fontWeight="bold" color="brand.600" 
-            onClick={() => {
-                if(window.confirm("Se déconnecter ?")) onLogout();
-            }}
-            cursor="pointer"
+            onClick={() => { if(window.confirm("Se déconnecter ?")) onLogout(); }}
         >
             IMMO PRO
         </Text>
+
+        {/* Bouton Déconnexion Rouge */}
+        <IconButton 
+          icon={<Icon as={FiLogOut} w={5} h={5} />} 
+          onClick={onLogout} 
+          variant="ghost" 
+          colorScheme="red" 
+          aria-label="Déconnexion"
+          size="sm"
+        />
       </Flex>
 
       {/* --- CONTENU --- */}
@@ -67,42 +70,30 @@ export default function Layout({ onLogout }) {
         </Box>
       </Flex>
 
-      {/* --- 4. BARRE DE NAVIGATION MOBILE (Version Épurée) --- */}
+      {/* --- BARRE DE NAVIGATION MOBILE (Dock Flottant) --- */}
       <Box
         display={{ base: 'block', md: 'none' }}
-        position="fixed" bottom={0} left={0} w="100%"
-        bg="white" 
-        borderTopWidth="1px" borderTopColor="gray.100"
-        zIndex="999" pb={`calc(env(safe-area-inset-bottom) + 10px)`}
-        boxShadow="0px -5px 20px rgba(0,0,0,0.03)"
+        position="fixed" bottom={4} left={4} right={4}
+        bg="white" borderRadius="2xl" zIndex="999" 
+        boxShadow="0px 10px 30px rgba(0,0,0,0.15)"
+        borderWidth="1px" borderColor="gray.100"
+        pb="env(safe-area-inset-bottom)"
       >
-        <SimpleGrid columns={6} h="70px" alignItems="center">
+        <SimpleGrid columns={6} h="64px" alignItems="center">
           {MobileNavItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <RouterNavLink key={item.name} to={item.path} style={{ textDecoration: 'none' }}>
                 <Flex 
                   direction="column" align="center" justify="center" h="100%" 
-                  position="relative"
                   color={isActive ? 'brand.500' : 'gray.400'}
+                  transform={isActive ? 'scale(1.1)' : 'scale(1)'}
+                  transition="all 0.2s"
+                  position="relative"
                 >
-                  {/* L'icône est plus grande pour compenser l'absence de texte */}
-                  <Icon 
-                    as={item.icon} 
-                    w={6} h={6} 
-                    transition="all 0.2s"
-                    transform={isActive ? 'scale(1.1)' : 'scale(1)'}
-                  />
-                  
-                  {/* Petit point discret pour indiquer la page active */}
-                  {isActive && (
-                    <Box 
-                      position="absolute" bottom="8px" 
-                      w="4px" h="4px" 
-                      bg="brand.500" 
-                      borderRadius="full" 
-                    />
-                  )}
+                  {isActive && <Box position="absolute" top="-8px" w="4px" h="4px" bg="brand.500" borderRadius="full" />}
+                  <Icon as={item.icon} w={5} h={5} mb={0.5} />
+                  <Text fontSize="9px" fontWeight={isActive ? 'bold' : 'medium'}>{item.name}</Text>
                 </Flex>
               </RouterNavLink>
             );
