@@ -39,7 +39,7 @@ export default function App() {
     setMessage('');
     setIsLoggingIn(true);
     try {
-      const response = await axios.post('https://saas-immo-final.onrender.com/api/auth/login', { email, password });
+      const response = await axios.post('https://api-immo-final.onrender.com/api/auth/login', { email, password });
       localStorage.setItem('token', response.data.token);
       setToken(response.data.token);
     } catch (error) {
@@ -57,16 +57,7 @@ export default function App() {
     <Box w="100%" minH="100vh">
       <Routes>
         <Route path="/share/:id" element={<PublicPropertyPage />} />
-        {/* Dans le bloc "Si connecté" */}
-<Route path="/" element={<Layout onLogout={handleLogout} />}>
-   {/* ... tes autres routes ... */}
-   <Route path="equipe" element={<TeamPage token={token} />} />
-   
-   {/* 👇 La route est maintenant ici, protégée ! */}
-   <Route path="nouveau-membre-agence" element={<SecretRegister token={token} />} />
-   
-   {/* ... */}
-</Route>
+        <Route path="/nouveau-membre-agence" element={<SecretRegister />} />
 
         {token ? (
           <Route path="/" element={<Layout onLogout={handleLogout} />}>
