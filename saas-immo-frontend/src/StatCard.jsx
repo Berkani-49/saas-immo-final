@@ -1,55 +1,43 @@
-// Fichier : src/StatCard.jsx (Version Design Aéré)
+// Fichier : src/StatCard.jsx (Version Design Alignée)
 
 import React from 'react';
-import {
-  Box,
-  Flex,
-  Stat,
-  StatLabel,
-  StatNumber,
-  useColorModeValue,
-} from '@chakra-ui/react';
+import { Box, Flex, Stat, StatLabel, StatNumber, useColorModeValue } from '@chakra-ui/react';
 
 export default function StatCard({ title, value, icon, colorScheme = "blue" }) {
-  // Couleurs dynamiques pour la bulle de l'icône
   const iconBg = useColorModeValue(`${colorScheme}.100`, `${colorScheme}.900`);
   const iconColor = useColorModeValue(`${colorScheme}.600`, `${colorScheme}.200`);
 
   return (
     <Stat
-      px={{ base: 4, md: 8 }} // Plus de marge intérieure
-      py={5}
-      shadow="lg" // Ombre plus prononcée
+      px={6} py={6} // Un peu plus d'espace interne
+      shadow="lg"
       borderWidth="1px"
-      borderColor={useColorModeValue('gray.100', 'gray.700')}
-      borderRadius="2xl" // Coins bien arrondis (tendance actuelle)
-      bg={useColorModeValue('white', 'gray.800')}
+      borderColor="gray.100"
+      borderRadius="2xl"
+      bg="white"
       transition="all 0.3s"
-      _hover={{ transform: 'translateY(-2px)', shadow: 'xl' }} // Petit effet au survol
+      _hover={{ transform: 'translateY(-3px)', shadow: 'xl' }}
     >
-      <Flex justifyContent="space-between" alignItems="center">
-        <Box pl={{ base: 2, md: 4 }}>
-          <StatLabel fontWeight="bold" color="gray.500" isTruncated fontSize="sm" mb={1}>
+      <Flex justifyContent="space-between" alignItems="center" h="100%">
+        <Box>
+          <StatLabel fontWeight="bold" color="gray.500" fontSize="sm" mb={1} textTransform="uppercase" letterSpacing="wide">
             {title}
           </StatLabel>
-          <StatNumber fontSize="4xl" fontWeight="extrabold" color="gray.800">
+          <StatNumber fontSize="4xl" fontWeight="extrabold" color="gray.800" lineHeight="1">
             {value}
           </StatNumber>
         </Box>
         
-        {/* La bulle d'icône */}
-        <Box
-          my="auto"
-          color={iconColor}
-          bg={iconBg}
-          p={3}
-          borderRadius="full" // Rond parfait
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
+        {/* Icône bien centrée */}
+        <Flex
+          align="center" justify="center"
+          w={14} h={14} // Taille fixe pour l'alignement parfait
+          bg={iconBg} color={iconColor}
+          borderRadius="xl" // Carré arrondi (plus moderne que rond)
+          fontSize="2xl"
         >
           {icon}
-        </Box>
+        </Flex>
       </Flex>
     </Stat>
   );
