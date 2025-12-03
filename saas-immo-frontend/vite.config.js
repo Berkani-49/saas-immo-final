@@ -1,10 +1,11 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  define: {
-    // Cette ligne remplace "global" par "window" pour que le PDF ne plante pas
-    global: 'window',
+  build: {
+    // On augmente la limite pour éviter les alertes jaunes inutiles
+    chunkSizeWarningLimit: 1600, 
   },
 })
