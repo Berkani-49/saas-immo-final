@@ -4,11 +4,12 @@ import React from 'react';
 import { Box, Flex, Text, Icon, SimpleGrid } from '@chakra-ui/react';
 import { Outlet, NavLink as RouterNavLink, useLocation } from 'react-router-dom';
 // 1. On ajoute l'icône FiBriefcase
-import { FiHome, FiList, FiUsers, FiCheckSquare, FiFileText, FiBriefcase } from 'react-icons/fi';
+import { FiHome, FiList, FiUsers, FiCheckSquare, FiFileText, FiBriefcase, FiCreditCard } from 'react-icons/fi';
 import Sidebar from './Sidebar.jsx';
 
 // 2. On ajoute "Équipe" dans la liste mobile
 const MobileNavItems = [
+  { name: 'Premium', icon: FiCreditCard, path: '/abonnement' },
   { name: 'Accueil', icon: FiHome, path: '/' },
   { name: 'Biens', icon: FiList, path: '/biens' },
   { name: 'Clients', icon: FiUsers, path: '/contacts' },

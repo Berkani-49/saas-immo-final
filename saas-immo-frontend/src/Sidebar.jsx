@@ -14,11 +14,13 @@ import {
   FiLogOut, 
   FiFileText, 
   FiActivity, 
-  FiBriefcase 
+  FiBriefcase,
+  FiCreditCard 
 } from 'react-icons/fi';
 
 // La liste complète des liens
 const LinkItems = [
+  { name: 'Abonnement', icon: FiCreditCard, path: '/abonnement' },
   { name: 'Accueil', icon: FiHome, path: '/' },
   { name: 'Mes Biens', icon: FiList, path: '/biens' },
   { name: 'Mes Contacts', icon: FiUsers, path: '/contacts' },
