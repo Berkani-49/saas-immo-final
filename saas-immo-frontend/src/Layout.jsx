@@ -56,16 +56,21 @@ export default function Layout({ onLogout }) {
         </Box>
       </Flex>
 
-      {/* --- BARRE DE NAVIGATION MOBILE --- */}
+      {/* --- 4. BARRE DE NAVIGATION MOBILE (Dock Flottant) --- */}
       <Box
         display={{ base: 'block', md: 'none' }}
-        position="fixed" bottom="0" left="0" w="100%"
-        bg="white" borderTopWidth="1px" borderTopColor="gray.200"
-        zIndex="999" pb="env(safe-area-inset-bottom)"
-        boxShadow="0px -2px 10px rgba(0,0,0,0.05)"
+        position="fixed" 
+        bottom={4}       /* Décollé du bas */
+        left={4}         /* Marge gauche */
+        right={4}        /* Marge droite */
+        bg="white" 
+        borderRadius="2xl" /* Coins très arrondis */
+        zIndex="999" 
+        boxShadow="0px 10px 30px rgba(0,0,0,0.15)" /* Grosse ombre douce */
+        borderWidth="1px"
+        borderColor="gray.100"
       >
-        {/* 3. On passe à 6 colonnes pour que tout rentre */}
-        <SimpleGrid columns={6} h="60px">
+        <SimpleGrid columns={6} h="64px" alignItems="center">
           {MobileNavItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -73,11 +78,17 @@ export default function Layout({ onLogout }) {
                 <Flex 
                   direction="column" align="center" justify="center" h="100%" 
                   color={isActive ? 'brand.500' : 'gray.400'}
-                  _active={{ bg: 'gray.50' }}
+                  transform={isActive ? 'scale(1.1)' : 'scale(1)'} /* Agrandit l'actif */
+                  transition="all 0.2s"
+                  position="relative"
                 >
-                  <Icon as={item.icon} w={5} h={5} mb={1} />
-                  {/* On réduit un peu la police pour que "Factures" et "Équipe" tiennent */}
-                  <Text fontSize="9px" fontWeight={isActive ? 'bold' : 'normal'}>
+                  {/* Petit point au-dessus de l'icône active */}
+                  {isActive && (
+                    <Box position="absolute" top="-8px" w="4px" h="4px" bg="brand.500" borderRadius="full" />
+                  )}
+                  
+                  <Icon as={item.icon} w={5} h={5} mb={0.5} />
+                  <Text fontSize="9px" fontWeight={isActive ? 'bold' : 'medium'}>
                     {item.name}
                   </Text>
                 </Flex>
