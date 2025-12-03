@@ -24,8 +24,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// INSCRIPTION AGENT (La route qui posait problème)
-app.post('/api/auth/register', async (req, res) => {
+// INSCRIPTION (Maintenant Protégée 🔒)
+app.post('/api/auth/register', authenticateToken, async (req, res) => {
   try {
     const { email, password, firstName, lastName } = req.body;
     
