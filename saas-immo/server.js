@@ -1,5 +1,5 @@
 // Fichier : server.js (Version FINALE - Inscription Réparée)
-
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const express = require('express');
 const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
@@ -425,6 +425,39 @@ app.get('/api/agents', authenticateToken, async (req, res) => {
       select: { id: true, firstName: true, lastName: true, email: true, createdAt: true }
     });
     res.json(agents);
+});
+
+// --- ROUTE PAIEMENT (STRIPE) ---
+app.post('/api/create-checkout-session', authenticateToken, async (req, res) => {
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'subscription', // C'est un abonnement récurrent
+      line_items: [
+        {
+          price_data: {
+            currency: 'eur',
+            product_data: {
+              name: 'Abonnement ImmoPro Premium',
+            },
+            unit_amount: 2900, // 29.00€ (en centimes)
+            recurring: {
+              interval: 'month', // Facturé tous les mois
+            },
+          },
+          quantity: 1,
+        },
+      ],
+      // Redirection après paiement (Change l'URL par la tienne plus tard)
+      success_url: 'https://saas-immo-final.vercel.app/?success=true',
+      cancel_url: 'https://saas-immo-final.vercel.app/?canceled=true',
+    });
+
+    res.json({ url: session.url });
+  } catch (error) {
+    console.error("Erreur Stripe:", error);
+    res.status(500).json({ error: "Erreur création paiement" });
+  }
 });
 
 // DÉMARRAGE

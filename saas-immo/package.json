@@ -16,6 +16,7 @@
     "jsonwebtoken": "^9.0.2",
     "openai": "^4.52.2",
     "prisma": "^5.16.2",
-    "resend": "^6.5.2"
+    "resend": "^6.5.2",
+    "stripe": "^20.0.0"
   }
 }
