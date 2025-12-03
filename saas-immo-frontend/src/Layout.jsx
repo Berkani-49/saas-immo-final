@@ -1,5 +1,7 @@
 // Fichier : src/Layout.jsx (Version Mobile avec Équipe)
-
+import { FiHome, FiList, FiUsers, FiCheckSquare, FiFileText, FiBriefcase, FiLogOut } from 'react-icons/fi';
+// N'oublie pas d'importer IconButton aussi si ce n'est pas déjà fait dans @chakra-ui/react
+import { Box, Flex, Text, Icon, SimpleGrid, IconButton } from '@chakra-ui/react';
 import React from 'react';
 import { Box, Flex, Text, Icon, SimpleGrid } from '@chakra-ui/react';
 import { Outlet, NavLink as RouterNavLink, useLocation } from 'react-router-dom';
@@ -34,14 +36,23 @@ export default function Layout({ onLogout }) {
         <Sidebar onLogout={onLogout} />
       </Box>
 
-      {/* --- HEADER MOBILE --- */}
+      {/* --- 2. HEADER MOBILE --- */}
       <Flex
         display={{ base: 'flex', md: 'none' }}
         h="60px" alignItems="center" justifyContent="center"
         bg="white" borderBottomWidth="1px" borderBottomColor="gray.200"
         px={4} position="sticky" top="0" zIndex="90"
       >
-        <Text fontSize="lg" fontWeight="bold" color="brand.600">IMMO PRO</Text>
+        {/* Le titre devient un bouton de déconnexion secret */}
+        <Text 
+            fontSize="lg" fontWeight="bold" color="brand.600" 
+            onClick={() => {
+                if(window.confirm("Se déconnecter ?")) onLogout();
+            }}
+            cursor="pointer"
+        >
+            IMMO PRO
+        </Text>
       </Flex>
 
       {/* --- CONTENU --- */}
