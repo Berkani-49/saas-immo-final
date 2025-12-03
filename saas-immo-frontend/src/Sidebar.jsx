@@ -80,8 +80,8 @@ export default function Sidebar({ onLogout, onClose }) {
     >
       <Flex h="20" alignItems="center" mx="8" justifyContent="space-between">
         <Heading fontSize="xl" fontWeight="bold" letterSpacing="tight">
-          IMMO<Text as="span" color="brand.500">PRO</Text>
-        </Heading>
+  IMMO<Text as="span" color="brand.500">PRO</Text>
+</Heading>
         {onClose && <CloseButton display={{ base: 'flex', md: 'none' }} onClick={onClose} />}
       </Flex>
 
