@@ -16,7 +16,7 @@ export default function SubscriptionPage({ token }) {
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
       // On demande au serveur de créer la session Stripe
-      const response = await axios.post('https://api-immo-final.onrender.com/api/create-checkout-session', {}, config);
+      const response = await axios.post('https://saas-immo-final.onrender.com/api/create-checkout-session', {}, config);
       
       // Le serveur nous renvoie l'URL de paiement Stripe
       if (response.data.url) {

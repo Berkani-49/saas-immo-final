@@ -21,7 +21,7 @@ export default function PropertyDetail({ token }) {
     const fetchProperty = async () => {
       try {
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
-        const response = await axios.get(`https://api-immo-final.onrender.com/api/properties/${propertyId}`, config);
+        const response = await axios.get(`https://saas-immo-final.onrender.com/api/properties/${propertyId}`, config);
         setProperty(response.data);
       } catch (err) {
         setError("Impossible de charger le bien.");

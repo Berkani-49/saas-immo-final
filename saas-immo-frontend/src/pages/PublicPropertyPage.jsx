@@ -43,7 +43,7 @@ export default function PublicPropertyPage() {
   useEffect(() => {
     const fetchPublicProperty = async () => {
       try {
-        const response = await axios.get(`https://api-immo-final.onrender.com/api/public/properties/${id}`);
+        const response = await axios.get(`https://saas-immo-final.onrender.com/api/public/properties/${id}`);
         setProperty(response.data);
       } catch (error) {
         console.error("Erreur chargement", error);
@@ -62,7 +62,7 @@ export default function PublicPropertyPage() {
     }
     setIsSending(true);
     try {
-        await axios.post('https://api-immo-final.onrender.com/api/public/leads', {
+        await axios.post('https://saas-immo-final.onrender.com/api/public/leads', {
             firstName, lastName, email, phone, message,
             propertyId: id
         });

@@ -19,7 +19,7 @@ export default function HomePage({ token }) {
       setIsLoading(true);
       try {
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
-        const response = await axios.get('https://api-immo-final.onrender.com/api/stats', config);
+        const response = await axios.get('https://saas-immo-final.onrender.com/api/stats', config);
         setStats(response.data);
       } catch (err) {
         console.error("Erreur (stats):", err);
