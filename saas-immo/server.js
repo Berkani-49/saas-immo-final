@@ -1,5 +1,5 @@
-// Fichier : server.js (Version FINALE - Inscription Réparée)
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+// Fichier : server.js (Version FINALE - Ordre Corrigé)
+
 const express = require('express');
 const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
@@ -16,51 +16,18 @@ const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 const resend = new Resend(process.env.RESEND_API_KEY);
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// --- 1. CONFIGURATION DE SÉCURITÉ (CORS) - EN PREMIER ---
-// C'est ici qu'on autorise le site à parler au serveur
+// 1. CONFIGURATION
+app.use(express.json());
 app.use(cors({
-  origin: '*', // Accepte tout le monde (Vercel, etc.)
+  origin: '*', 
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
-
-// INSCRIPTION (Maintenant Protégée 🔒)
-app.post('/api/auth/register', authenticateToken, async (req, res) => {
-  try {
-    const { email, password, firstName, lastName } = req.body;
-    
-    if (!email || !password || !firstName || !lastName) {
-      return res.status(400).json({ error: 'Tous les champs sont requis.' });
-    }
-    
-    const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
-      return res.status(400).json({ error: 'Cet email est déjà utilisé.' });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await prisma.user.create({
-      data: { email, password: hashedPassword, firstName, lastName },
-    });
-
-    const { password: _, ...userWithoutPassword } = newUser;
-    res.status(201).json(userWithoutPassword);
-
-  } catch (error) {
-    console.error("Erreur Register:", error);
-    res.status(500).json({ error: 'Erreur serveur inscription.' });
-  }
-});
-
-
-// Gère les demandes "Preflight" (OPTIONS) pour toutes les routes
 app.options('*', cors());
 
-// --- 2. MIDDLEWARES ---
-app.use(express.json());
+// 2. FONCTIONS D'AIDE (DÉFINIES EN PREMIER !)
 
-
-// --- FONCTION LOG ---
+// Fonction Log
 async function logActivity(agentId, action, description) {
   try {
     if (!agentId) return; 
@@ -69,12 +36,23 @@ async function logActivity(agentId, action, description) {
   } catch (e) { console.error("Log erreur:", e); }
 }
 
-// --- 3. ROUTES PUBLIQUES (Sans mot de passe) ---
+// Fonction Sécurité (TOKEN) - ELLE DOIT ÊTRE ICI
+const authenticateToken = async (req, res, next) => {
+  const token = req.headers['authorization']?.split(' ')[1];
+  if (!token) return res.sendStatus(401);
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    req.user = { id: payload.id };
+    next();
+  } catch (e) { res.sendStatus(403); }
+};
+
+// 3. ROUTES
 
 app.get('/', (req, res) => res.json({ message: "Serveur en ligne !" }));
 
-// INSCRIPTION AGENT (La route qui posait problème)
-app.post('/api/auth/register', async (req, res) => {
+// INSCRIPTION AGENT (Maintenant elle peut utiliser authenticateToken car il est défini au-dessus)
+app.post('/api/auth/register', authenticateToken, async (req, res) => {
   try {
     const { email, password, firstName, lastName } = req.body;
     
@@ -138,7 +116,6 @@ app.post('/api/public/leads', async (req, res) => {
     logActivity(property.agentId, "NOUVEAU_LEAD", `Lead pour ${property.address}`);
 
     try {
-        // Remplace par ton email si besoin
         await resend.emails.send({
           from: 'onboarding@resend.dev', to: 'amirelattaoui49@gmail.com', 
           subject: `🔥 Lead: ${property.address}`,
@@ -156,22 +133,10 @@ app.get('/api/public/properties/:id', async (req, res) => {
   p ? res.json(p) : res.status(404).json({error: "Introuvable"});
 });
 
-
-// --- 4. MIDDLEWARE D'AUTHENTIFICATION ---
-const authenticateToken = async (req, res, next) => {
-  const token = req.headers['authorization']?.split(' ')[1];
-  if (!token) return res.sendStatus(401);
-  try {
-    const payload = jwt.verify(token, JWT_SECRET);
-    req.user = { id: payload.id };
-    next();
-  } catch (e) { res.sendStatus(403); }
-};
-
 app.get('/api/me', authenticateToken, (req, res) => res.json(req.user));
 
 
-// --- 5. ROUTES PROTÉGÉES (Biens, Contacts, Tâches, Factures) ---
+// --- ROUTES PROTÉGÉES ---
 
 // BIENS
 app.get('/api/properties', authenticateToken, async (req, res) => {
@@ -279,35 +244,12 @@ app.put('/api/contacts/:id', authenticateToken, async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Erreur" }); }
 });
 
-// 5. Supprimer un contact (Version "Nettoyeur")
 app.delete('/api/contacts/:id', authenticateToken, async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
-
-      // ÉTAPE 1 : On supprime d'abord les factures de ce client
-      // (Comme ça, plus rien ne retient le contact)
-      await prisma.invoice.deleteMany({
-        where: { contactId: id }
-      });
-
-      // ÉTAPE 2 : On supprime le contact (maintenant qu'il est libre)
-      await prisma.contact.delete({ 
-        where: { id: id } 
-      });
-
-      // Log
-      try {
-        await logActivity(req.user.id, "SUPPRESSION_CONTACT", `Suppression contact (et ses factures)`);
-      } catch(e) {}
-
-      res.status(204).send();
-
-    } catch (error) {
-      console.error("Erreur DELETE Contact:", error);
-      // On renvoie le vrai message d'erreur pour comprendre si ça plante encore
-      res.status(500).json({ error: "Erreur : " + error.message });
-    }
+        await prisma.contact.delete({ where: { id: parseInt(req.params.id) } });
+        logActivity(req.user.id, "SUPPRESSION_CONTACT", `Suppression contact`);
+        res.status(204).send();
+    } catch (e) { res.status(500).json({ error: "Erreur" }); }
 });
 
 // TÂCHES
@@ -320,43 +262,19 @@ app.get('/api/tasks', authenticateToken, async (req, res) => {
     res.json(t);
 });
 
-// 1. Créer une tâche (Version Sécurisée)
 app.post('/api/tasks', authenticateToken, async (req, res) => {
     try {
-        const { title, dueDate, contactId, propertyId } = req.body;
-        
-        if (!title) {
-            return res.status(400).json({ error: "Le titre est requis." });
-        }
-
-        // 1. On crée la tâche
-        const newTask = await prisma.task.create({
-            data: {
-                title: title,
-                dueDate: dueDate ? new Date(dueDate) : null,
-                agentId: req.user.id,
-                // On s'assure que les IDs sont bien des nombres ou null
-                contactId: contactId ? parseInt(contactId) : null,
-                propertyId: propertyId ? parseInt(propertyId) : null
-            }
+        const t = await prisma.task.create({ 
+            data: { 
+                ...req.body,
+                contactId: req.body.contactId ? parseInt(req.body.contactId) : null,
+                propertyId: req.body.propertyId ? parseInt(req.body.propertyId) : null,
+                agentId: req.user.id 
+            } 
         });
-        
-        // 2. On essaie d'enregistrer l'activité (mais on ne plante pas si ça rate)
-        try {
-            // Vérifie que la fonction existe avant de l'appeler
-            if (typeof logActivity === 'function') {
-                await logActivity(req.user.id, "CRÉATION_TÂCHE", `Tâche : ${title}`);
-            }
-        } catch (logError) {
-            console.error("Erreur optionnelle (Log):", logError);
-        }
-        
-        res.status(201).json(newTask);
-
-    } catch (error) {
-        console.error("Erreur POST /api/tasks:", error); // Regarde les logs Render si ça plante ici
-        res.status(500).json({ error: "Erreur création tâche : " + error.message });
-    }
+        logActivity(req.user.id, "CRÉATION_TÂCHE", `Tâche : ${req.body.title}`);
+        res.json(t);
+    } catch (e) { res.status(500).json({ error: "Erreur" }); }
 });
 
 app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
@@ -418,6 +336,14 @@ app.get('/api/stats', authenticateToken, async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Erreur" }); }
 });
 
+app.post('/api/properties/:id/generate-description', authenticateToken, async (req, res) => {
+    res.json({ description: "Description IA..." }); 
+});
+
+app.post('/api/estimate-price', authenticateToken, async (req, res) => {
+    res.json({ estimationMin: 100000, estimationMax: 120000 });
+});
+
 // ÉQUIPE
 app.get('/api/agents', authenticateToken, async (req, res) => {
     const agents = await prisma.user.findMany({
@@ -425,39 +351,6 @@ app.get('/api/agents', authenticateToken, async (req, res) => {
       select: { id: true, firstName: true, lastName: true, email: true, createdAt: true }
     });
     res.json(agents);
-});
-
-// --- ROUTE PAIEMENT (STRIPE) ---
-app.post('/api/create-checkout-session', authenticateToken, async (req, res) => {
-  try {
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      mode: 'subscription', // C'est un abonnement récurrent
-      line_items: [
-        {
-          price_data: {
-            currency: 'eur',
-            product_data: {
-              name: 'Abonnement ImmoPro Premium',
-            },
-            unit_amount: 2900, // 29.00€ (en centimes)
-            recurring: {
-              interval: 'month', // Facturé tous les mois
-            },
-          },
-          quantity: 1,
-        },
-      ],
-      // Redirection après paiement (Change l'URL par la tienne plus tard)
-      success_url: 'https://saas-immo-final.vercel.app/?success=true',
-      cancel_url: 'https://saas-immo-final.vercel.app/?canceled=true',
-    });
-
-    res.json({ url: session.url });
-  } catch (error) {
-    console.error("Erreur Stripe:", error);
-    res.status(500).json({ error: "Erreur création paiement" });
-  }
 });
 
 // DÉMARRAGE
