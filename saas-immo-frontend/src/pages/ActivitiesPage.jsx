@@ -14,7 +14,7 @@ export default function ActivitiesPage({ token }) {
     const fetchActivities = async () => {
       try {
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
-        const response = await axios.get('https://saas-immo-final.onrender.com/api/activities', config);
+        const response = await axios.get('https://api-immo-final.onrender.com/api/activities', config);
         setActivities(response.data);
       } catch (error) {
         console.error("Erreur logs:", error);

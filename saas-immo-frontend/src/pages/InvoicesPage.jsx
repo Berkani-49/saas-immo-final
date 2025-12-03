@@ -22,7 +22,7 @@ export default function InvoicesPage({ token }) {
   const toast = useToast();
   
   // ⚠️ VÉRIFIE BIEN CETTE URL
-  const API_URL = 'https://saas-immo-final.onrender.com';
+  const API_URL = 'https://api-immo-final.onrender.com';
 
   // --- 1. CHARGEMENT ---
   useEffect(() => {
