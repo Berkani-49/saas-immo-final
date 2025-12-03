@@ -57,7 +57,16 @@ export default function App() {
     <Box w="100%" minH="100vh">
       <Routes>
         <Route path="/share/:id" element={<PublicPropertyPage />} />
-        <Route path="/nouveau-membre-agence" element={<SecretRegister />} />
+        {/* Dans le bloc "Si connecté" */}
+<Route path="/" element={<Layout onLogout={handleLogout} />}>
+   {/* ... tes autres routes ... */}
+   <Route path="equipe" element={<TeamPage token={token} />} />
+   
+   {/* 👇 La route est maintenant ici, protégée ! */}
+   <Route path="nouveau-membre-agence" element={<SecretRegister token={token} />} />
+   
+   {/* ... */}
+</Route>
 
         {token ? (
           <Route path="/" element={<Layout onLogout={handleLogout} />}>
