@@ -56,41 +56,42 @@ export default function Layout({ onLogout }) {
         </Box>
       </Flex>
 
-      {/* --- 4. BARRE DE NAVIGATION MOBILE (Dock Flottant) --- */}
+      {/* --- 4. BARRE DE NAVIGATION MOBILE (Version Épurée) --- */}
       <Box
         display={{ base: 'block', md: 'none' }}
-        position="fixed" 
-        bottom={4}       /* Décollé du bas */
-        left={4}         /* Marge gauche */
-        right={4}        /* Marge droite */
+        position="fixed" bottom={0} left={0} w="100%"
         bg="white" 
-        borderRadius="2xl" /* Coins très arrondis */
-        zIndex="999" 
-        boxShadow="0px 10px 30px rgba(0,0,0,0.15)" /* Grosse ombre douce */
-        borderWidth="1px"
-        borderColor="gray.100"
+        borderTopWidth="1px" borderTopColor="gray.100"
+        zIndex="999" pb="env(safe-area-inset-bottom)"
+        boxShadow="0px -5px 20px rgba(0,0,0,0.03)"
       >
-        <SimpleGrid columns={6} h="64px" alignItems="center">
+        <SimpleGrid columns={6} h="60px" alignItems="center">
           {MobileNavItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <RouterNavLink key={item.name} to={item.path} style={{ textDecoration: 'none' }}>
                 <Flex 
                   direction="column" align="center" justify="center" h="100%" 
-                  color={isActive ? 'brand.500' : 'gray.400'}
-                  transform={isActive ? 'scale(1.1)' : 'scale(1)'} /* Agrandit l'actif */
-                  transition="all 0.2s"
                   position="relative"
+                  color={isActive ? 'brand.500' : 'gray.400'}
                 >
-                  {/* Petit point au-dessus de l'icône active */}
-                  {isActive && (
-                    <Box position="absolute" top="-8px" w="4px" h="4px" bg="brand.500" borderRadius="full" />
-                  )}
+                  {/* L'icône est plus grande pour compenser l'absence de texte */}
+                  <Icon 
+                    as={item.icon} 
+                    w={6} h={6} 
+                    transition="all 0.2s"
+                    transform={isActive ? 'scale(1.1)' : 'scale(1)'}
+                  />
                   
-                  <Icon as={item.icon} w={5} h={5} mb={0.5} />
-                  <Text fontSize="9px" fontWeight={isActive ? 'bold' : 'medium'}>
-                    {item.name}
-                  </Text>
+                  {/* Petit point discret pour indiquer la page active */}
+                  {isActive && (
+                    <Box 
+                      position="absolute" bottom="8px" 
+                      w="4px" h="4px" 
+                      bg="brand.500" 
+                      borderRadius="full" 
+                    />
+                  )}
                 </Flex>
               </RouterNavLink>
             );
