@@ -1,4 +1,4 @@
-// Fichier : src/pages/InvoicesPage.jsx (Version Détective 🕵️‍♂️)
+// Fichier : src/pages/InvoicesPage.jsx (Version Corrigée - Liste Contacts)
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -11,7 +11,7 @@ import jsPDF from 'jspdf';
 
 export default function InvoicesPage({ token }) {
   const [invoices, setInvoices] = useState([]);
-  const [contacts, setContacts] = useState([]);
+  const [contacts, setContacts] = useState([]); // La liste des clients
   const [isLoading, setIsLoading] = useState(true);
   
   const [selectedContact, setSelectedContact] = useState('');
@@ -21,29 +21,29 @@ export default function InvoicesPage({ token }) {
 
   const toast = useToast();
   
-  // ⚠️ VÉRIFIE BIEN CETTE URL
-  const API_URL = 'https://api-immo-final.onrender.com';
+  // Ton URL API
+  const API_URL = 'https://saas-immo-final.onrender.com';
 
-  // --- 1. CHARGEMENT ---
   useEffect(() => {
     if (!token) return;
+    
     const fetchData = async () => {
       setIsLoading(true);
+      const config = { headers: { 'Authorization': `Bearer ${token}` } };
+
       try {
-        const config = { headers: { 'Authorization': `Bearer ${token}` } };
-        
-        // Chargement Contacts
-        try {
-            const contactsRes = await axios.get(`${API_URL}/api/contacts`, config);
-            setContacts(contactsRes.data);
-        } catch (e) { console.error("Erreur Contacts", e); }
+        // 1. On charge les Contacts (C'est ça qui manquait peut-être)
+        const contactsRes = await axios.get(`${API_URL}/api/contacts`, config);
+        setContacts(contactsRes.data);
+        console.log("Contacts chargés :", contactsRes.data.length); // Vérif dans la console
 
-        // Chargement Factures
-        try {
-            const invoicesRes = await axios.get(`${API_URL}/api/invoices`, config);
-            setInvoices(invoicesRes.data);
-        } catch (e) { console.error("Erreur Factures", e); }
+        // 2. On charge les Factures
+        const invoicesRes = await axios.get(`${API_URL}/api/invoices`, config);
+        setInvoices(invoicesRes.data);
 
+      } catch (error) {
+        console.error("Erreur chargement :", error);
+        toast({ title: "Erreur connexion", status: "error" });
       } finally {
         setIsLoading(false);
       }
@@ -51,49 +51,37 @@ export default function InvoicesPage({ token }) {
     fetchData();
   }, [token]);
 
-  // --- 2. CRÉATION (C'est ici qu'on debug) ---
   const handleCreateInvoice = async (e) => {
     e.preventDefault();
-    
     if (!amount || !selectedContact) {
-        alert("Stop ! Il manque le montant ou le client.");
+        toast({ title: "Montant et Client requis", status: "warning" });
         return;
     }
 
     setIsSubmitting(true);
-
-    // On prépare les données en forçant les nombres (Sécurité Frontend)
-    const payload = {
-        amount: parseInt(amount),
-        contactId: parseInt(selectedContact),
-        description: description || "Honoraires"
-    };
-
-    console.log("🚀 Envoi de la facture...", payload);
-
     try {
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
+        await axios.post(`${API_URL}/api/invoices`, {
+            amount: parseInt(amount),
+            description, 
+            contactId: parseInt(selectedContact)
+        }, config);
         
-        // On envoie
-        await axios.post(`${API_URL}/api/invoices`, payload, config);
-        
-        // Si on arrive ici, c'est que ça a marché !
-        alert("Succès ! Facture créée. Je vais recharger la page.");
+        // Rechargement pour voir la nouvelle facture
         window.location.reload();
 
     } catch (error) {
-        // Si ça plante, on affiche l'erreur exacte
-        console.error("💥 ERREUR CRÉATION :", error);
-        alert(`Erreur : ${error.response?.data?.error || error.message}`);
+        console.error(error);
+        toast({ title: "Erreur création", status: "error" });
         setIsSubmitting(false);
     }
   };
 
-  // --- 3. PDF ---
   const generatePDF = (invoice) => {
     const doc = new jsPDF();
     const date = new Date(invoice.createdAt).toLocaleDateString('fr-FR');
-    
+    const clientName = invoice.contact ? `${invoice.contact.firstName} ${invoice.contact.lastName}` : "Client Inconnu";
+
     doc.setFontSize(20); doc.setTextColor(49, 130, 206);
     doc.text("IMMO PRO", 20, 20);
     
@@ -110,7 +98,7 @@ export default function InvoicesPage({ token }) {
     
     doc.text("FACTURÉ À :", 20, 50);
     doc.setFontSize(12);
-    doc.text(`${invoice.contact?.firstName} ${invoice.contact?.lastName}`, 20, 56);
+    doc.text(clientName, 20, 56);
     
     doc.rect(20, 75, 170, 10);
     doc.setFontSize(10);
@@ -137,9 +125,20 @@ export default function InvoicesPage({ token }) {
                 <HStack width="full" alignItems="end">
                     <FormControl isRequired flex={2}>
                         <FormLabel>Client à facturer</FormLabel>
-                        <Select placeholder="Choisir un client" value={selectedContact} onChange={(e) => setSelectedContact(e.target.value)}>
-                            {contacts.map(c => (<option key={c.id} value={c.id}>{c.firstName} {c.lastName}</option>))}
+                        
+                        {/* LA LISTE DÉROULANTE EST ICI 👇 */}
+                        <Select 
+                            placeholder={contacts.length > 0 ? "Choisir un client" : "Aucun client trouvé..."} 
+                            value={selectedContact} 
+                            onChange={(e) => setSelectedContact(e.target.value)}
+                        >
+                            {contacts.map(c => (
+                                <option key={c.id} value={c.id}>
+                                    {c.firstName} {c.lastName}
+                                </option>
+                            ))}
                         </Select>
+
                     </FormControl>
                     <FormControl isRequired flex={1}>
                         <FormLabel>Montant (€)</FormLabel>
@@ -147,7 +146,7 @@ export default function InvoicesPage({ token }) {
                     </FormControl>
                 </HStack>
                 <FormControl><FormLabel>Description</FormLabel><Input value={description} onChange={(e) => setDescription(e.target.value)} /></FormControl>
-                <Button type="submit" leftIcon={<AddIcon />} colorScheme="brand" width="full" isLoading={isSubmitting}>Générer la facture</Button>
+                <Button type="submit" leftIcon={<AddIcon />} colorScheme="purple" width="full" isLoading={isSubmitting}>Générer la facture</Button>
             </VStack>
         </form>
       </Box>
@@ -157,7 +156,7 @@ export default function InvoicesPage({ token }) {
       {isLoading ? ( <Flex justify="center"><Spinner size="xl" /></Flex> ) : (
         <Box overflowX="auto" bg="white" borderRadius="lg" shadow="sm" borderWidth="1px">
             <Table variant="simple">
-                <Thead bg="brand.50">
+                <Thead bg="gray.50">
                     <Tr><Th>Réf</Th><Th>Client</Th><Th>Date</Th><Th isNumeric>Montant</Th><Th>Statut</Th><Th>Action</Th></Tr>
                 </Thead>
                 <Tbody>
