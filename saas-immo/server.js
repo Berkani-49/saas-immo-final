@@ -16,13 +16,16 @@ const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 const resend = new Resend(process.env.RESEND_API_KEY);
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// --- 1. CONFIGURATION DE SÉCURITÉ (CORS) - EN PREMIER ---
-// C'est ici qu'on autorise le site à parler au serveur
-app.use(cors({
-  origin: '*', // Accepte tout le monde (Vercel, etc.)
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+// Configuration CORS Ultra-Permissive (pour débloquer)
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*"); // Autorise tout le monde
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  if (req.method === 'OPTIONS') {
+      return res.sendStatus(200); // Répond OK immédiatement aux pré-vérifications
+  }
+  next();
+});
 
 // INSCRIPTION AGENT (La route qui posait problème)
 app.post('/api/auth/register', async (req, res) => {
@@ -53,8 +56,16 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 
-// Gère les demandes "Preflight" (OPTIONS) pour toutes les routes
-app.options('*', cors());
+// Configuration CORS Ultra-Permissive (pour débloquer)
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*"); // Autorise tout le monde
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  if (req.method === 'OPTIONS') {
+      return res.sendStatus(200); // Répond OK immédiatement aux pré-vérifications
+  }
+  next();
+});
 
 // --- 2. MIDDLEWARES ---
 app.use(express.json());
@@ -182,7 +193,14 @@ app.get('/api/properties', authenticateToken, async (req, res) => {
     if (minRooms) filters.rooms = { gte: parseInt(minRooms) };
     if (city) filters.city = { contains: city, mode: 'insensitive' };
 
-    const properties = await prisma.property.findMany({ where: filters, orderBy: { createdAt: 'desc' }, include: { agent: true } });
+    const properties = await prisma.property.findMany({ 
+        where: filters, 
+        orderBy: { createdAt: 'desc' }, 
+        include: { 
+            agent: true,
+            contact: true // <--- ON INCLUT LE PROPRIÉTAIRE ICI
+        } 
+    });
     res.json(properties);
 });
 
@@ -205,12 +223,14 @@ app.post('/api/properties', authenticateToken, async (req, res) => {
                 rooms: parseInt(req.body.rooms),
                 bedrooms: parseInt(req.body.bedrooms),
                 latitude: lat, longitude: lon,
+                // On ajoute le contact (si sélectionné)
+                contactId: req.body.contactId ? parseInt(req.body.contactId) : null,
                 agentId: req.user.id 
             } 
         });
         logActivity(req.user.id, "CRÉATION_BIEN", `Ajout du bien : ${req.body.address}`);
         res.status(201).json(newProperty);
-    } catch (e) { res.status(500).json({ error: "Erreur" }); }
+    } catch (e) { console.error(e); res.status(500).json({ error: "Erreur" }); }
 });
 
 app.put('/api/properties/:id', authenticateToken, async (req, res) => {
@@ -221,7 +241,9 @@ app.put('/api/properties/:id', authenticateToken, async (req, res) => {
                 price: parseInt(req.body.price), 
                 area: parseInt(req.body.area),
                 rooms: parseInt(req.body.rooms),
-                bedrooms: parseInt(req.body.bedrooms)
+                bedrooms: parseInt(req.body.bedrooms),
+                // On met à jour le contact
+                contactId: req.body.contactId ? parseInt(req.body.contactId) : null
             } 
         });
         logActivity(req.user.id, "MODIF_BIEN", `Modification : ${updated.address}`);

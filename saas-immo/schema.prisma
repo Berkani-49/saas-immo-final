@@ -41,6 +41,10 @@ model Property {
   rooms       Int
   bedrooms    Int
   description String?
+
+
+  contactId   Int?     // Peut être vide si on n'a pas encore le contact
+  contact     Contact? @relation(fields: [contactId], references: [id])
   
   // Nos ajouts précédents (Photos et Carte)
   imageUrl    String?
@@ -70,7 +74,7 @@ model Contact {
   agentId   Int
   tasks     Task[]
 
-  // 👇 C'est ici qu'on ajoute la ligne pour les factures
+
   invoices  Invoice[]
 
   @@index([agentId])
