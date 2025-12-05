@@ -1,4 +1,4 @@
-// Fichier : prisma/schema.prisma (Version FINALE avec Factures + Photos + Carte)
+// Fichier : prisma/schema.prisma (Version FINALE CORRIGÉE)
 
 datasource db {
   provider  = "postgresql"
@@ -11,7 +11,7 @@ generator client {
   binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
-// --- MODÈLE USER ---
+// --- MODÈLE USER (Agent) ---
 model User {
   id          Int      @id @default(autoincrement())
   email       String   @unique
@@ -20,17 +20,14 @@ model User {
   lastName    String
   createdAt   DateTime @default(now())
 
-  // Relations
-  properties Property[]
-  contacts   Contact[]
-  tasks      Task[]
-  activities ActivityLog[]
-  
-  // 👇 C'est ici qu'on ajoute la ligne pour les factures
-  invoices   Invoice[] 
+  properties  Property[]
+  contacts    Contact[]
+  tasks       Task[]
+  invoices    Invoice[]
+  activities  ActivityLog[]
 }
 
-// --- MODÈLE PROPERTY ---
+// --- MODÈLE PROPERTY (Bien) ---
 model Property {
   id          Int      @id @default(autoincrement())
   address     String
@@ -41,26 +38,27 @@ model Property {
   rooms       Int
   bedrooms    Int
   description String?
-
-
-  contactId   Int?     // Peut être vide si on n'a pas encore le contact
-  contact     Contact? @relation(fields: [contactId], references: [id])
   
-  // Nos ajouts précédents (Photos et Carte)
   imageUrl    String?
   latitude    Float?
   longitude   Float?
 
   createdAt   DateTime @default(now())
 
-  agent     User @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  agentId   Int
-  tasks     Task[]
+  // Relation Agent
+  agent       User     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agentId     Int
+
+  // Relation Propriétaire (Contact)
+  contact     Contact? @relation(fields: [contactId], references: [id])
+  contactId   Int?
+
+  tasks       Task[]
 
   @@index([agentId])
 }
 
-// --- MODÈLE CONTACT ---
+// --- MODÈLE CONTACT (Client) ---
 model Contact {
   id          Int      @id @default(autoincrement())
   firstName   String
@@ -70,12 +68,15 @@ model Contact {
   type        String   // "BUYER" ou "SELLER"
   createdAt   DateTime @default(now())
 
-  agent     User @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  agentId   Int
-  tasks     Task[]
+  agent       User     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agentId     Int
 
-
-  invoices  Invoice[]
+  // Relations
+  tasks       Task[]
+  invoices    Invoice[]
+  
+  // 👇 C'EST CETTE LIGNE QUI MANQUAIT !
+  properties  Property[] 
 
   @@index([agentId])
 }
@@ -88,8 +89,8 @@ model Task {
   status      String   @default("PENDING")
   createdAt   DateTime @default(now())
 
-  agent     User @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  agentId   Int
+  agent       User     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agentId     Int
 
   contact     Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
   contactId   Int?
@@ -102,28 +103,27 @@ model Task {
   @@index([propertyId])
 }
 
-// --- NOUVEAU MODÈLE FACTURE (INVOICE) ---
+// --- MODÈLE INVOICE ---
 model Invoice {
   id          Int      @id @default(autoincrement())
-  ref         String   // Numéro de facture
-  amount      Int      // Montant
-  description String   // Motif
-  status      String   @default("PENDING") // PENDING ou PAID
+  ref         String   
+  amount      Int      
+  description String   
+  status      String   @default("PENDING")
   createdAt   DateTime @default(now())
 
-  // Liens
-  contact     Contact @relation(fields: [contactId], references: [id])
+  contact     Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
   contactId   Int
 
-  agent       User    @relation(fields: [agentId], references: [id])
+  agent       User     @relation(fields: [agentId], references: [id])
   agentId     Int
 }
 
-// --- MODÈLE HISTORIQUE D'ACTIVITÉ ---
+// --- MODÈLE HISTORIQUE ---
 model ActivityLog {
   id          Int      @id @default(autoincrement())
-  action      String   // Ex: "CRÉATION_BIEN", "SUPPRESSION_CONTACT"
-  description String   // Ex: "A ajouté le bien 10 rue de la Paix"
+  action      String   
+  description String   
   createdAt   DateTime @default(now())
 
   agent       User     @relation(fields: [agentId], references: [id], onDelete: Cascade)
