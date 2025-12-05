@@ -154,6 +154,11 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
         </HStack>
 
         <Flex pt={3} borderTopWidth={1} borderColor="gray.100" justify="space-between" align="center">
+          {property.contact && (
+    <Text fontSize="xs" color="green.600" mt={1} fontWeight="bold">
+        Propriétaire : {property.contact.firstName} {property.contact.lastName}
+    </Text>
+)}
             {property.agent ? (
                 <Text fontSize="xs" color="gray.400">Agent: {property.agent.firstName}</Text>
             ) : <Spacer />}
