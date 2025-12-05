@@ -405,17 +405,61 @@ app.get('/api/activities', authenticateToken, async (req, res) => {
     res.json(logs);
 });
 
+// --- STATISTIQUES AVANCÉES (Avec Finances) ---
 app.get('/api/stats', authenticateToken, async (req, res) => {
     try {
-        const [p, c, b, s, t] = await Promise.all([
+        const agentId = req.user.id;
+
+        // On lance tous les calculs en parallèle
+        const [
+            propertyCount, 
+            contactCount, 
+            buyerCount, 
+            sellerCount, 
+            pendingTaskCount,
+            // NOUVEAU : Calcul de la valeur totale des biens
+            portfolioValue,
+            // NOUVEAU : Calcul du chiffre d'affaires (Factures payées)
+            revenue
+        ] = await Promise.all([
             prisma.property.count(),
             prisma.contact.count(),
             prisma.contact.count({ where: { type: 'BUYER' } }),
             prisma.contact.count({ where: { type: 'SELLER' } }),
-            prisma.task.count({ where: { agentId: req.user.id, status: 'PENDING' } })
+            prisma.task.count({ where: { agentId: agentId, status: 'PENDING' } }),
+            
+            // Somme des prix des biens
+            prisma.property.aggregate({ _sum: { price: true } }),
+            
+            // Somme des factures PAYÉES
+            prisma.invoice.aggregate({ _sum: { amount: true }, where: { status: 'PAID' } })
         ]);
-        res.json({ properties: {total: p}, contacts: {total: c, buyers: b, sellers: s}, tasks: {pending: t, done: 0} });
-    } catch (e) { res.status(500).json({ error: "Erreur" }); }
+
+        const stats = {
+            properties: { 
+                total: propertyCount, 
+                value: portfolioValue._sum.price || 0 // La valeur en €
+            },
+            contacts: { 
+                total: contactCount, 
+                buyers: buyerCount, 
+                sellers: sellerCount 
+            },
+            tasks: { 
+                pending: pendingTaskCount, 
+                done: 0 
+            },
+            finance: {
+                revenue: revenue._sum.amount || 0 // Le CA encaissé
+            }
+        };
+
+        res.status(200).json(stats);
+
+    } catch (e) { 
+        console.error("Erreur Stats:", e);
+        res.status(500).json({ error: "Erreur chargement statistiques" }); 
+    }
 });
 
 // ÉQUIPE
