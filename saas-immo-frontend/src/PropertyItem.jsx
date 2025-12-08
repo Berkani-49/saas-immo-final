@@ -153,14 +153,18 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
             <Flex align="center"><FaBath /><Text ml={1}>{property.rooms} p.</Text></Flex>
         </HStack>
 
-        {/* PROPRIÉTAIRES */}
+        {/* CONTACTS LIÉS */}
         {property.owners && property.owners.length > 0 && (
             <Box mb={3}>
-                <Text fontSize="xs" color="gray.500" mb={1}>Propriétaires:</Text>
+                <Text fontSize="xs" color="gray.500" mb={1}>Contacts:</Text>
                 <HStack spacing={1} flexWrap="wrap">
                     {property.owners.map(owner => (
-                        <Badge key={owner.id} colorScheme="blue" fontSize="xs">
-                            {owner.contact.firstName} {owner.contact.lastName}
+                        <Badge
+                            key={owner.id}
+                            colorScheme={owner.type === 'OWNER' ? 'blue' : 'green'}
+                            fontSize="xs"
+                        >
+                            {owner.contact.firstName} {owner.contact.lastName} ({owner.type === 'OWNER' ? 'P' : 'I'})
                         </Badge>
                     ))}
                 </HStack>
