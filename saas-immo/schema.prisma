@@ -41,7 +41,7 @@ model Property {
   rooms       Int
   bedrooms    Int
   description String?
-  
+
   // Nos ajouts précédents (Photos et Carte)
   imageUrl    String?
   latitude    Float?
@@ -53,6 +53,9 @@ model Property {
   agent     User @relation(fields: [agentId], references: [id], onDelete: Cascade)
   agentId   Int
   tasks     Task[]
+
+  // Relation many-to-many avec Contact (propriétaires)
+  owners    PropertyOwner[]
 
   @@index([agentId])
 }
@@ -73,6 +76,9 @@ model Contact {
 
   // 👇 C'est ici qu'on ajoute la ligne pour les factures
   invoices  Invoice[]
+
+  // Relation many-to-many avec Property (biens possédés)
+  properties PropertyOwner[]
 
   @@index([agentId])
 }
@@ -127,4 +133,21 @@ model ActivityLog {
   agentId     Int
 
   @@index([agentId])
+}
+
+// --- TABLE DE JONCTION BIEN-CONTACT (Many-to-Many) ---
+model PropertyOwner {
+  id         Int      @id @default(autoincrement())
+
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  propertyId Int
+
+  contact    Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contactId  Int
+
+  createdAt  DateTime @default(now())
+
+  @@unique([propertyId, contactId]) // Un contact ne peut être propriétaire qu'une seule fois du même bien
+  @@index([propertyId])
+  @@index([contactId])
 }
