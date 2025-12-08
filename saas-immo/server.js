@@ -1,7 +1,6 @@
-// Fichier : server.js (Version FINALE - Inscription Réparée)
+// Fichier : server.js (Version FINALE - CORS Fix Manuel)
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const express = require('express');
-const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -17,14 +16,20 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // --- 1. MIDDLEWARES (CORS + JSON) - EN PREMIER ---
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-}));
+// Middleware CORS manuel pour gérer OPTIONS en premier
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Max-Age', '86400'); // 24h cache
 
-app.options('*', cors());
+  // Si c'est une requête OPTIONS (preflight), on répond immédiatement 200 OK
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  next();
+});
+
 app.use(express.json());
 
 
