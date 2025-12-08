@@ -434,4 +434,8 @@ app.post('/api/create-checkout-session', authenticateToken, async (req, res) => 
 });
 
 // DÉMARRAGE
-app.listen(PORT, () => console.log(`Serveur OK sur ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`✅ Serveur OK sur port ${PORT}`);
+  console.log(`✅ CORS Manuel activé - Version Dec 8 2025`);
+  console.log(`✅ Middleware OPTIONS configuré`);
+});
