@@ -7,15 +7,13 @@ import { Outlet, NavLink as RouterNavLink, useLocation } from 'react-router-dom'
 import { FiHome, FiList, FiUsers, FiCheckSquare, FiFileText, FiBriefcase, FiCreditCard } from 'react-icons/fi';
 import Sidebar from './Sidebar.jsx';
 
-// 2. On ajoute "Équipe" dans la liste mobile
+// Navigation mobile - Seulement les fonctions essentielles
 const MobileNavItems = [
-  { name: 'Premium', icon: FiCreditCard, path: '/abonnement' },
   { name: 'Accueil', icon: FiHome, path: '/' },
   { name: 'Biens', icon: FiList, path: '/biens' },
-  { name: 'Clients', icon: FiUsers, path: '/contacts' },
+  { name: 'Contacts', icon: FiUsers, path: '/contacts' },
   { name: 'Tâches', icon: FiCheckSquare, path: '/taches' },
-  { name: 'Factures', icon: FiFileText, path: '/factures' },
-  { name: 'Équipe', icon: FiBriefcase, path: '/equipe' }, // <-- Le voilà !
+  { name: 'Plus', icon: FiBriefcase, path: '/equipe' },
 ];
 
 export default function Layout({ onLogout }) {
@@ -64,20 +62,19 @@ export default function Layout({ onLogout }) {
         zIndex="999" pb="env(safe-area-inset-bottom)"
         boxShadow="0px -2px 10px rgba(0,0,0,0.05)"
       >
-        {/* 3. On passe à 6 colonnes pour que tout rentre */}
-        <SimpleGrid columns={6} h="60px">
+        <SimpleGrid columns={5} h="70px">
           {MobileNavItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <RouterNavLink key={item.name} to={item.path} style={{ textDecoration: 'none' }}>
-                <Flex 
-                  direction="column" align="center" justify="center" h="100%" 
-                  color={isActive ? 'brand.500' : 'gray.400'}
-                  _active={{ bg: 'gray.50' }}
+                <Flex
+                  direction="column" align="center" justify="center" h="100%"
+                  color={isActive ? 'brand.500' : 'gray.500'}
+                  transition="all 0.2s"
+                  _active={{ bg: 'gray.100' }}
                 >
-                  <Icon as={item.icon} w={5} h={5} mb={1} />
-                  {/* On réduit un peu la police pour que "Factures" et "Équipe" tiennent */}
-                  <Text fontSize="9px" fontWeight={isActive ? 'bold' : 'normal'}>
+                  <Icon as={item.icon} w={6} h={6} mb={1} />
+                  <Text fontSize="10px" fontWeight={isActive ? 'semibold' : 'normal'}>
                     {item.name}
                   </Text>
                 </Flex>
