@@ -16,47 +16,15 @@ const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 const resend = new Resend(process.env.RESEND_API_KEY);
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// --- 1. CONFIGURATION DE SÉCURITÉ (CORS) - EN PREMIER ---
-// C'est ici qu'on autorise le site à parler au serveur
+// --- 1. MIDDLEWARES (CORS + JSON) - EN PREMIER ---
 app.use(cors({
-  origin: '*', // Accepte tout le monde (Vercel, etc.)
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
 
-// INSCRIPTION AGENT (La route qui posait problème)
-app.post('/api/auth/register', async (req, res) => {
-  try {
-    const { email, password, firstName, lastName } = req.body;
-    
-    if (!email || !password || !firstName || !lastName) {
-      return res.status(400).json({ error: 'Tous les champs sont requis.' });
-    }
-    
-    const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
-      return res.status(400).json({ error: 'Cet email est déjà utilisé.' });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await prisma.user.create({
-      data: { email, password: hashedPassword, firstName, lastName },
-    });
-
-    const { password: _, ...userWithoutPassword } = newUser;
-    res.status(201).json(userWithoutPassword);
-
-  } catch (error) {
-    console.error("Erreur Register:", error);
-    res.status(500).json({ error: 'Erreur serveur inscription.' });
-  }
-});
-
-
-// Gère les demandes "Preflight" (OPTIONS) pour toutes les routes
 app.options('*', cors());
-
-// --- 2. MIDDLEWARES ---
 app.use(express.json());
 
 
@@ -73,15 +41,15 @@ async function logActivity(agentId, action, description) {
 
 app.get('/', (req, res) => res.json({ message: "Serveur en ligne !" }));
 
-// INSCRIPTION AGENT (La route qui posait problème)
+// INSCRIPTION AGENT
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { email, password, firstName, lastName } = req.body;
-    
+
     if (!email || !password || !firstName || !lastName) {
       return res.status(400).json({ error: 'Tous les champs sont requis.' });
     }
-    
+
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       return res.status(400).json({ error: 'Cet email est déjà utilisé.' });
