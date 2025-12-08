@@ -46,6 +46,7 @@ model Property {
   imageUrl    String?
   latitude    Float?
   longitude   Float?
+  views       Int?     @default(0)
 
   createdAt   DateTime @default(now())
 
