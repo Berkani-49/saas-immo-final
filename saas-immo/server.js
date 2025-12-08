@@ -155,7 +155,16 @@ app.get('/api/properties', authenticateToken, async (req, res) => {
     if (minRooms) filters.rooms = { gte: parseInt(minRooms) };
     if (city) filters.city = { contains: city, mode: 'insensitive' };
 
-    const properties = await prisma.property.findMany({ where: filters, orderBy: { createdAt: 'desc' }, include: { agent: true } });
+    const properties = await prisma.property.findMany({
+        where: filters,
+        orderBy: { createdAt: 'desc' },
+        include: {
+            agent: true,
+            owners: {
+                include: { contact: true }
+            }
+        }
+    });
     res.json(properties);
 });
 
@@ -398,6 +407,81 @@ app.get('/api/agents', authenticateToken, async (req, res) => {
       select: { id: true, firstName: true, lastName: true, email: true, createdAt: true }
     });
     res.json(agents);
+});
+
+// --- ROUTES RELATION BIEN-CONTACT (Propriétaires) ---
+
+// Ajouter un propriétaire à un bien
+app.post('/api/properties/:propertyId/owners', authenticateToken, async (req, res) => {
+    try {
+        const { contactId } = req.body;
+        const propertyId = parseInt(req.params.propertyId);
+
+        // Vérifier si la relation existe déjà
+        const existing = await prisma.propertyOwner.findFirst({
+            where: { propertyId, contactId: parseInt(contactId) }
+        });
+
+        if (existing) {
+            return res.status(400).json({ error: "Ce contact est déjà propriétaire de ce bien" });
+        }
+
+        const newOwner = await prisma.propertyOwner.create({
+            data: { propertyId, contactId: parseInt(contactId) }
+        });
+
+        logActivity(req.user.id, "AJOUT_PROPRIÉTAIRE", `Propriétaire ajouté au bien ID ${propertyId}`);
+        res.status(201).json(newOwner);
+    } catch (e) {
+        console.error("Erreur ajout propriétaire:", e);
+        res.status(500).json({ error: "Erreur lors de l'ajout du propriétaire" });
+    }
+});
+
+// Retirer un propriétaire d'un bien
+app.delete('/api/properties/:propertyId/owners/:contactId', authenticateToken, async (req, res) => {
+    try {
+        const propertyId = parseInt(req.params.propertyId);
+        const contactId = parseInt(req.params.contactId);
+
+        await prisma.propertyOwner.deleteMany({
+            where: { propertyId, contactId }
+        });
+
+        logActivity(req.user.id, "RETRAIT_PROPRIÉTAIRE", `Propriétaire retiré du bien ID ${propertyId}`);
+        res.status(204).send();
+    } catch (e) {
+        console.error("Erreur retrait propriétaire:", e);
+        res.status(500).json({ error: "Erreur lors du retrait du propriétaire" });
+    }
+});
+
+// Obtenir tous les propriétaires d'un bien
+app.get('/api/properties/:propertyId/owners', authenticateToken, async (req, res) => {
+    try {
+        const propertyId = parseInt(req.params.propertyId);
+        const owners = await prisma.propertyOwner.findMany({
+            where: { propertyId },
+            include: { contact: true }
+        });
+        res.json(owners.map(o => o.contact));
+    } catch (e) {
+        res.status(500).json({ error: "Erreur" });
+    }
+});
+
+// Obtenir tous les biens d'un contact
+app.get('/api/contacts/:contactId/properties', authenticateToken, async (req, res) => {
+    try {
+        const contactId = parseInt(req.params.contactId);
+        const properties = await prisma.propertyOwner.findMany({
+            where: { contactId },
+            include: { property: true }
+        });
+        res.json(properties.map(p => p.property));
+    } catch (e) {
+        res.status(500).json({ error: "Erreur" });
+    }
 });
 
 // --- ROUTE PAIEMENT (STRIPE) ---
