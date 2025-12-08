@@ -94,6 +94,7 @@ app.post('/api/public/leads', async (req, res) => {
     const property = await prisma.property.findUnique({ where: { id: parseInt(propertyId) } });
     if (!property) return res.status(404).json({ error: "Bien introuvable" });
 
+    // 1. Créer ou récupérer le contact
     let contact = await prisma.contact.findFirst({ where: { email, agentId: property.agentId } });
     if (!contact) {
         contact = await prisma.contact.create({
@@ -101,26 +102,42 @@ app.post('/api/public/leads', async (req, res) => {
         });
     }
 
+    // 2. Marquer le contact comme INTERESTED pour ce bien (s'il ne l'est pas déjà)
+    const existingInterest = await prisma.propertyOwner.findFirst({
+        where: { propertyId: property.id, contactId: contact.id, type: 'INTERESTED' }
+    });
+
+    if (!existingInterest) {
+        await prisma.propertyOwner.create({
+            data: { propertyId: property.id, contactId: contact.id, type: 'INTERESTED' }
+        });
+    }
+
+    // 3. Créer une tâche pour l'agent
     await prisma.task.create({
         data: {
             title: `📢 LEAD : ${firstName} ${lastName} sur ${property.address}`,
             status: 'PENDING', agentId: property.agentId, contactId: contact.id, propertyId: property.id, dueDate: new Date()
         }
     });
-    
+
     logActivity(property.agentId, "NOUVEAU_LEAD", `Lead pour ${property.address}`);
 
+    // 4. Envoyer un email de notification
     try {
         // Remplace par ton email si besoin
         await resend.emails.send({
-          from: 'onboarding@resend.dev', to: 'amirelattaoui49@gmail.com', 
+          from: 'onboarding@resend.dev', to: 'amirelattaoui49@gmail.com',
           subject: `🔥 Lead: ${property.address}`,
           html: `<p>Nouveau client : ${firstName} ${lastName} (${phone})</p>`
         });
     } catch (e) {}
 
     res.json({ message: "OK" });
-  } catch (e) { res.status(500).json({error: "Erreur"}); }
+  } catch (e) {
+    console.error("Erreur capture lead:", e);
+    res.status(500).json({error: "Erreur"});
+  }
 });
 
 // VOIR UN BIEN PUBLIC
