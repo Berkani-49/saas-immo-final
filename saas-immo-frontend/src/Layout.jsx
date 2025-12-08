@@ -1,10 +1,10 @@
 // Fichier : src/Layout.jsx (Version Mobile avec Équipe)
 
 import React from 'react';
-import { Box, Flex, Text, Icon, SimpleGrid } from '@chakra-ui/react';
+import { Box, Flex, Text, Icon, SimpleGrid, IconButton } from '@chakra-ui/react';
 import { Outlet, NavLink as RouterNavLink, useLocation } from 'react-router-dom';
 // 1. On ajoute l'icône FiBriefcase
-import { FiHome, FiList, FiUsers, FiCheckSquare, FiFileText, FiBriefcase, FiCreditCard } from 'react-icons/fi';
+import { FiHome, FiList, FiUsers, FiCheckSquare, FiFileText, FiBriefcase, FiCreditCard, FiLogOut } from 'react-icons/fi';
 import Sidebar from './Sidebar.jsx';
 
 // Navigation mobile - Seulement les fonctions essentielles
@@ -35,11 +35,20 @@ export default function Layout({ onLogout }) {
       {/* --- HEADER MOBILE --- */}
       <Flex
         display={{ base: 'flex', md: 'none' }}
-        h="60px" alignItems="center" justifyContent="center"
+        h="60px" alignItems="center" justifyContent="space-between"
         bg="white" borderBottomWidth="1px" borderBottomColor="gray.200"
         px={4} position="sticky" top="0" zIndex="90"
       >
+        <Box w="40px" /> {/* Spacer pour centrer le titre */}
         <Text fontSize="lg" fontWeight="bold" color="brand.600">IMMO PRO</Text>
+        <IconButton
+          icon={<Icon as={FiLogOut} />}
+          size="sm"
+          variant="ghost"
+          colorScheme="red"
+          onClick={onLogout}
+          aria-label="Déconnexion"
+        />
       </Flex>
 
       {/* --- CONTENU --- */}
