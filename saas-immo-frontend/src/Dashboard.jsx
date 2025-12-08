@@ -26,7 +26,7 @@ export default function Dashboard({ token }) {
         headers: { 'Authorization': `Bearer ${token}` },
         params: { city: cityFilter, minPrice, maxPrice, minRooms }
       };
-      const response = await axios.get('https://saas-immo-final.onrender.com/api/properties', config);
+      const response = await axios.get('https://saas-immo.onrender.com/api/properties', config);
       setProperties(response.data);
     } catch (error) {
       console.error("Erreur (biens):", error);

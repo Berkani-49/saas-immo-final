@@ -20,7 +20,7 @@ export default function TachesPage({ token }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   
-  const API_URL = 'https://saas-immo-final.onrender.com'; 
+  const API_URL = 'https://saas-immo.onrender.com'; 
 
   useEffect(() => {
     if (!token) return;

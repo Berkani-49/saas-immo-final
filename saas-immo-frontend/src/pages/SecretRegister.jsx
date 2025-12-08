@@ -20,7 +20,7 @@ export default function SecretRegister({ token }) {
     try {
       // 👇 C'EST ICI QUE J'AI CORRIGÉ L'ADRESSE : "saas-immo-final"
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      await axios.post('https://saas-immo-final.onrender.com/api/auth/register', {
+      await axios.post('https://saas-immo.onrender.com/api/auth/register', {
         firstName,
         lastName,
         email,

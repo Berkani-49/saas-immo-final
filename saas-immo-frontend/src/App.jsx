@@ -1,24 +1,26 @@
-// Fichier: src/App.jsx (Version Finale - Connexion Centrée)
-import SubscriptionPage from './pages/SubscriptionPage.jsx';
-import ActivitiesPage from './pages/ActivitiesPage.jsx';
-import InvoicesPage from './pages/InvoicesPage.jsx';
+// Fichier: src/App.jsx (Version Finale Corrigée)
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import './App.css';
-import Dashboard from './Dashboard.jsx';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { Box, Heading, FormControl, FormLabel, Input, Button, Alert, Spinner, Center } from '@chakra-ui/react';
+import { AlertIcon } from '@chakra-ui/icons';
+import './App.css';
+
+// Imports des pages
 import Layout from './Layout.jsx'; 
 import HomePage from './pages/HomePage.jsx';
+import Dashboard from './Dashboard.jsx'; // Biens
 import ContactsPage from './pages/ContactsPage.jsx'; 
+import SubscriptionPage from './pages/SubscriptionPage.jsx';
 import TachesPage from './pages/TachesPage.jsx';
+import InvoicesPage from './pages/InvoicesPage.jsx';
+import ActivitiesPage from './pages/ActivitiesPage.jsx';
+import TeamPage from './pages/TeamPage.jsx';
+import PriceEstimator from './PriceEstimator.jsx';
 import PublicPropertyPage from './pages/PublicPropertyPage.jsx';
 import PropertyDetail from './pages/PropertyDetail.jsx';
 import ContactDetail from './pages/ContactDetail.jsx';
 import SecretRegister from './pages/SecretRegister.jsx';
-import PriceEstimator from './PriceEstimator.jsx';
-import { Box, Heading, FormControl, FormLabel, Input, Button, Alert, Spinner, Center } from '@chakra-ui/react';
-import { AlertIcon } from '@chakra-ui/icons';
-import TeamPage from './pages/TeamPage.jsx';
 
 export default function App() {
   const [email, setEmail] = useState('');
@@ -39,10 +41,13 @@ export default function App() {
     setMessage('');
     setIsLoggingIn(true);
     try {
-      const response = await axios.post('https://api-immo-final.onrender.com/api/auth/login', { email, password });
+      // ✅ CORRECTION ICI : Bonne adresse "saas-immo-final"
+      const response = await axios.post('https://saas-immo.onrender.com/api/auth/login', { email, password });
+      
       localStorage.setItem('token', response.data.token);
       setToken(response.data.token);
     } catch (error) {
+      console.error("Erreur login:", error);
       setMessage('Email ou mot de passe incorrect.');
     } finally {
       setIsLoggingIn(false);
@@ -81,8 +86,14 @@ export default function App() {
                 <Box p={8} maxWidth="400px" w="90%" borderWidth={1} borderRadius="lg" boxShadow="xl" bg="white">
                   <Heading as="h2" size="lg" mb={6} textAlign="center">Connexion Agence</Heading>
                   <form onSubmit={handleLogin}>
-                    <FormControl id="email-login" mb={4} isRequired><FormLabel>Email</FormLabel><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></FormControl>
-                    <FormControl id="password-login" mb={6} isRequired><FormLabel>Mot de passe</FormLabel><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} /></FormControl>
+                    <FormControl id="email-login" mb={4} isRequired>
+                        <FormLabel>Email</FormLabel>
+                        <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                    </FormControl>
+                    <FormControl id="password-login" mb={6} isRequired>
+                        <FormLabel>Mot de passe</FormLabel>
+                        <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                    </FormControl>
                     {message && <Alert status="error" mb={4} borderRadius="md"><AlertIcon />{message}</Alert>}
                     <Button type="submit" colorScheme="blue" width="full" isLoading={isLoggingIn}>Se connecter</Button>
                   </form>

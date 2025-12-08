@@ -19,7 +19,7 @@ export default function ContactItem({ contact, token, onContactDeleted }) {
     setIsLoading(true);
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      await axios.delete(`https://saas-immo-final.onrender.com/api/contacts/${contact.id}`, config);
+      await axios.delete(`https://saas-immo.onrender.com/api/contacts/${contact.id}`, config);
       onContactDeleted(contact.id);
       toast({ title: "Contact supprimé.", status: "success", duration: 2000 });
     } catch (err) {
