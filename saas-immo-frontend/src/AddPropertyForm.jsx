@@ -21,8 +21,9 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
 
   // Nouveaux états pour les propriétaires
   const [contacts, setContacts] = useState([]);
-  const [selectedOwners, setSelectedOwners] = useState([]);
+  const [selectedOwners, setSelectedOwners] = useState([]); // Maintenant contient {contact, type}
   const [selectedContactId, setSelectedContactId] = useState('');
+  const [selectedType, setSelectedType] = useState('OWNER');
 
   const toast = useToast();
 
@@ -44,15 +45,16 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
   const handleAddOwner = () => {
     if (!selectedContactId) return;
     const contact = contacts.find(c => c.id === parseInt(selectedContactId));
-    if (contact && !selectedOwners.find(o => o.id === contact.id)) {
-      setSelectedOwners([...selectedOwners, contact]);
+    if (contact && !selectedOwners.find(o => o.contact.id === contact.id && o.type === selectedType)) {
+      setSelectedOwners([...selectedOwners, { contact, type: selectedType }]);
       setSelectedContactId('');
+      setSelectedType('OWNER');
     }
   };
 
   // Retirer un propriétaire de la sélection
-  const handleRemoveOwner = (contactId) => {
-    setSelectedOwners(selectedOwners.filter(o => o.id !== contactId));
+  const handleRemoveOwner = (index) => {
+    setSelectedOwners(selectedOwners.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
@@ -97,17 +99,17 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
       const response = await axios.post('https://saas-immo.onrender.com/api/properties', payload, config);
       const newProperty = response.data;
 
-      // 3. Ajouter les propriétaires si sélectionnés
+      // 3. Ajouter les propriétaires/intéressés si sélectionnés
       if (selectedOwners.length > 0) {
-        for (const owner of selectedOwners) {
+        for (const item of selectedOwners) {
           try {
             await axios.post(
               `https://saas-immo.onrender.com/api/properties/${newProperty.id}/owners`,
-              { contactId: owner.id },
+              { contactId: item.contact.id, type: item.type },
               config
             );
           } catch (err) {
-            console.error("Erreur ajout propriétaire:", err);
+            console.error("Erreur ajout relation:", err);
           }
         }
       }
@@ -162,41 +164,58 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
             <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
           </FormControl>
 
-          {/* SÉLECTION DES PROPRIÉTAIRES */}
+          {/* SÉLECTION DES PROPRIÉTAIRES/INTÉRESSÉS */}
           <FormControl>
-            <FormLabel>Propriétaires (optionnel)</FormLabel>
-            <HStack mb={2}>
-              <Select
-                placeholder="Choisir un contact"
-                value={selectedContactId}
-                onChange={(e) => setSelectedContactId(e.target.value)}
-                size="sm"
-              >
-                {contacts
-                  .filter(c => !selectedOwners.find(o => o.id === c.id))
-                  .map(contact => (
+            <FormLabel>Contacts liés (optionnel)</FormLabel>
+            <VStack align="stretch" spacing={2}>
+              <HStack>
+                <Select
+                  placeholder="Choisir un contact"
+                  value={selectedContactId}
+                  onChange={(e) => setSelectedContactId(e.target.value)}
+                  size="sm"
+                  flex={2}
+                >
+                  {contacts.map(contact => (
                     <option key={contact.id} value={contact.id}>
                       {contact.firstName} {contact.lastName}
                     </option>
                   ))}
-              </Select>
-              <Button size="sm" colorScheme="blue" onClick={handleAddOwner} isDisabled={!selectedContactId}>
+                </Select>
+                <Select
+                  value={selectedType}
+                  onChange={(e) => setSelectedType(e.target.value)}
+                  size="sm"
+                  flex={1}
+                >
+                  <option value="OWNER">Propriétaire</option>
+                  <option value="INTERESTED">Intéressé</option>
+                </Select>
+              </HStack>
+              <Button size="sm" colorScheme="blue" onClick={handleAddOwner} isDisabled={!selectedContactId} width="full">
                 Ajouter
               </Button>
-            </HStack>
+            </VStack>
 
-            {/* Liste des propriétaires sélectionnés */}
+            {/* Liste des propriétaires/intéressés sélectionnés */}
             {selectedOwners.length > 0 && (
-              <Wrap spacing={2} mt={2}>
-                {selectedOwners.map(owner => (
-                  <Badge key={owner.id} colorScheme="blue" fontSize="sm" px={2} py={1} borderRadius="md">
-                    {owner.firstName} {owner.lastName}
+              <Wrap spacing={2} mt={3}>
+                {selectedOwners.map((item, index) => (
+                  <Badge
+                    key={index}
+                    colorScheme={item.type === 'OWNER' ? 'blue' : 'green'}
+                    fontSize="sm"
+                    px={2}
+                    py={1}
+                    borderRadius="md"
+                  >
+                    {item.contact.firstName} {item.contact.lastName} ({item.type === 'OWNER' ? 'Proprio' : 'Intéressé'})
                     <IconButton
                       icon={<CloseIcon />}
                       size="xs"
                       variant="ghost"
                       ml={1}
-                      onClick={() => handleRemoveOwner(owner.id)}
+                      onClick={() => handleRemoveOwner(index)}
                       aria-label="Retirer"
                     />
                   </Badge>

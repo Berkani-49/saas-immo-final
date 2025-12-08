@@ -411,26 +411,29 @@ app.get('/api/agents', authenticateToken, async (req, res) => {
 
 // --- ROUTES RELATION BIEN-CONTACT (Propriétaires) ---
 
-// Ajouter un propriétaire à un bien
+// Ajouter un propriétaire/intéressé à un bien
 app.post('/api/properties/:propertyId/owners', authenticateToken, async (req, res) => {
     try {
-        const { contactId } = req.body;
+        const { contactId, type } = req.body; // type = "OWNER" ou "INTERESTED"
         const propertyId = parseInt(req.params.propertyId);
+        const relationType = type || "OWNER"; // Par défaut OWNER
 
         // Vérifier si la relation existe déjà
         const existing = await prisma.propertyOwner.findFirst({
-            where: { propertyId, contactId: parseInt(contactId) }
+            where: { propertyId, contactId: parseInt(contactId), type: relationType }
         });
 
         if (existing) {
-            return res.status(400).json({ error: "Ce contact est déjà propriétaire de ce bien" });
+            return res.status(400).json({ error: `Ce contact est déjà ${relationType === 'OWNER' ? 'propriétaire' : 'intéressé'} pour ce bien` });
         }
 
         const newOwner = await prisma.propertyOwner.create({
-            data: { propertyId, contactId: parseInt(contactId) }
+            data: { propertyId, contactId: parseInt(contactId), type: relationType }
         });
 
-        logActivity(req.user.id, "AJOUT_PROPRIÉTAIRE", `Propriétaire ajouté au bien ID ${propertyId}`);
+        const actionLabel = relationType === 'OWNER' ? "AJOUT_PROPRIÉTAIRE" : "AJOUT_INTÉRESSÉ";
+        const descLabel = relationType === 'OWNER' ? "Propriétaire ajouté" : "Contact intéressé ajouté";
+        logActivity(req.user.id, actionLabel, `${descLabel} au bien ID ${propertyId}`);
         res.status(201).json(newOwner);
     } catch (e) {
         console.error("Erreur ajout propriétaire:", e);
@@ -438,17 +441,19 @@ app.post('/api/properties/:propertyId/owners', authenticateToken, async (req, re
     }
 });
 
-// Retirer un propriétaire d'un bien
+// Retirer un propriétaire/intéressé d'un bien
 app.delete('/api/properties/:propertyId/owners/:contactId', authenticateToken, async (req, res) => {
     try {
         const propertyId = parseInt(req.params.propertyId);
         const contactId = parseInt(req.params.contactId);
+        const { type } = req.query; // type optionnel dans les query params
 
-        await prisma.propertyOwner.deleteMany({
-            where: { propertyId, contactId }
-        });
+        const where = { propertyId, contactId };
+        if (type) where.type = type; // Si type fourni, on supprime uniquement cette relation
 
-        logActivity(req.user.id, "RETRAIT_PROPRIÉTAIRE", `Propriétaire retiré du bien ID ${propertyId}`);
+        await prisma.propertyOwner.deleteMany({ where });
+
+        logActivity(req.user.id, "RETRAIT_PROPRIÉTAIRE", `Relation retirée du bien ID ${propertyId}`);
         res.status(204).send();
     } catch (e) {
         console.error("Erreur retrait propriétaire:", e);
@@ -456,7 +461,7 @@ app.delete('/api/properties/:propertyId/owners/:contactId', authenticateToken, a
     }
 });
 
-// Obtenir tous les propriétaires d'un bien
+// Obtenir tous les propriétaires/intéressés d'un bien
 app.get('/api/properties/:propertyId/owners', authenticateToken, async (req, res) => {
     try {
         const propertyId = parseInt(req.params.propertyId);
@@ -464,7 +469,8 @@ app.get('/api/properties/:propertyId/owners', authenticateToken, async (req, res
             where: { propertyId },
             include: { contact: true }
         });
-        res.json(owners.map(o => o.contact));
+        // On retourne maintenant la relation complète avec le type
+        res.json(owners.map(o => ({ ...o.contact, relationType: o.type })));
     } catch (e) {
         res.status(500).json({ error: "Erreur" });
     }

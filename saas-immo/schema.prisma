@@ -145,9 +145,10 @@ model PropertyOwner {
   contact    Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
   contactId  Int
 
+  type       String   @default("OWNER") // "OWNER" (propriétaire) ou "INTERESTED" (intéressé)
   createdAt  DateTime @default(now())
 
-  @@unique([propertyId, contactId]) // Un contact ne peut être propriétaire qu'une seule fois du même bien
+  @@unique([propertyId, contactId, type]) // Un contact peut être à la fois propriétaire ET intéressé
   @@index([propertyId])
   @@index([contactId])
 }
