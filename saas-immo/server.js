@@ -7,21 +7,39 @@ const jwt = require('jsonwebtoken');
 const { OpenAI } = require('openai');
 const { Resend } = require('resend');
 const axios = require('axios');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'secret'; 
+// Force JWT_SECRET (ne pas utiliser de valeur par défaut en production)
+if (!process.env.JWT_SECRET) {
+  console.error('❌ ERREUR : JWT_SECRET manquant dans .env');
+  process.exit(1);
+}
+const JWT_SECRET = process.env.JWT_SECRET; 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // --- 1. MIDDLEWARES (CORS + JSON) - EN PREMIER ---
-// Middleware CORS manuel pour gérer OPTIONS en premier
+// Liste des origines autorisées (frontend Vercel + localhost dev)
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ['http://localhost:5173', 'http://localhost:3000'];
+
+// Middleware CORS sécurisé avec vérification de l'origine
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin;
+
+  // Vérifier si l'origine est dans la liste autorisée
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.header('Access-Control-Max-Age', '86400'); // 24h cache
+  res.header('Access-Control-Allow-Credentials', 'true');
 
   // Si c'est une requête OPTIONS (preflight), on répond immédiatement 200 OK
   if (req.method === 'OPTIONS') {
@@ -32,11 +50,42 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
+// --- 2. RATE LIMITING (Protection contre brute-force) ---
+// Limiter les tentatives de connexion
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Max 5 tentatives
+  message: { error: "Trop de tentatives de connexion. Réessayez dans 15 minutes." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Limiter les inscriptions
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 heure
+  max: 3, // Max 3 inscriptions par heure par IP
+  message: { error: "Trop d'inscriptions. Réessayez dans 1 heure." }
+});
+
+// Limiter les requêtes générales
+const generalLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 100, // Max 100 requêtes par minute
+  message: { error: "Trop de requêtes. Ralentissez." }
+});
+
+app.use('/api/', generalLimiter);
+
+// --- FONCTION DE VALIDATION EMAIL ---
+function isValidEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
 
 // --- FONCTION LOG ---
 async function logActivity(agentId, action, description) {
   try {
-    if (!agentId) return; 
+    if (!agentId) return;
     await prisma.activityLog.create({ data: { agentId, action, description } });
     console.log(`📝 Activité : ${action}`);
   } catch (e) { console.error("Log erreur:", e); }
@@ -46,13 +95,18 @@ async function logActivity(agentId, action, description) {
 
 app.get('/', (req, res) => res.json({ message: "Serveur en ligne !" }));
 
-// INSCRIPTION AGENT
-app.post('/api/auth/register', async (req, res) => {
+// INSCRIPTION AGENT (avec rate limiting)
+app.post('/api/auth/register', registerLimiter, async (req, res) => {
   try {
     const { email, password, firstName, lastName } = req.body;
 
     if (!email || !password || !firstName || !lastName) {
       return res.status(400).json({ error: 'Tous les champs sont requis.' });
+    }
+
+    // Validation de l'email
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ error: 'Format d\'email invalide.' });
     }
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -74,15 +128,22 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-// CONNEXION
-app.post('/api/auth/login', async (req, res) => {
+// CONNEXION (avec rate limiting contre brute-force)
+app.post('/api/auth/login', loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    // Validation de l'email
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ error: 'Format d\'email invalide.' });
+    }
+
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user || !(await bcrypt.compare(password, user.password))) {
         return res.status(401).json({ error: 'Identifiants incorrects' });
     }
-    const token = jwt.sign({ id: user.id }, JWT_SECRET);
+    // Générer un token JWT avec expiration de 24h
+    const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '24h' });
     res.json({ token });
   } catch (e) { res.status(500).json({ error: "Erreur connexion" }); }
 });
@@ -91,6 +152,12 @@ app.post('/api/auth/login', async (req, res) => {
 app.post('/api/public/leads', async (req, res) => {
   try {
     const { firstName, lastName, email, phone, message, propertyId } = req.body;
+
+    // Validation de l'email
+    if (email && !isValidEmail(email)) {
+      return res.status(400).json({ error: 'Format d\'email invalide.' });
+    }
+
     const property = await prisma.property.findUnique({ where: { id: parseInt(propertyId) } });
     if (!property) return res.status(404).json({ error: "Bien introuvable" });
 
@@ -166,7 +233,8 @@ app.get('/api/me', authenticateToken, (req, res) => res.json(req.user));
 // BIENS
 app.get('/api/properties', authenticateToken, async (req, res) => {
     const { minPrice, maxPrice, minRooms, city } = req.query;
-    const filters = {};
+    // 🔒 ISOLATION : Filtrer uniquement les biens de cet agent
+    const filters = { agentId: req.user.id };
     if (minPrice) filters.price = { gte: parseInt(minPrice) };
     if (maxPrice) filters.price = { ...filters.price, lte: parseInt(maxPrice) };
     if (minRooms) filters.rooms = { gte: parseInt(minRooms) };
@@ -214,14 +282,20 @@ app.post('/api/properties', authenticateToken, async (req, res) => {
 
 app.put('/api/properties/:id', authenticateToken, async (req, res) => {
     try {
-        const updated = await prisma.property.update({ 
-            where: { id: parseInt(req.params.id) }, 
-            data: { ...req.body, 
-                price: parseInt(req.body.price), 
+        // 🔒 ISOLATION : Vérifier que le bien appartient à l'agent
+        const property = await prisma.property.findFirst({
+            where: { id: parseInt(req.params.id), agentId: req.user.id }
+        });
+        if (!property) return res.status(404).json({ error: "Bien non trouvé ou non autorisé" });
+
+        const updated = await prisma.property.update({
+            where: { id: parseInt(req.params.id) },
+            data: { ...req.body,
+                price: parseInt(req.body.price),
                 area: parseInt(req.body.area),
                 rooms: parseInt(req.body.rooms),
                 bedrooms: parseInt(req.body.bedrooms)
-            } 
+            }
         });
         logActivity(req.user.id, "MODIF_BIEN", `Modification : ${updated.address}`);
         res.json(updated);
@@ -230,6 +304,12 @@ app.put('/api/properties/:id', authenticateToken, async (req, res) => {
 
 app.delete('/api/properties/:id', authenticateToken, async (req, res) => {
     try {
+        // 🔒 ISOLATION : Vérifier que le bien appartient à l'agent avant de le supprimer
+        const property = await prisma.property.findFirst({
+            where: { id: parseInt(req.params.id), agentId: req.user.id }
+        });
+        if (!property) return res.status(404).json({ error: "Bien non trouvé ou non autorisé" });
+
         await prisma.property.delete({ where: { id: parseInt(req.params.id) } });
         logActivity(req.user.id, "SUPPRESSION_BIEN", `Suppression bien`);
         res.status(204).send();
@@ -237,13 +317,22 @@ app.delete('/api/properties/:id', authenticateToken, async (req, res) => {
 });
 
 app.get('/api/properties/:id', authenticateToken, async (req, res) => {
-    const p = await prisma.property.findUnique({ where: { id: parseInt(req.params.id) }, include: { agent: true } });
-    p ? res.json(p) : res.status(404).json({ error: "Non trouvé" });
+    // 🔒 ISOLATION : Récupérer uniquement si le bien appartient à l'agent
+    const p = await prisma.property.findFirst({
+        where: { id: parseInt(req.params.id), agentId: req.user.id },
+        include: { agent: true }
+    });
+    p ? res.json(p) : res.status(404).json({ error: "Non trouvé ou non autorisé" });
 });
 
 // CONTACTS
 app.get('/api/contacts', authenticateToken, async (req, res) => {
-    const c = await prisma.contact.findMany({ orderBy: { lastName: 'asc' }, include: { agent: true } });
+    // 🔒 ISOLATION : Récupérer uniquement les contacts de l'agent
+    const c = await prisma.contact.findMany({
+        where: { agentId: req.user.id },
+        orderBy: { lastName: 'asc' },
+        include: { agent: true }
+    });
     res.json(c);
 });
 
@@ -256,22 +345,32 @@ app.post('/api/contacts', authenticateToken, async (req, res) => {
 });
 
 app.get('/api/contacts/:id', authenticateToken, async (req, res) => {
-    const c = await prisma.contact.findUnique({ where: { id: parseInt(req.params.id) }, include: { agent: true } });
-    c ? res.json(c) : res.status(404).json({ error: "Non trouvé" });
+    // 🔒 ISOLATION : Récupérer uniquement si le contact appartient à l'agent
+    const c = await prisma.contact.findFirst({
+        where: { id: parseInt(req.params.id), agentId: req.user.id },
+        include: { agent: true }
+    });
+    c ? res.json(c) : res.status(404).json({ error: "Non trouvé ou non autorisé" });
 });
 
 app.put('/api/contacts/:id', authenticateToken, async (req, res) => {
     try {
         const id = parseInt(req.params.id);
-        const updated = await prisma.contact.update({ 
-            where: { id: id }, 
-            data: { 
-                firstName: req.body.firstName, 
-                lastName: req.body.lastName, 
-                email: req.body.email, 
-                phoneNumber: req.body.phoneNumber, 
-                type: req.body.type 
-            } 
+        // 🔒 ISOLATION : Vérifier que le contact appartient à l'agent
+        const contact = await prisma.contact.findFirst({
+            where: { id: id, agentId: req.user.id }
+        });
+        if (!contact) return res.status(404).json({ error: "Contact non trouvé ou non autorisé" });
+
+        const updated = await prisma.contact.update({
+            where: { id: id },
+            data: {
+                firstName: req.body.firstName,
+                lastName: req.body.lastName,
+                email: req.body.email,
+                phoneNumber: req.body.phoneNumber,
+                type: req.body.type
+            }
         });
         logActivity(req.user.id, "MODIF_CONTACT", `Modification contact : ${updated.lastName}`);
         res.json(updated);
@@ -284,15 +383,20 @@ app.delete('/api/contacts/:id', authenticateToken, async (req, res) => {
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ error: "ID invalide" });
 
-      // ÉTAPE 1 : On supprime d'abord les factures de ce client
-      // (Comme ça, plus rien ne retient le contact)
+      // 🔒 ISOLATION : Vérifier que le contact appartient à l'agent
+      const contact = await prisma.contact.findFirst({
+          where: { id: id, agentId: req.user.id }
+      });
+      if (!contact) return res.status(404).json({ error: "Contact non trouvé ou non autorisé" });
+
+      // ÉTAPE 1 : On supprime d'abord les factures de ce client (avec isolation)
       await prisma.invoice.deleteMany({
-        where: { contactId: id }
+        where: { contactId: id, agentId: req.user.id }
       });
 
       // ÉTAPE 2 : On supprime le contact (maintenant qu'il est libre)
-      await prisma.contact.delete({ 
-        where: { id: id } 
+      await prisma.contact.delete({
+        where: { id: id }
       });
 
       // Log
@@ -304,7 +408,6 @@ app.delete('/api/contacts/:id', authenticateToken, async (req, res) => {
 
     } catch (error) {
       console.error("Erreur DELETE Contact:", error);
-      // On renvoie le vrai message d'erreur pour comprendre si ça plante encore
       res.status(500).json({ error: "Erreur : " + error.message });
     }
 });
@@ -360,6 +463,12 @@ app.post('/api/tasks', authenticateToken, async (req, res) => {
 
 app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
     try {
+        // 🔒 ISOLATION : Vérifier que la tâche appartient à l'agent
+        const task = await prisma.task.findFirst({
+            where: { id: parseInt(req.params.id), agentId: req.user.id }
+        });
+        if (!task) return res.status(404).json({ error: "Tâche non trouvée ou non autorisée" });
+
         const t = await prisma.task.update({ where: { id: parseInt(req.params.id) }, data: req.body });
         if (req.body.status === 'DONE') logActivity(req.user.id, "TÂCHE_TERMINÉE", `Tâche finie : ${t.title}`);
         res.json(t);
@@ -367,13 +476,26 @@ app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
 });
 
 app.delete('/api/tasks/:id', authenticateToken, async (req, res) => {
-    await prisma.task.delete({ where: { id: parseInt(req.params.id) } });
-    res.status(204).send();
+    try {
+        // 🔒 ISOLATION : Vérifier que la tâche appartient à l'agent
+        const task = await prisma.task.findFirst({
+            where: { id: parseInt(req.params.id), agentId: req.user.id }
+        });
+        if (!task) return res.status(404).json({ error: "Tâche non trouvée ou non autorisée" });
+
+        await prisma.task.delete({ where: { id: parseInt(req.params.id) } });
+        res.status(204).send();
+    } catch (e) { res.status(500).json({ error: "Erreur" }); }
 });
 
 // FACTURES
 app.get('/api/invoices', authenticateToken, async (req, res) => {
-    const i = await prisma.invoice.findMany({ include: { contact: true }, orderBy: { createdAt: 'desc' } });
+    // 🔒 ISOLATION : Récupérer uniquement les factures de l'agent
+    const i = await prisma.invoice.findMany({
+        where: { agentId: req.user.id },
+        include: { contact: true },
+        orderBy: { createdAt: 'desc' }
+    });
     res.json(i);
 });
 
@@ -397,7 +519,9 @@ app.post('/api/invoices', authenticateToken, async (req, res) => {
 
 // ACTIVITÉS & STATS
 app.get('/api/activities', authenticateToken, async (req, res) => {
+    // 🔒 ISOLATION : Récupérer uniquement les activités de l'agent
     const logs = await prisma.activityLog.findMany({
+        where: { agentId: req.user.id },
         orderBy: { createdAt: 'desc' }, take: 50,
         include: { agent: { select: { firstName: true, lastName: true } } }
     });
@@ -406,11 +530,12 @@ app.get('/api/activities', authenticateToken, async (req, res) => {
 
 app.get('/api/stats', authenticateToken, async (req, res) => {
     try {
+        // 🔒 ISOLATION : Compter uniquement les données de l'agent
         const [p, c, b, s, t] = await Promise.all([
-            prisma.property.count(),
-            prisma.contact.count(),
-            prisma.contact.count({ where: { type: 'BUYER' } }),
-            prisma.contact.count({ where: { type: 'SELLER' } }),
+            prisma.property.count({ where: { agentId: req.user.id } }),
+            prisma.contact.count({ where: { agentId: req.user.id } }),
+            prisma.contact.count({ where: { agentId: req.user.id, type: 'BUYER' } }),
+            prisma.contact.count({ where: { agentId: req.user.id, type: 'SELLER' } }),
             prisma.task.count({ where: { agentId: req.user.id, status: 'PENDING' } })
         ]);
         res.json({ properties: {total: p}, contacts: {total: c, buyers: b, sellers: s}, tasks: {pending: t, done: 0} });
