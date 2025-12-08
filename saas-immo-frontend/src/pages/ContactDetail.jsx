@@ -1,4 +1,4 @@
-// Fichier : src/pages/ContactDetail.jsx (Version Réparée & Complète)
+// Fichier : src/pages/ContactDetail.jsx (Version Complète + Biens)
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -9,6 +9,7 @@ import {
   VStack, useToast, Center, Container, Badge
 } from '@chakra-ui/react';
 import { ArrowBackIcon } from '@chakra-ui/icons';
+import ContactProperties from '../components/ContactProperties.jsx';
 
 export default function ContactDetail({ token }) {
   const { contactId } = useParams();
@@ -146,6 +147,11 @@ export default function ContactDetail({ token }) {
                 <Badge colorScheme={contact.type === 'BUYER' ? 'blue' : 'green'} fontSize="md" px={3} py={1} borderRadius="full">
                     {contact.type === 'BUYER' ? 'Acheteur' : 'Vendeur'}
                 </Badge>
+            </Box>
+
+            {/* BIENS POSSÉDÉS */}
+            <Box w="full" p={4} bg="green.50" borderRadius="md" borderWidth="1px" borderColor="green.200">
+                <ContactProperties contactId={contact.id} token={token} />
             </Box>
           </VStack>
         )}

@@ -1,4 +1,4 @@
-// Fichier : src/pages/PropertyDetail.jsx (Avec PDF)
+// Fichier : src/pages/PropertyDetail.jsx (Avec PDF + Propriétaires)
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -9,6 +9,7 @@ import {
 import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaFilePdf } from 'react-icons/fa';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import PropertyPDF from '../components/PropertyPDF.jsx';
+import PropertyOwners from '../components/PropertyOwners.jsx';
 
 export default function PropertyDetail({ token }) {
   const { propertyId } = useParams();
@@ -73,22 +74,28 @@ export default function PropertyDetail({ token }) {
             </Text>
 
             {/* BOUTON PDF MAGIQUE */}
-            <PDFDownloadLink 
-                document={<PropertyPDF property={property} />} 
+            <PDFDownloadLink
+                document={<PropertyPDF property={property} />}
                 fileName={`Fiche_${property.city}_${property.id}.pdf`}
             >
                 {({ blob, url, loading, error }) => (
-                    <Button 
-                        leftIcon={<FaFilePdf />} 
-                        colorScheme="red" 
-                        width="full" 
+                    <Button
+                        leftIcon={<FaFilePdf />}
+                        colorScheme="red"
+                        width="full"
                         isLoading={loading}
                         loadingText="Génération du PDF..."
+                        mb={6}
                     >
                         Télécharger la Fiche PDF
                     </Button>
                 )}
             </PDFDownloadLink>
+
+            {/* GESTION DES PROPRIÉTAIRES */}
+            <Box p={4} bg="gray.50" borderRadius="lg" borderWidth="1px">
+                <PropertyOwners propertyId={property.id} token={token} />
+            </Box>
 
         </Box>
       </Flex>
