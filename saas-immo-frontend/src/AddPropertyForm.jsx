@@ -18,7 +18,6 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
   const [imageFile, setImageFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
 
   // Nouveaux états pour les propriétaires
   const [contacts, setContacts] = useState([]);
@@ -60,6 +59,16 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
 
   // Générer la description avec l'IA
   const handleGenerateDescription = async () => {
+    // Fonctionnalité temporairement désactivée (quota OpenAI dépassé)
+    toast({
+      title: "Fonctionnalité IA temporairement désactivée",
+      description: "La génération automatique de descriptions nécessite un abonnement OpenAI actif. Vous pouvez rédiger la description manuellement.",
+      status: "info",
+      duration: 5000
+    });
+    return;
+
+    /* CODE DÉSACTIVÉ - Réactiver quand OpenAI sera rechargé
     if (!address && !city && !price && !area) {
       toast({ title: "Informations manquantes", description: "Remplissez au moins quelques champs (adresse, ville, prix, surface) pour générer une description.", status: "warning" });
       return;
@@ -80,6 +89,7 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
     } finally {
       setIsGenerating(false);
     }
+    */
   };
 
   const handleSubmit = async (e) => {
@@ -195,14 +205,12 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
             <Button
               mt={2}
               size="sm"
-              colorScheme="purple"
+              colorScheme="gray"
               variant="outline"
               onClick={handleGenerateDescription}
-              isLoading={isGenerating}
-              loadingText="Génération en cours..."
-              leftIcon={<Text>✨</Text>}
+              leftIcon={<Text>🔒</Text>}
             >
-              Générer avec l'IA
+              Générer avec l'IA (désactivé)
             </Button>
           </FormControl>
 
