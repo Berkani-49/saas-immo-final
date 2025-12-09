@@ -1,12 +1,16 @@
-// Fichier : src/AddPropertyForm.jsx (Version Finale avec Photo + Propriétaires)
+// Fichier : src/AddPropertyForm.jsx (Version Finale avec Photo + Propriétaires + Matching)
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Box, Button, FormControl, FormLabel, Input, Textarea, HStack, VStack, Heading, useToast, Text, Select, Badge, Wrap, IconButton } from '@chakra-ui/react';
+import { Box, Button, FormControl, FormLabel, Input, Textarea, HStack, VStack, Heading, useToast, Text, Select, Badge, Wrap, IconButton, useDisclosure } from '@chakra-ui/react';
 import { CloseIcon } from '@chakra-ui/icons';
-import { supabase } from './supabaseClient'; // On importe le connecteur
+import { supabase } from './supabaseClient';
+import MatchingModal from './components/MatchingModal';
 
 export default function AddPropertyForm({ token, onPropertyAdded }) {
+  // État pour le modal de matching
+  const { isOpen: isMatchingOpen, onOpen: onMatchingOpen, onClose: onMatchingClose } = useDisclosure();
+  const [currentProperty, setCurrentProperty] = useState(null);
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [postalCode, setPostalCode] = useState('');
@@ -159,6 +163,10 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
       setSelectedContactId('');
       toast({ title: "Bien ajouté avec succès !", status: "success" });
 
+      // 🎯 MATCHING AUTOMATIQUE - Ouvrir le modal avec les acheteurs correspondants
+      setCurrentProperty(newProperty);
+      onMatchingOpen();
+
     } catch (error) {
       console.error("Erreur:", error);
       toast({ title: "Erreur", description: "Problème lors de l'ajout.", status: "error" });
@@ -280,6 +288,14 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
           </Button>
         </VStack>
       </form>
+
+      {/* 🎯 MODAL DE MATCHING AUTOMATIQUE */}
+      <MatchingModal
+        isOpen={isMatchingOpen}
+        onClose={onMatchingClose}
+        property={currentProperty}
+        token={token}
+      />
     </Box>
   );
 }

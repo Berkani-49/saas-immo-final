@@ -606,6 +606,77 @@ Description :`;
     }
 });
 
+// 🎯 MATCHING AUTOMATIQUE - Trouver les acheteurs correspondants à un bien
+app.get('/api/properties/:id/matches', authenticateToken, async (req, res) => {
+    try {
+        const propertyId = parseInt(req.params.id);
+
+        // Récupérer le bien
+        const property = await prisma.property.findUnique({
+            where: { id: propertyId },
+            include: { agent: true }
+        });
+
+        if (!property || property.agentId !== req.user.id) {
+            return res.status(404).json({ error: "Bien non trouvé" });
+        }
+
+        // Trouver les contacts de type BUYER avec critères correspondants
+        const matches = await prisma.contact.findMany({
+            where: {
+                agentId: req.user.id,
+                type: "BUYER",
+                AND: [
+                    // Filtre budget : le prix du bien doit être dans la fourchette du buyer
+                    {
+                        OR: [
+                            { budgetMin: null }, // Pas de budget min spécifié
+                            { budgetMin: { lte: property.price } } // Budget min <= prix
+                        ]
+                    },
+                    {
+                        OR: [
+                            { budgetMax: null }, // Pas de budget max spécifié
+                            { budgetMax: { gte: property.price } } // Budget max >= prix
+                        ]
+                    },
+                    // Filtre chambres : le bien doit avoir au moins le nb de chambres souhaité
+                    {
+                        OR: [
+                            { minBedrooms: null }, // Pas de critère chambres
+                            { minBedrooms: { lte: property.bedrooms } } // Le bien a assez de chambres
+                        ]
+                    },
+                    // Filtre surface : le bien doit avoir au moins la surface souhaitée
+                    {
+                        OR: [
+                            { minArea: null }, // Pas de critère surface
+                            { minArea: { lte: property.area } } // Le bien a assez de surface
+                        ]
+                    }
+                ]
+            }
+        });
+
+        // Filtrer par ville (cityPreferences est une string avec virgules)
+        const finalMatches = matches.filter(contact => {
+            if (!contact.cityPreferences) return true; // Pas de préférence de ville
+            const cities = contact.cityPreferences.split(',').map(c => c.trim().toLowerCase());
+            return cities.includes(property.city.toLowerCase());
+        });
+
+        res.json({
+            property,
+            matches: finalMatches,
+            count: finalMatches.length
+        });
+
+    } catch (error) {
+        console.error("Erreur matching:", error);
+        res.status(500).json({ error: "Erreur lors du matching" });
+    }
+});
+
 // ÉQUIPE
 app.get('/api/agents', authenticateToken, async (req, res) => {
     const agents = await prisma.user.findMany({

@@ -70,6 +70,13 @@ model Contact {
   type        String   // "BUYER" ou "SELLER"
   createdAt   DateTime @default(now())
 
+  // 🎯 CRITÈRES DE RECHERCHE (pour matching automatique)
+  budgetMin   Int?     // Budget minimum (€)
+  budgetMax   Int?     // Budget maximum (€)
+  cityPreferences String? // Villes préférées (séparées par des virgules)
+  minBedrooms Int?     // Nombre minimum de chambres
+  minArea     Int?     // Surface minimum (m²)
+
   agent     User @relation(fields: [agentId], references: [id], onDelete: Cascade)
   agentId   Int
   tasks     Task[]
