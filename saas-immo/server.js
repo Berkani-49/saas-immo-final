@@ -542,6 +542,52 @@ app.get('/api/stats', authenticateToken, async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Erreur" }); }
 });
 
+// IA - GÉNÉRATION DE DESCRIPTION
+app.post('/api/generate-description', authenticateToken, async (req, res) => {
+    try {
+        const { address, city, price, area, rooms, bedrooms } = req.body;
+
+        // Construire le prompt pour GPT
+        const prompt = `Tu es un expert en rédaction d'annonces immobilières. Rédige une description vendeuse et attractive pour ce bien immobilier en français :
+
+Adresse : ${address || 'Non spécifiée'}
+Ville : ${city || 'Non spécifiée'}
+Prix : ${price ? `${parseInt(price).toLocaleString()} €` : 'Non spécifié'}
+Surface : ${area ? `${area} m²` : 'Non spécifiée'}
+Nombre de pièces : ${rooms || 'Non spécifié'}
+Nombre de chambres : ${bedrooms || 'Non spécifié'}
+
+Consignes :
+- Ton professionnel et vendeur
+- 3-4 paragraphes maximum
+- Mets en avant les atouts du bien
+- Utilise un vocabulaire immobilier approprié
+- Sois concis et impactant
+- Ne mentionne pas d'informations que tu n'as pas
+
+Description :`;
+
+        const completion = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: [
+                { role: "system", content: "Tu es un rédacteur d'annonces immobilières expert." },
+                { role: "user", content: prompt }
+            ],
+            max_tokens: 300,
+            temperature: 0.7,
+        });
+
+        const description = completion.choices[0].message.content.trim();
+
+        logActivity(req.user.id, "GÉNÉRATION_IA", `Description générée pour ${address || 'bien'}`);
+
+        res.json({ description });
+    } catch (error) {
+        console.error("Erreur génération IA:", error);
+        res.status(500).json({ error: "Impossible de générer la description" });
+    }
+});
+
 // ÉQUIPE
 app.get('/api/agents', authenticateToken, async (req, res) => {
     const agents = await prisma.user.findMany({

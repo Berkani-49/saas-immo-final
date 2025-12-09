@@ -18,6 +18,7 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
   const [imageFile, setImageFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // Nouveaux états pour les propriétaires
   const [contacts, setContacts] = useState([]);
@@ -55,6 +56,30 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
   // Retirer un propriétaire de la sélection
   const handleRemoveOwner = (index) => {
     setSelectedOwners(selectedOwners.filter((_, i) => i !== index));
+  };
+
+  // Générer la description avec l'IA
+  const handleGenerateDescription = async () => {
+    if (!address && !city && !price && !area) {
+      toast({ title: "Informations manquantes", description: "Remplissez au moins quelques champs (adresse, ville, prix, surface) pour générer une description.", status: "warning" });
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const config = { headers: { 'Authorization': `Bearer ${token}` } };
+      const response = await axios.post('https://saas-immo.onrender.com/api/generate-description', {
+        address, city, price, area, rooms, bedrooms
+      }, config);
+
+      setDescription(response.data.description);
+      toast({ title: "Description générée ✨", description: "La description a été générée par l'IA !", status: "success", duration: 3000 });
+    } catch (error) {
+      console.error("Erreur génération:", error);
+      toast({ title: "Erreur", description: "Impossible de générer la description. Vérifiez votre clé API OpenAI.", status: "error" });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -161,7 +186,24 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
           </FormControl>
           <FormControl>
             <FormLabel>Description</FormLabel>
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Décrivez le bien..."
+              rows={5}
+            />
+            <Button
+              mt={2}
+              size="sm"
+              colorScheme="purple"
+              variant="outline"
+              onClick={handleGenerateDescription}
+              isLoading={isGenerating}
+              loadingText="Génération en cours..."
+              leftIcon={<Text>✨</Text>}
+            >
+              Générer avec l'IA
+            </Button>
           </FormControl>
 
           {/* SÉLECTION DES PROPRIÉTAIRES/INTÉRESSÉS */}
