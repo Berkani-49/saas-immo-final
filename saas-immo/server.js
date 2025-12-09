@@ -17,9 +17,15 @@ if (!process.env.JWT_SECRET) {
   console.error('❌ ERREUR : JWT_SECRET manquant dans .env');
   process.exit(1);
 }
-const JWT_SECRET = process.env.JWT_SECRET; 
+const JWT_SECRET = process.env.JWT_SECRET;
+
+// Vérification de la clé OpenAI (optionnel mais recommandé si vous utilisez l'IA)
+if (!process.env.OPENAI_API_KEY) {
+  console.warn('⚠️  ATTENTION : OPENAI_API_KEY manquant - La génération IA sera désactivée');
+}
+
 const resend = new Resend(process.env.RESEND_API_KEY);
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 
 // --- 1. MIDDLEWARES (CORS + JSON) - EN PREMIER ---
 // Liste des origines autorisées (frontend Vercel + localhost dev)
@@ -545,6 +551,13 @@ app.get('/api/stats', authenticateToken, async (req, res) => {
 // IA - GÉNÉRATION DE DESCRIPTION
 app.post('/api/generate-description', authenticateToken, async (req, res) => {
     try {
+        // Vérifier si OpenAI est configuré
+        if (!openai) {
+            return res.status(503).json({
+                error: "La clé API OpenAI n'est pas configurée sur le serveur. Contactez l'administrateur."
+            });
+        }
+
         const { address, city, price, area, rooms, bedrooms } = req.body;
 
         // Construire le prompt pour GPT
@@ -584,7 +597,8 @@ Description :`;
         res.json({ description });
     } catch (error) {
         console.error("Erreur génération IA:", error);
-        res.status(500).json({ error: "Impossible de générer la description" });
+        console.error("Détails:", error.message);
+        res.status(500).json({ error: "Impossible de générer la description. Vérifiez les logs serveur." });
     }
 });
 
