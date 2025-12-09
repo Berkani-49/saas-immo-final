@@ -12,6 +12,10 @@ const rateLimit = require('express-rate-limit');
 const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3000;
+
+// Trust proxy (nécessaire pour Render/Heroku/Vercel pour que rate-limit fonctionne correctement)
+app.set('trust proxy', true);
+
 // Force JWT_SECRET (ne pas utiliser de valeur par défaut en production)
 if (!process.env.JWT_SECRET) {
   console.error('❌ ERREUR : JWT_SECRET manquant dans .env');
