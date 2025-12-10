@@ -1,4 +1,5 @@
-// Fichier : server.js (Version FINALE - CORS Fix Manuel)
+// Fichier : server.js (Version FINALE - CORS Fix Manuel + RDV)
+require('dotenv').config();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
@@ -797,6 +798,189 @@ app.post('/api/create-checkout-session', authenticateToken, async (req, res) => 
   } catch (error) {
     console.error("Erreur Stripe:", error);
     res.status(500).json({ error: "Erreur création paiement" });
+  }
+});
+
+// ================================
+// 📅 ENDPOINTS RENDEZ-VOUS (PUBLICS)
+// ================================
+
+// Obtenir les créneaux disponibles pour un agent (PUBLIC - pas besoin d'auth)
+app.get('/api/public/agents/:agentId/availability', async (req, res) => {
+  try {
+    const agentId = parseInt(req.params.agentId);
+    const { date } = req.query; // Format: YYYY-MM-DD
+
+    if (!date) {
+      return res.status(400).json({ error: "Date requise (format: YYYY-MM-DD)" });
+    }
+
+    // Créneaux par défaut (9h-18h, créneaux de 1h)
+    const defaultSlots = [
+      '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'
+    ];
+
+    // Récupérer les rendez-vous existants pour cette date
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const existingAppointments = await prisma.appointment.findMany({
+      where: {
+        agentId,
+        appointmentDate: {
+          gte: startOfDay,
+          lte: endOfDay
+        },
+        status: { not: 'CANCELLED' }
+      }
+    });
+
+    // Récupérer les tâches existantes pour cette date
+    const existingTasks = await prisma.task.findMany({
+      where: {
+        agentId,
+        dueDate: {
+          gte: startOfDay,
+          lte: endOfDay
+        },
+        status: { not: 'DONE' }
+      }
+    });
+
+    // Marquer les créneaux occupés
+    const availableSlots = defaultSlots.map(time => {
+      const [hours, minutes] = time.split(':');
+      const slotDate = new Date(date);
+      slotDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+      // Vérifier si ce créneau est occupé par un RDV
+      const hasAppointment = existingAppointments.some(apt => {
+        const aptTime = new Date(apt.appointmentDate);
+        const diff = Math.abs(aptTime.getTime() - slotDate.getTime());
+        return diff < 60 * 60 * 1000; // Moins d'1h de différence
+      });
+
+      // Vérifier si ce créneau est occupé par une tâche
+      const hasTask = existingTasks.some(task => {
+        const taskTime = new Date(task.dueDate);
+        const diff = Math.abs(taskTime.getTime() - slotDate.getTime());
+        return diff < 60 * 60 * 1000; // Moins d'1h de différence
+      });
+
+      return {
+        time,
+        available: !hasAppointment && !hasTask,
+        reason: hasAppointment ? 'Rendez-vous déjà réservé' : hasTask ? 'Tâche planifiée' : null
+      };
+    });
+
+    res.json({
+      date,
+      slots: availableSlots
+    });
+
+  } catch (error) {
+    console.error("Erreur récupération disponibilités:", error);
+    res.status(500).json({ error: "Erreur lors de la récupération des disponibilités" });
+  }
+});
+
+// Créer un rendez-vous (PUBLIC - pas besoin d'auth)
+app.post('/api/public/agents/:agentId/appointments', async (req, res) => {
+  try {
+    const agentId = parseInt(req.params.agentId);
+    const { clientName, clientEmail, clientPhone, date, time, notes } = req.body;
+
+    // Validation
+    if (!clientName || !clientEmail || !date || !time) {
+      return res.status(400).json({ error: "Nom, email, date et heure requis" });
+    }
+
+    // Construire la date complète
+    const [hours, minutes] = time.split(':');
+    const appointmentDate = new Date(date);
+    appointmentDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+    // Vérifier que le créneau est toujours disponible
+    const startOfHour = new Date(appointmentDate);
+    const endOfHour = new Date(appointmentDate);
+    endOfHour.setHours(endOfHour.getHours() + 1);
+
+    const existingAppointment = await prisma.appointment.findFirst({
+      where: {
+        agentId,
+        appointmentDate: {
+          gte: startOfHour,
+          lt: endOfHour
+        },
+        status: { not: 'CANCELLED' }
+      }
+    });
+
+    if (existingAppointment) {
+      return res.status(409).json({ error: "Ce créneau n'est plus disponible" });
+    }
+
+    // Créer le rendez-vous
+    const appointment = await prisma.appointment.create({
+      data: {
+        clientName,
+        clientEmail,
+        clientPhone: clientPhone || null,
+        appointmentDate,
+        notes: notes || null,
+        agentId
+      }
+    });
+
+    // Log d'activité
+    logActivity(agentId, "RDV_PUBLIC", `Nouveau RDV depuis la page publique: ${clientName} le ${appointmentDate.toLocaleString('fr-FR')}`);
+
+    res.status(201).json(appointment);
+
+  } catch (error) {
+    console.error("Erreur création rendez-vous:", error);
+    res.status(500).json({ error: "Erreur lors de la création du rendez-vous" });
+  }
+});
+
+// Obtenir les rendez-vous de l'agent connecté (PRIVÉ)
+app.get('/api/appointments', authenticateToken, async (req, res) => {
+  try {
+    const appointments = await prisma.appointment.findMany({
+      where: { agentId: req.user.id },
+      orderBy: { appointmentDate: 'asc' }
+    });
+    res.json(appointments);
+  } catch (error) {
+    console.error("Erreur récupération rendez-vous:", error);
+    res.status(500).json({ error: "Erreur lors de la récupération des rendez-vous" });
+  }
+});
+
+// Mettre à jour le statut d'un rendez-vous (PRIVÉ)
+app.patch('/api/appointments/:id', authenticateToken, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { status } = req.body;
+
+    if (!['PENDING', 'CONFIRMED', 'CANCELLED'].includes(status)) {
+      return res.status(400).json({ error: "Statut invalide" });
+    }
+
+    const appointment = await prisma.appointment.update({
+      where: { id },
+      data: { status }
+    });
+
+    logActivity(req.user.id, "MAJ_RDV", `Rendez-vous #${id} mis à jour: ${status}`);
+    res.json(appointment);
+
+  } catch (error) {
+    console.error("Erreur mise à jour rendez-vous:", error);
+    res.status(500).json({ error: "Erreur lors de la mise à jour du rendez-vous" });
   }
 });
 

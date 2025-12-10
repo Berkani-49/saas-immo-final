@@ -1,13 +1,14 @@
-// Fichier : src/pages/PublicPropertyPage.jsx (Version Finale avec Carte)
+// Fichier : src/pages/PublicPropertyPage.jsx (Version Finale avec Carte + RDV)
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
-import { 
+import {
   Box, Image, Heading, Text, Badge, Flex, Icon, Button, VStack, Container, Center, Spinner,
-  FormControl, FormLabel, Input, Textarea, useToast
+  FormControl, FormLabel, Input, Textarea, useToast, Tabs, TabList, TabPanels, Tab, TabPanel
 } from '@chakra-ui/react';
 import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaPaperPlane } from 'react-icons/fa';
+import AppointmentCalendar from '../components/AppointmentCalendar';
 
 // Imports pour la Carte
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -135,37 +136,54 @@ export default function PublicPropertyPage() {
                 </Box>
             )}
 
-            {/* FORMULAIRE DE CONTACT */}
+            {/* ONGLETS : FORMULAIRE DE CONTACT OU PRISE DE RDV */}
             <Box bg="blue.50" p={6} borderRadius="xl" borderWidth="1px" borderColor="blue.100">
                 <Heading size="md" mb={4} color="blue.800">Ce bien vous intéresse ?</Heading>
-                
-                {sent ? (
-                    <Box textAlign="center" py={6}>
-                        <Icon as={FaPaperPlane} w={10} h={10} color="green.500" mb={4} />
-                        <Text fontSize="xl" fontWeight="bold" color="green.600">Message envoyé !</Text>
-                        <Text>L'agent va vous recontacter très vite.</Text>
-                    </Box>
-                ) : (
-                    <form onSubmit={handleSendLead}>
-                        <VStack spacing={4}>
-                            <Flex w="full" gap={4} direction={{ base: 'column', md: 'row' }}>
-                                <FormControl isRequired><FormLabel>Prénom</FormLabel><Input bg="white" value={firstName} onChange={(e) => setFirstName(e.target.value)} /></FormControl>
-                                <FormControl isRequired><FormLabel>Nom</FormLabel><Input bg="white" value={lastName} onChange={(e) => setLastName(e.target.value)} /></FormControl>
-                            </Flex>
-                            <Flex w="full" gap={4} direction={{ base: 'column', md: 'row' }}>
-                                <FormControl isRequired><FormLabel>Email</FormLabel><Input type="email" bg="white" value={email} onChange={(e) => setEmail(e.target.value)} /></FormControl>
-                                <FormControl isRequired><FormLabel>Téléphone</FormLabel><Input type="tel" bg="white" value={phone} onChange={(e) => setPhone(e.target.value)} /></FormControl>
-                            </Flex>
-                            <FormControl>
-                                <FormLabel>Message</FormLabel>
-                                <Textarea bg="white" placeholder="Je souhaiterais visiter ce bien..." value={message} onChange={(e) => setMessage(e.target.value)} />
-                            </FormControl>
-                            <Button type="submit" colorScheme="blue" size="lg" width="full" isLoading={isSending}>
-                                Contacter l'agence
-                            </Button>
-                        </VStack>
-                    </form>
-                )}
+
+                <Tabs colorScheme="purple" variant="enclosed">
+                    <TabList>
+                        <Tab>📧 Envoyer un message</Tab>
+                        <Tab>📅 Prendre rendez-vous</Tab>
+                    </TabList>
+
+                    <TabPanels>
+                        {/* ONGLET 1 : FORMULAIRE DE CONTACT */}
+                        <TabPanel>
+                            {sent ? (
+                                <Box textAlign="center" py={6}>
+                                    <Icon as={FaPaperPlane} w={10} h={10} color="green.500" mb={4} />
+                                    <Text fontSize="xl" fontWeight="bold" color="green.600">Message envoyé !</Text>
+                                    <Text>L'agent va vous recontacter très vite.</Text>
+                                </Box>
+                            ) : (
+                                <form onSubmit={handleSendLead}>
+                                    <VStack spacing={4}>
+                                        <Flex w="full" gap={4} direction={{ base: 'column', md: 'row' }}>
+                                            <FormControl isRequired><FormLabel>Prénom</FormLabel><Input bg="white" value={firstName} onChange={(e) => setFirstName(e.target.value)} /></FormControl>
+                                            <FormControl isRequired><FormLabel>Nom</FormLabel><Input bg="white" value={lastName} onChange={(e) => setLastName(e.target.value)} /></FormControl>
+                                        </Flex>
+                                        <Flex w="full" gap={4} direction={{ base: 'column', md: 'row' }}>
+                                            <FormControl isRequired><FormLabel>Email</FormLabel><Input type="email" bg="white" value={email} onChange={(e) => setEmail(e.target.value)} /></FormControl>
+                                            <FormControl isRequired><FormLabel>Téléphone</FormLabel><Input type="tel" bg="white" value={phone} onChange={(e) => setPhone(e.target.value)} /></FormControl>
+                                        </Flex>
+                                        <FormControl>
+                                            <FormLabel>Message</FormLabel>
+                                            <Textarea bg="white" placeholder="Je souhaiterais visiter ce bien..." value={message} onChange={(e) => setMessage(e.target.value)} />
+                                        </FormControl>
+                                        <Button type="submit" colorScheme="blue" size="lg" width="full" isLoading={isSending}>
+                                            Contacter l'agence
+                                        </Button>
+                                    </VStack>
+                                </form>
+                            )}
+                        </TabPanel>
+
+                        {/* ONGLET 2 : PRISE DE RENDEZ-VOUS */}
+                        <TabPanel>
+                            <AppointmentCalendar agentId={property.agentId} />
+                        </TabPanel>
+                    </TabPanels>
+                </Tabs>
             </Box>
 
         </Box>

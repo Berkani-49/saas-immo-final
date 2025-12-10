@@ -25,9 +25,8 @@ model User {
   contacts   Contact[]
   tasks      Task[]
   activities ActivityLog[]
-  
-  // 👇 C'est ici qu'on ajoute la ligne pour les factures
-  invoices   Invoice[] 
+  invoices   Invoice[]
+  appointments Appointment[] 
 }
 
 // --- MODÈLE PROPERTY ---
@@ -158,4 +157,24 @@ model PropertyOwner {
   @@unique([propertyId, contactId, type]) // Un contact peut être à la fois propriétaire ET intéressé
   @@index([propertyId])
   @@index([contactId])
+}
+
+// --- MODÈLE RENDEZ-VOUS (APPOINTMENT) ---
+model Appointment {
+  id            Int      @id @default(autoincrement())
+  clientName    String   // Nom du client
+  clientEmail   String   // Email du client
+  clientPhone   String?  // Téléphone (optionnel)
+  appointmentDate DateTime // Date et heure du RDV
+  duration      Int      @default(60) // Durée en minutes (par défaut 1h)
+  status        String   @default("PENDING") // PENDING, CONFIRMED, CANCELLED
+  notes         String?  // Notes optionnelles du client
+  createdAt     DateTime @default(now())
+
+  // Lien avec l'agent
+  agent         User     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agentId       Int
+
+  @@index([agentId])
+  @@index([appointmentDate])
 }
