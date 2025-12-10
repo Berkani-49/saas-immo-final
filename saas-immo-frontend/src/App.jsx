@@ -7,10 +7,10 @@ import { AlertIcon } from '@chakra-ui/icons';
 import './App.css';
 
 // Imports des pages
-import Layout from './Layout.jsx'; 
+import Layout from './Layout.jsx';
 import HomePage from './pages/HomePage.jsx';
 import Dashboard from './Dashboard.jsx'; // Biens
-import ContactsPage from './pages/ContactsPage.jsx'; 
+import ContactsPage from './pages/ContactsPage.jsx';
 import SubscriptionPage from './pages/SubscriptionPage.jsx';
 import TachesPage from './pages/TachesPage.jsx';
 import InvoicesPage from './pages/InvoicesPage.jsx';
@@ -21,6 +21,7 @@ import PublicPropertyPage from './pages/PublicPropertyPage.jsx';
 import PropertyDetail from './pages/PropertyDetail.jsx';
 import ContactDetail from './pages/ContactDetail.jsx';
 import SecretRegister from './pages/SecretRegister.jsx';
+import AppointmentsPage from './pages/AppointmentsPage.jsx';
 
 export default function App() {
   const [email, setEmail] = useState('');
@@ -68,9 +69,10 @@ export default function App() {
           <Route path="/" element={<Layout onLogout={handleLogout} />}>
             <Route index element={<HomePage token={token} />} />
             <Route path="biens" element={<Dashboard token={token} />} />
-            <Route path="contacts" element={<ContactsPage token={token} />} /> 
+            <Route path="contacts" element={<ContactsPage token={token} />} />
             <Route path="abonnement" element={<SubscriptionPage token={token} />} />
             <Route path="taches" element={<TachesPage token={token} />} />
+            <Route path="rendez-vous" element={<AppointmentsPage token={token} />} />
             <Route path="factures" element={<InvoicesPage token={token} />} />
             <Route path="activites" element={<ActivitiesPage token={token} />} />
             <Route path="equipe" element={<TeamPage token={token} />} />

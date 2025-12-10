@@ -5,17 +5,18 @@ import { Box, VStack, Button, Heading, Spacer, CloseButton, Flex, Icon, Text, Di
 import { NavLink as RouterNavLink } from 'react-router-dom';
 
 // UNE SEULE ligne d'import pour toutes les icônes (nettoyée)
-import { 
-  FiHome, 
-  FiList, 
-  FiUsers, 
-  FiCheckSquare, 
-  FiTrendingUp, 
-  FiLogOut, 
-  FiFileText, 
-  FiActivity, 
+import {
+  FiHome,
+  FiList,
+  FiUsers,
+  FiCheckSquare,
+  FiTrendingUp,
+  FiLogOut,
+  FiFileText,
+  FiActivity,
   FiBriefcase,
-  FiCreditCard 
+  FiCreditCard,
+  FiCalendar
 } from 'react-icons/fi';
 
 // La liste complète des liens
@@ -25,6 +26,7 @@ const LinkItems = [
   { name: 'Mes Biens', icon: FiList, path: '/biens' },
   { name: 'Mes Contacts', icon: FiUsers, path: '/contacts' },
   { name: 'Mes Tâches', icon: FiCheckSquare, path: '/taches' },
+  { name: 'Rendez-vous', icon: FiCalendar, path: '/rendez-vous' },
   { name: 'Factures', icon: FiFileText, path: '/factures' },
   { name: 'Activité', icon: FiActivity, path: '/activites' },
   { name: 'Mon Équipe', icon: FiBriefcase, path: '/equipe' },
