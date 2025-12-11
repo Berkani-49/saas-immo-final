@@ -1470,7 +1470,7 @@ app.post('/api/properties/:id/stage-photo', authenticateToken, async (req, res) 
       "erayyavuz/interior-ai:e299c531485aac511610a878ef44b554381355de5ee032d109fcae5352f39fa9",
       {
         input: {
-          image: property.imageUrl,
+          input: property.imageUrl,  // Le paramètre s'appelle "input" (pas "image")
           prompt: selectedPrompt
         }
       }
