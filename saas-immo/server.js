@@ -1471,9 +1471,9 @@ app.post('/api/properties/:id/stage-photo', authenticateToken, async (req, res) 
     console.log(`⏳ Création de la prédiction Replicate (asynchrone)...`);
 
     const prediction = await replicate.predictions.create({
-      version: "e299c531485aac511610a878ef44b554381355de5ee032d109fcae5352f39fa9",
+      version: "76604baddc85b1b4616e1c6475eca080da339c8875bd4996705440484a6eac38",
       input: {
-        input: property.imageUrl,
+        image: property.imageUrl,
         prompt: selectedPrompt
       }
     });

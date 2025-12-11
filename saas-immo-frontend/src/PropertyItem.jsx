@@ -258,17 +258,16 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
             ) : <Spacer />}
 
             <HStack spacing={1}>
-                {/* BOUTON HOME STAGING 🛋️ - TEMPORAIREMENT DÉSACTIVÉ */}
-                {false && !property.imageUrlStaged && property.imageUrl && (
+                {/* BOUTON HOME STAGING 🛋️ */}
+                {!property.imageUrlStaged && property.imageUrl && (
                   <IconButton
                     icon={<FiHome />}
                     size="sm"
                     variant="ghost"
                     colorScheme="purple"
                     onClick={onStagingOpen}
-                    aria-label="Home Staging Virtuel (Bientôt disponible)"
-                    title="Meubler la pièce avec IA (Bientôt disponible)"
-                    isDisabled
+                    aria-label="Home Staging Virtuel"
+                    title="Meubler la pièce avec IA"
                   />
                 )}
 
