@@ -1518,6 +1518,7 @@ app.post('/api/properties/:id/stage-photo', authenticateToken, async (req, res) 
 // DÉMARRAGE
 app.listen(PORT, () => {
   console.log(`✅ Serveur OK sur port ${PORT}`);
-  console.log(`✅ CORS Manuel activé - Version Dec 8 2025`);
+  console.log(`✅ CORS Manuel activé - Version Dec 11 2025`);
   console.log(`✅ Middleware OPTIONS configuré`);
+  console.log(`✅ Replicate API: ${process.env.REPLICATE_API_TOKEN ? 'Configurée ✓' : 'NON configurée ✗'}`);
 });
