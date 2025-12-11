@@ -1,11 +1,12 @@
-// Composant : MatchingModal - Affiche les acheteurs matchés avec un bien
+// Composant : MatchingModal - Affiche les acheteurs matchés avec un bien (Version améliorée avec scoring)
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalCloseButton,
-  ModalFooter, Button, VStack, HStack, Text, Badge, Box, Spinner, useToast, Icon
+  ModalFooter, Button, VStack, HStack, Text, Badge, Box, Spinner, useToast, Icon,
+  Progress, Tooltip, List, ListItem, ListIcon
 } from '@chakra-ui/react';
-import { FiCheck, FiUser, FiPhone, FiMail } from 'react-icons/fi';
+import { FiCheck, FiUser, FiPhone, FiMail, FiAlertCircle, FiCheckCircle, FiXCircle, FiTarget } from 'react-icons/fi';
 
 export default function MatchingModal({ isOpen, onClose, property, token }) {
   const [matches, setMatches] = useState([]);
@@ -87,82 +88,135 @@ export default function MatchingModal({ isOpen, onClose, property, token }) {
               </Text>
 
               <VStack spacing={3} align="stretch">
-                {matches.map((contact) => (
-                  <Box
-                    key={contact.id}
-                    p={4}
-                    borderWidth="1px"
-                    borderRadius="md"
-                    borderColor="purple.200"
-                    bg="purple.50"
-                    _hover={{ bg: "purple.100", shadow: "md" }}
-                    transition="all 0.2s"
-                  >
-                    <HStack justify="space-between" mb={2}>
-                      <HStack>
-                        <Icon as={FiUser} color="purple.600" />
-                        <Text fontWeight="bold" fontSize="lg">
-                          {contact.firstName} {contact.lastName}
-                        </Text>
-                      </HStack>
-                      <Badge colorScheme="green">Match</Badge>
-                    </HStack>
+                {matches.map((contact) => {
+                  // Déterminer la couleur en fonction du score
+                  const getScoreColor = (score) => {
+                    if (score >= 90) return 'green';
+                    if (score >= 70) return 'blue';
+                    if (score >= 50) return 'orange';
+                    return 'gray';
+                  };
 
-                    <VStack align="stretch" spacing={1} fontSize="sm" color="gray.700">
-                      {contact.email && (
-                        <HStack>
-                          <Icon as={FiMail} boxSize={4} />
-                          <Text>{contact.email}</Text>
-                        </HStack>
-                      )}
-                      {contact.phoneNumber && (
-                        <HStack>
-                          <Icon as={FiPhone} boxSize={4} />
-                          <Text>{contact.phoneNumber}</Text>
-                        </HStack>
-                      )}
+                  const scoreColor = getScoreColor(contact.matchScore);
 
-                      {/* Critères de recherche */}
-                      <Box mt={2} pt={2} borderTopWidth="1px" borderColor="purple.200">
-                        <Text fontSize="xs" fontWeight="bold" color="purple.600" mb={1}>
-                          Recherche :
-                        </Text>
-                        <HStack spacing={2} flexWrap="wrap">
-                          {contact.budgetMin && contact.budgetMax && (
-                            <Badge colorScheme="blue" fontSize="xs">
-                              {contact.budgetMin.toLocaleString()}€ - {contact.budgetMax.toLocaleString()}€
-                            </Badge>
-                          )}
-                          {contact.cityPreferences && (
-                            <Badge colorScheme="teal" fontSize="xs">
-                              {contact.cityPreferences}
-                            </Badge>
-                          )}
-                          {contact.minBedrooms && (
-                            <Badge colorScheme="orange" fontSize="xs">
-                              {contact.minBedrooms}+ chambres
-                            </Badge>
-                          )}
-                          {contact.minArea && (
-                            <Badge colorScheme="pink" fontSize="xs">
-                              {contact.minArea}+ m²
-                            </Badge>
-                          )}
-                        </HStack>
-                      </Box>
-                    </VStack>
-
-                    <Button
-                      mt={3}
-                      size="sm"
-                      colorScheme="purple"
-                      onClick={() => createTaskForMatch(contact)}
-                      width="full"
+                  return (
+                    <Box
+                      key={contact.id}
+                      p={4}
+                      borderWidth="2px"
+                      borderRadius="lg"
+                      borderColor={`${scoreColor}.300`}
+                      bg="white"
+                      shadow="md"
+                      _hover={{ shadow: "xl", transform: "translateY(-2px)" }}
+                      transition="all 0.2s"
                     >
-                      Créer une tâche de rappel
-                    </Button>
-                  </Box>
-                ))}
+                      {/* Header avec nom et score */}
+                      <HStack justify="space-between" mb={3}>
+                        <HStack>
+                          <Icon as={FiUser} color={`${scoreColor}.600`} boxSize={5} />
+                          <Text fontWeight="bold" fontSize="lg">
+                            {contact.firstName} {contact.lastName}
+                          </Text>
+                        </HStack>
+                        <Tooltip label={`Score de compatibilité : ${contact.matchScore}/100`}>
+                          <Badge
+                            colorScheme={scoreColor}
+                            fontSize="md"
+                            px={3}
+                            py={1}
+                            display="flex"
+                            alignItems="center"
+                            gap={1}
+                          >
+                            <Icon as={FiTarget} />
+                            {contact.matchScore}%
+                          </Badge>
+                        </Tooltip>
+                      </HStack>
+
+                      {/* Barre de progression du score */}
+                      <Progress
+                        value={contact.matchScore}
+                        colorScheme={scoreColor}
+                        size="sm"
+                        borderRadius="full"
+                        mb={3}
+                      />
+
+                      {/* Coordonnées */}
+                      <VStack align="stretch" spacing={1} fontSize="sm" color="gray.700" mb={3}>
+                        {contact.email && (
+                          <HStack>
+                            <Icon as={FiMail} boxSize={4} color="gray.500" />
+                            <Text>{contact.email}</Text>
+                          </HStack>
+                        )}
+                        {contact.phoneNumber && (
+                          <HStack>
+                            <Icon as={FiPhone} boxSize={4} color="gray.500" />
+                            <Text>{contact.phoneNumber}</Text>
+                          </HStack>
+                        )}
+                      </VStack>
+
+                      {/* Détails du matching */}
+                      {contact.matchDetails && contact.matchDetails.reasons && (
+                        <Box
+                          mt={2}
+                          pt={3}
+                          borderTopWidth="1px"
+                          borderColor="gray.200"
+                          bg="gray.50"
+                          p={3}
+                          borderRadius="md"
+                        >
+                          <HStack mb={2}>
+                            <Icon as={FiAlertCircle} color="purple.600" boxSize={4} />
+                            <Text fontSize="xs" fontWeight="bold" color="purple.600">
+                              Analyse de compatibilité :
+                            </Text>
+                          </HStack>
+                          <List spacing={1}>
+                            {contact.matchDetails.reasons.map((reason, idx) => {
+                              const isSuccess = reason.startsWith('✅');
+                              const isPartial = reason.startsWith('⚠️');
+
+                              return (
+                                <ListItem
+                                  key={idx}
+                                  fontSize="xs"
+                                  color={isSuccess ? 'green.700' : isPartial ? 'orange.700' : 'red.700'}
+                                  display="flex"
+                                  alignItems="center"
+                                  gap={2}
+                                >
+                                  <ListIcon
+                                    as={isSuccess ? FiCheckCircle : isPartial ? FiAlertCircle : FiXCircle}
+                                    color={isSuccess ? 'green.500' : isPartial ? 'orange.500' : 'red.500'}
+                                  />
+                                  {reason.substring(2)} {/* Enlever l'emoji */}
+                                </ListItem>
+                              );
+                            })}
+                          </List>
+                        </Box>
+                      )}
+
+                      {/* Bouton d'action */}
+                      <Button
+                        mt={3}
+                        size="sm"
+                        colorScheme={scoreColor}
+                        onClick={() => createTaskForMatch(contact)}
+                        width="full"
+                        leftIcon={<Icon as={FiCheck} />}
+                      >
+                        Créer une tâche de rappel
+                      </Button>
+                    </Box>
+                  );
+                })}
               </VStack>
             </>
           )}

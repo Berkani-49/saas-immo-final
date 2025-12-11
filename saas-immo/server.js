@@ -622,54 +622,145 @@ app.get('/api/properties/:id/matches', authenticateToken, async (req, res) => {
             return res.status(404).json({ error: "Bien non trouvé" });
         }
 
-        // Trouver les contacts de type BUYER avec critères correspondants
-        const matches = await prisma.contact.findMany({
+        // Fonction pour normaliser les noms de villes (enlever accents, espaces, etc.)
+        const normalizeCity = (city) => {
+            if (!city) return '';
+            return city
+                .toLowerCase()
+                .trim()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "") // Enlever les accents
+                .replace(/[^a-z0-9]/g, ''); // Enlever caractères spéciaux
+        };
+
+        // Récupérer TOUS les contacts de type BUYER (on va scorer ensuite)
+        const allBuyers = await prisma.contact.findMany({
             where: {
                 agentId: req.user.id,
-                type: "BUYER",
-                AND: [
-                    // Filtre budget : le prix du bien doit être dans la fourchette du buyer
-                    {
-                        OR: [
-                            { budgetMin: null }, // Pas de budget min spécifié
-                            { budgetMin: { lte: property.price } } // Budget min <= prix
-                        ]
-                    },
-                    {
-                        OR: [
-                            { budgetMax: null }, // Pas de budget max spécifié
-                            { budgetMax: { gte: property.price } } // Budget max >= prix
-                        ]
-                    },
-                    // Filtre chambres : le bien doit avoir au moins le nb de chambres souhaité
-                    {
-                        OR: [
-                            { minBedrooms: null }, // Pas de critère chambres
-                            { minBedrooms: { lte: property.bedrooms } } // Le bien a assez de chambres
-                        ]
-                    },
-                    // Filtre surface : le bien doit avoir au moins la surface souhaitée
-                    {
-                        OR: [
-                            { minArea: null }, // Pas de critère surface
-                            { minArea: { lte: property.area } } // Le bien a assez de surface
-                        ]
-                    }
-                ]
+                type: "BUYER"
             }
         });
 
-        // Filtrer par ville (cityPreferences est une string avec virgules)
-        const finalMatches = matches.filter(contact => {
-            if (!contact.cityPreferences) return true; // Pas de préférence de ville
-            const cities = contact.cityPreferences.split(',').map(c => c.trim().toLowerCase());
-            return cities.includes(property.city.toLowerCase());
+        // Système de scoring pour chaque contact
+        const scoredMatches = allBuyers.map(contact => {
+            let score = 0;
+            let matchDetails = {
+                budgetMatch: false,
+                cityMatch: false,
+                bedroomsMatch: false,
+                areaMatch: false,
+                reasons: []
+            };
+
+            // 1. BUDGET (40 points max)
+            if (contact.budgetMin !== null || contact.budgetMax !== null) {
+                const budgetMinOk = contact.budgetMin === null || contact.budgetMin <= property.price;
+                const budgetMaxOk = contact.budgetMax === null || contact.budgetMax >= property.price;
+
+                if (budgetMinOk && budgetMaxOk) {
+                    score += 40;
+                    matchDetails.budgetMatch = true;
+                    matchDetails.reasons.push("✅ Budget compatible");
+                } else {
+                    // Matching partiel : si le prix est proche de la fourchette (marge de 10%)
+                    if (contact.budgetMax && property.price <= contact.budgetMax * 1.1) {
+                        score += 20;
+                        matchDetails.reasons.push("⚠️ Prix légèrement au-dessus du budget");
+                    } else if (contact.budgetMin && property.price >= contact.budgetMin * 0.9) {
+                        score += 20;
+                        matchDetails.reasons.push("⚠️ Prix légèrement en-dessous du budget");
+                    } else {
+                        matchDetails.reasons.push("❌ Budget incompatible");
+                    }
+                }
+            } else {
+                // Pas de critère budget = match par défaut
+                score += 40;
+                matchDetails.budgetMatch = true;
+            }
+
+            // 2. VILLE (30 points)
+            if (contact.cityPreferences && contact.cityPreferences.trim() !== '') {
+                const normalizedPropertyCity = normalizeCity(property.city);
+                const cities = contact.cityPreferences
+                    .split(',')
+                    .map(c => normalizeCity(c))
+                    .filter(c => c.length > 0);
+
+                if (cities.includes(normalizedPropertyCity)) {
+                    score += 30;
+                    matchDetails.cityMatch = true;
+                    matchDetails.reasons.push("✅ Ville recherchée");
+                } else {
+                    matchDetails.reasons.push(`❌ Ville non recherchée (cherche: ${contact.cityPreferences})`);
+                }
+            } else {
+                // Pas de préférence de ville = match par défaut
+                score += 30;
+                matchDetails.cityMatch = true;
+            }
+
+            // 3. CHAMBRES (15 points)
+            if (contact.minBedrooms !== null) {
+                if (property.bedrooms >= contact.minBedrooms) {
+                    score += 15;
+                    matchDetails.bedroomsMatch = true;
+                    matchDetails.reasons.push(`✅ Assez de chambres (${property.bedrooms}/${contact.minBedrooms})`);
+                } else {
+                    // Matching partiel : s'il manque juste 1 chambre
+                    if (property.bedrooms === contact.minBedrooms - 1) {
+                        score += 8;
+                        matchDetails.reasons.push(`⚠️ Presque assez de chambres (${property.bedrooms}/${contact.minBedrooms})`);
+                    } else {
+                        matchDetails.reasons.push(`❌ Pas assez de chambres (${property.bedrooms}/${contact.minBedrooms})`);
+                    }
+                }
+            } else {
+                score += 15;
+                matchDetails.bedroomsMatch = true;
+            }
+
+            // 4. SURFACE (15 points)
+            if (contact.minArea !== null) {
+                if (property.area >= contact.minArea) {
+                    score += 15;
+                    matchDetails.areaMatch = true;
+                    matchDetails.reasons.push(`✅ Surface suffisante (${property.area}m²/${contact.minArea}m²)`);
+                } else {
+                    // Matching partiel : si la surface est à moins de 10% de la surface demandée
+                    const areaDiff = (contact.minArea - property.area) / contact.minArea;
+                    if (areaDiff <= 0.1) {
+                        score += 8;
+                        matchDetails.reasons.push(`⚠️ Surface légèrement insuffisante (${property.area}m²/${contact.minArea}m²)`);
+                    } else {
+                        matchDetails.reasons.push(`❌ Surface insuffisante (${property.area}m²/${contact.minArea}m²)`);
+                    }
+                }
+            } else {
+                score += 15;
+                matchDetails.areaMatch = true;
+            }
+
+            return {
+                ...contact,
+                matchScore: score,
+                matchDetails
+            };
         });
+
+        // Filtrer pour ne garder que les matches avec un score >= 50/100 (au moins 50% de compatibilité)
+        // Et trier par score décroissant
+        const finalMatches = scoredMatches
+            .filter(contact => contact.matchScore >= 50)
+            .sort((a, b) => b.matchScore - a.matchScore);
 
         res.json({
             property,
             matches: finalMatches,
-            count: finalMatches.length
+            count: finalMatches.length,
+            averageScore: finalMatches.length > 0
+                ? Math.round(finalMatches.reduce((acc, m) => acc + m.matchScore, 0) / finalMatches.length)
+                : 0
         });
 
     } catch (error) {
