@@ -1,4 +1,4 @@
-// Fichier : server.js (Version FINALE - CORS Fix Manuel + RDV + PDF)
+// Fichier : server.js (Version FINALE - CORS Fix Manuel + RDV + PDF + AI Photos)
 require('dotenv').config();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const express = require('express');
@@ -10,6 +10,9 @@ const { Resend } = require('resend');
 const axios = require('axios');
 const rateLimit = require('express-rate-limit');
 const PDFDocument = require('pdfkit');
+const sharp = require('sharp');
+const https = require('https');
+const http = require('http');
 
 const app = express();
 const prisma = new PrismaClient();
@@ -1322,6 +1325,98 @@ app.get('/api/properties/:id/documents/offre-achat', authenticateToken, async (r
   } catch (error) {
     console.error("Erreur génération offre d'achat:", error);
     res.status(500).json({ error: "Erreur lors de la génération du PDF" });
+  }
+});
+
+// ================================
+// 📸 AMÉLIORATION AUTOMATIQUE DES PHOTOS (IA)
+// ================================
+
+// Endpoint pour améliorer automatiquement une photo
+app.post('/api/properties/:id/enhance-photo', authenticateToken, async (req, res) => {
+  try {
+    const propertyId = parseInt(req.params.id);
+
+    // Récupérer le bien
+    const property = await prisma.property.findUnique({
+      where: { id: propertyId }
+    });
+
+    if (!property || property.agentId !== req.user.id) {
+      return res.status(404).json({ error: "Bien non trouvé" });
+    }
+
+    if (!property.imageUrl) {
+      return res.status(400).json({ error: "Aucune photo à améliorer" });
+    }
+
+    console.log("🖼️  Début amélioration photo pour le bien #" + propertyId);
+
+    // Télécharger l'image originale
+    const protocol = property.imageUrl.startsWith('https') ? https : http;
+
+    const imageBuffer = await new Promise((resolve, reject) => {
+      protocol.get(property.imageUrl, (response) => {
+        const chunks = [];
+        response.on('data', (chunk) => chunks.push(chunk));
+        response.on('end', () => resolve(Buffer.concat(chunks)));
+        response.on('error', reject);
+      });
+    });
+
+    console.log("✅ Image téléchargée, taille:", imageBuffer.length, "bytes");
+
+    // Amélioration automatique avec Sharp
+    const enhancedBuffer = await sharp(imageBuffer)
+      .resize(1920, 1080, {
+        fit: 'inside',
+        withoutEnlargement: true
+      })
+      // Auto-optimisation : luminosité, contraste, saturation
+      .normalize() // Ajustement automatique de la luminosité
+      .modulate({
+        brightness: 1.05, // +5% de luminosité
+        saturation: 1.15, // +15% de saturation (couleurs plus vives)
+      })
+      .sharpen({
+        sigma: 1.2 // Netteté professionnelle
+      })
+      .jpeg({
+        quality: 92, // Qualité optimale
+        progressive: true
+      })
+      .toBuffer();
+
+    console.log("✅ Image améliorée, nouvelle taille:", enhancedBuffer.length, "bytes");
+
+    // Convertir en base64 pour retour
+    const base64Image = `data:image/jpeg;base64,${enhancedBuffer.toString('base64')}`;
+
+    // Mise à jour du champ dans la base de données
+    await prisma.property.update({
+      where: { id: propertyId },
+      data: {
+        imageUrlEnhanced: base64Image
+      }
+    });
+
+    logActivity(req.user.id, "PHOTO_ENHANCED", `Photo améliorée pour le bien #${propertyId}`);
+
+    res.json({
+      success: true,
+      message: "Photo améliorée avec succès !",
+      enhancedUrl: base64Image,
+      improvements: [
+        "✨ Luminosité optimisée",
+        "🎨 Couleurs plus vives (+15%)",
+        "🔍 Netteté professionnelle",
+        "📐 Format optimisé"
+      ]
+    });
+
+  } catch (error) {
+    console.error("Erreur amélioration photo:", error);
+    res.status(500).json({ error: "Erreur lors de l'amélioration de la photo" });
   }
 });
 

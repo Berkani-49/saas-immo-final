@@ -43,6 +43,7 @@ model Property {
 
   // Nos ajouts précédents (Photos et Carte)
   imageUrl    String?
+  imageUrlEnhanced String? // 📸 Photo améliorée par IA
   latitude    Float?
   longitude   Float?
   views       Int?     @default(0)
