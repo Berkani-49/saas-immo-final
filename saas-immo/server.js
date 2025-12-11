@@ -1437,7 +1437,8 @@ app.post('/api/properties/:id/stage-photo', authenticateToken, async (req, res) 
       return res.status(404).json({ error: "Bien non trouvé" });
     }
 
-    if (property.agentId !== req.user.userId) {
+    // Vérifier que le bien appartient à l'agent connecté
+    if (property.agentId !== req.user.id) {
       return res.status(403).json({ error: "Non autorisé" });
     }
 
@@ -1494,7 +1495,7 @@ app.post('/api/properties/:id/stage-photo', authenticateToken, async (req, res) 
       data: {
         action: 'HOME_STAGING_VIRTUEL',
         description: `Home staging virtuel appliqué (${style}) sur ${property.address}`,
-        agentId: req.user.userId
+        agentId: req.user.id
       }
     });
 
