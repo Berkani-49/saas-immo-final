@@ -1465,15 +1465,13 @@ app.post('/api/properties/:id/stage-photo', authenticateToken, async (req, res) 
 
     console.log(`🛋️ Staging virtuel pour bien ${propertyId} - Style: ${style}`);
 
-    // 3. Utiliser le modèle interior-ai ou roomGPT
+    // 3. Utiliser le modèle interior-ai (erayyavuz/interior-ai) - Coût: ~0.063$ par génération
     const output = await replicate.run(
-      "adirik/interior-design:76604baddc85003d0ce8f37e49f2f3b52f0a83b5e5bf96cb86dc2b0c0e2faa6a",
+      "erayyavuz/interior-ai:e299c531485aac511610a878ef44b554381355de5ee032d109fcae5352f39fa9",
       {
         input: {
           image: property.imageUrl,
-          prompt: selectedPrompt,
-          num_inference_steps: 50,
-          guidance_scale: 7.5
+          prompt: selectedPrompt
         }
       }
     );
