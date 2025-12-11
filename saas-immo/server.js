@@ -1,4 +1,4 @@
-// Fichier : server.js (Version FINALE - CORS Fix Manuel + RDV)
+// Fichier : server.js (Version FINALE - CORS Fix Manuel + RDV + PDF)
 require('dotenv').config();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const express = require('express');
@@ -9,6 +9,7 @@ const { OpenAI } = require('openai');
 const { Resend } = require('resend');
 const axios = require('axios');
 const rateLimit = require('express-rate-limit');
+const PDFDocument = require('pdfkit');
 
 const app = express();
 const prisma = new PrismaClient();
@@ -1072,6 +1073,255 @@ app.patch('/api/appointments/:id', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error("Erreur mise à jour rendez-vous:", error);
     res.status(500).json({ error: "Erreur lors de la mise à jour du rendez-vous" });
+  }
+});
+
+// ================================
+// 📄 GÉNÉRATION DE DOCUMENTS PDF
+// ================================
+
+// Fonction helper pour formater la date en français
+const formatDateFR = (date) => {
+  return new Date(date).toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+};
+
+// 📄 Générer un Bon de Visite
+app.get('/api/properties/:id/documents/bon-de-visite', authenticateToken, async (req, res) => {
+  try {
+    const propertyId = parseInt(req.params.id);
+    const { clientName, visitDate } = req.query;
+
+    // Récupérer le bien et l'agent
+    const property = await prisma.property.findUnique({
+      where: { id: propertyId },
+      include: { agent: true }
+    });
+
+    if (!property || property.agentId !== req.user.id) {
+      return res.status(404).json({ error: "Bien non trouvé" });
+    }
+
+    // Créer le document PDF
+    const doc = new PDFDocument({ margin: 50 });
+
+    // Headers pour le téléchargement
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=bon-de-visite-${propertyId}.pdf`);
+
+    // Pipe le PDF directement dans la réponse
+    doc.pipe(res);
+
+    // === EN-TÊTE ===
+    doc.fontSize(24).font('Helvetica-Bold').text('BON DE VISITE', { align: 'center' });
+    doc.moveDown(0.5);
+    doc.fontSize(10).font('Helvetica').fillColor('#666666')
+       .text(`Document généré le ${formatDateFR(new Date())}`, { align: 'center' });
+    doc.moveDown(2);
+
+    // === INFORMATIONS DU BIEN ===
+    doc.fontSize(16).font('Helvetica-Bold').fillColor('#000000').text('Informations du bien');
+    doc.moveDown(0.5);
+
+    doc.fontSize(11).font('Helvetica');
+    doc.text(`Adresse : ${property.address}`);
+    doc.text(`Code postal : ${property.postalCode || 'N/A'}`);
+    doc.text(`Ville : ${property.city || 'N/A'}`);
+    doc.moveDown(0.3);
+    doc.text(`Type : ${property.type || 'N/A'}`);
+    doc.text(`Surface : ${property.area} m²`);
+    doc.text(`Nombre de chambres : ${property.bedrooms}`);
+    doc.text(`Nombre de pièces : ${property.rooms}`);
+    doc.moveDown(0.3);
+    doc.fontSize(14).font('Helvetica-Bold').fillColor('#2D3748')
+       .text(`Prix : ${property.price.toLocaleString('fr-FR')} €`);
+    doc.moveDown(2);
+
+    // === INFORMATIONS DE LA VISITE ===
+    doc.fontSize(16).font('Helvetica-Bold').fillColor('#000000').text('Détails de la visite');
+    doc.moveDown(0.5);
+
+    doc.fontSize(11).font('Helvetica');
+    doc.text(`Client : ${clientName || 'Non spécifié'}`);
+    doc.text(`Date de visite : ${visitDate ? formatDateFR(visitDate) : formatDateFR(new Date())}`);
+    doc.moveDown(0.3);
+    doc.text(`Agent immobilier : ${property.agent.firstName} ${property.agent.lastName}`);
+    doc.text(`Email de l'agent : ${property.agent.email}`);
+    doc.moveDown(3);
+
+    // === OBSERVATIONS ===
+    doc.fontSize(16).font('Helvetica-Bold').text('Observations et remarques');
+    doc.moveDown(0.5);
+
+    // Zone de texte pour les notes
+    doc.rect(50, doc.y, 500, 150).stroke();
+    doc.moveDown(10);
+
+    // === SIGNATURES ===
+    doc.fontSize(12).font('Helvetica-Bold').text('Signatures', { align: 'center' });
+    doc.moveDown(1);
+
+    const signatureY = doc.y;
+
+    // Signature du client (gauche)
+    doc.fontSize(10).font('Helvetica').text('Le Client :', 70, signatureY);
+    doc.text('Signature :', 70, signatureY + 20);
+    doc.moveTo(70, signatureY + 80).lineTo(240, signatureY + 80).stroke();
+    doc.text('Date :', 70, signatureY + 90);
+    doc.moveTo(70, signatureY + 120).lineTo(240, signatureY + 120).stroke();
+
+    // Signature de l'agent (droite)
+    doc.text("L'Agent :", 350, signatureY);
+    doc.text('Signature :', 350, signatureY + 20);
+    doc.moveTo(350, signatureY + 80).lineTo(520, signatureY + 80).stroke();
+    doc.text('Date :', 350, signatureY + 90);
+    doc.moveTo(350, signatureY + 120).lineTo(520, signatureY + 120).stroke();
+
+    // === PIED DE PAGE ===
+    doc.fontSize(8).fillColor('#999999')
+       .text(
+         'Ce document certifie que la visite du bien a été effectuée conformément aux règles en vigueur.',
+         50,
+         doc.page.height - 50,
+         { align: 'center', width: 500 }
+       );
+
+    doc.end();
+
+    logActivity(req.user.id, "PDF_GENERATED", `Bon de visite généré pour le bien #${propertyId}`);
+
+  } catch (error) {
+    console.error("Erreur génération bon de visite:", error);
+    res.status(500).json({ error: "Erreur lors de la génération du PDF" });
+  }
+});
+
+// 📄 Générer une Offre d'Achat
+app.get('/api/properties/:id/documents/offre-achat', authenticateToken, async (req, res) => {
+  try {
+    const propertyId = parseInt(req.params.id);
+    const { buyerName, buyerEmail, buyerPhone, offerAmount } = req.query;
+
+    // Récupérer le bien et l'agent
+    const property = await prisma.property.findUnique({
+      where: { id: propertyId },
+      include: { agent: true }
+    });
+
+    if (!property || property.agentId !== req.user.id) {
+      return res.status(404).json({ error: "Bien non trouvé" });
+    }
+
+    // Créer le document PDF
+    const doc = new PDFDocument({ margin: 50 });
+
+    // Headers pour le téléchargement
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=offre-achat-${propertyId}.pdf`);
+
+    doc.pipe(res);
+
+    // === EN-TÊTE ===
+    doc.fontSize(24).font('Helvetica-Bold').text("OFFRE D'ACHAT", { align: 'center' });
+    doc.moveDown(0.5);
+    doc.fontSize(10).font('Helvetica').fillColor('#666666')
+       .text(`Document généré le ${formatDateFR(new Date())}`, { align: 'center' });
+    doc.moveDown(2);
+
+    // === INFORMATIONS DE L'ACQUÉREUR ===
+    doc.fontSize(16).font('Helvetica-Bold').fillColor('#000000').text("Informations de l'acquéreur");
+    doc.moveDown(0.5);
+
+    doc.fontSize(11).font('Helvetica');
+    doc.text(`Nom complet : ${buyerName || '___________________________'}`);
+    doc.text(`Email : ${buyerEmail || '___________________________'}`);
+    doc.text(`Téléphone : ${buyerPhone || '___________________________'}`);
+    doc.moveDown(2);
+
+    // === INFORMATIONS DU BIEN ===
+    doc.fontSize(16).font('Helvetica-Bold').text('Bien concerné');
+    doc.moveDown(0.5);
+
+    doc.fontSize(11).font('Helvetica');
+    doc.text(`Adresse complète : ${property.address}, ${property.postalCode} ${property.city}`);
+    doc.text(`Type de bien : ${property.type || 'N/A'}`);
+    doc.text(`Surface habitable : ${property.area} m²`);
+    doc.text(`Nombre de chambres : ${property.bedrooms}`);
+    doc.text(`Nombre de pièces : ${property.rooms}`);
+    doc.moveDown(0.5);
+    doc.fontSize(14).font('Helvetica-Bold').fillColor('#2D3748')
+       .text(`Prix demandé : ${property.price.toLocaleString('fr-FR')} €`);
+    doc.moveDown(2);
+
+    // === OFFRE ===
+    doc.fontSize(16).font('Helvetica-Bold').fillColor('#000000').text("Montant de l'offre");
+    doc.moveDown(0.5);
+
+    const offer = offerAmount || property.price;
+    doc.fontSize(18).font('Helvetica-Bold').fillColor('#2C5282')
+       .text(`${parseInt(offer).toLocaleString('fr-FR')} €`, { align: 'center' });
+    doc.moveDown(2);
+
+    // === CONDITIONS ===
+    doc.fontSize(16).font('Helvetica-Bold').fillColor('#000000').text('Conditions de l\'offre');
+    doc.moveDown(0.5);
+
+    doc.fontSize(10).font('Helvetica');
+    doc.list([
+      "Cette offre est valable pendant 7 jours à compter de sa signature.",
+      "L'acquéreur s'engage à fournir un justificatif de financement sous 15 jours.",
+      "La vente est conditionnée à l'obtention d'un prêt immobilier.",
+      "Un délai de rétractation de 10 jours est accordé conformément à la loi.",
+      "Les frais de notaire sont à la charge de l'acquéreur."
+    ], { bulletRadius: 2 });
+    doc.moveDown(2);
+
+    // === NOTES ADDITIONNELLES ===
+    doc.fontSize(14).font('Helvetica-Bold').text('Notes et conditions particulières');
+    doc.moveDown(0.5);
+
+    doc.rect(50, doc.y, 500, 100).stroke();
+    doc.moveDown(7);
+
+    // === SIGNATURES ===
+    doc.fontSize(12).font('Helvetica-Bold').text('Signatures', { align: 'center' });
+    doc.moveDown(1);
+
+    const signatureY = doc.y;
+
+    // Signature de l'acquéreur
+    doc.fontSize(10).font('Helvetica').text("L'Acquéreur :", 70, signatureY);
+    doc.text('Lu et approuvé', 70, signatureY + 20);
+    doc.text('Signature :', 70, signatureY + 40);
+    doc.moveTo(70, signatureY + 100).lineTo(240, signatureY + 100).stroke();
+    doc.text('Date :', 70, signatureY + 110);
+
+    // Signature de l'agent
+    doc.text("L'Agent immobilier :", 350, signatureY);
+    doc.text(`${property.agent.firstName} ${property.agent.lastName}`, 350, signatureY + 20);
+    doc.text('Signature :', 350, signatureY + 40);
+    doc.moveTo(350, signatureY + 100).lineTo(520, signatureY + 100).stroke();
+    doc.text('Date :', 350, signatureY + 110);
+
+    // === PIED DE PAGE ===
+    doc.fontSize(8).fillColor('#999999')
+       .text(
+         "Ce document constitue une offre d'achat non contractuelle. Il doit être validé par un compromis de vente signé devant notaire.",
+         50,
+         doc.page.height - 50,
+         { align: 'center', width: 500 }
+       );
+
+    doc.end();
+
+    logActivity(req.user.id, "PDF_GENERATED", `Offre d'achat générée pour le bien #${propertyId}`);
+
+  } catch (error) {
+    console.error("Erreur génération offre d'achat:", error);
+    res.status(500).json({ error: "Erreur lors de la génération du PDF" });
   }
 });
 

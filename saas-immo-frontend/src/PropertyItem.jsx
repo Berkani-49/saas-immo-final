@@ -1,15 +1,17 @@
-// Fichier : src/PropertyItem.jsx (Version Finale avec Partage)
+// Fichier : src/PropertyItem.jsx (Version Finale avec Partage + Documents PDF)
 
 import React, { useState } from 'react';
 import axios from 'axios';
-import { 
+import {
   Box, Text, Button, IconButton, Flex, Badge, Image, VStack, HStack, useToast,
-  FormControl, FormLabel, Input, Textarea, Spacer
+  FormControl, FormLabel, Input, Textarea, Spacer, useDisclosure
 } from '@chakra-ui/react';
 import { EditIcon, DeleteIcon } from '@chakra-ui/icons';
 import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaShareAlt } from 'react-icons/fa';
+import { FiFileText } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import { supabase } from './supabaseClient';
+import DocumentGenerator from './components/DocumentGenerator';
 
 export default function PropertyItem({ property, token, onPropertyDeleted, onPropertyUpdated }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -18,6 +20,9 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const toast = useToast();
+
+  // Modal de génération de documents
+  const { isOpen: isDocGenOpen, onOpen: onDocGenOpen, onClose: onDocGenClose } = useDisclosure();
 
   // --- SHARE (Nouvelle fonction) ---
   const handleShare = () => {
@@ -175,16 +180,35 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
             {property.agent ? (
                 <Text fontSize="xs" color="gray.400">Agent: {property.agent.firstName}</Text>
             ) : <Spacer />}
-            
-            <Box>
-                {/* LE BOUTON PARTAGER EST ICI 👇 */}
-                <IconButton icon={<FaShareAlt />} size="sm" variant="ghost" colorScheme="purple" onClick={handleShare} aria-label="Partager" mr={1} />
-                
-                <IconButton icon={<EditIcon />} size="sm" variant="ghost" colorScheme="blue" onClick={() => setIsEditing(true)} aria-label="Modifier" mr={1} />
+
+            <HStack spacing={1}>
+                {/* BOUTON DOCUMENTS PDF 📄 */}
+                <IconButton
+                  icon={<FiFileText />}
+                  size="sm"
+                  variant="ghost"
+                  colorScheme="orange"
+                  onClick={onDocGenOpen}
+                  aria-label="Générer Documents"
+                  title="Générer des documents PDF"
+                />
+
+                {/* LE BOUTON PARTAGER */}
+                <IconButton icon={<FaShareAlt />} size="sm" variant="ghost" colorScheme="purple" onClick={handleShare} aria-label="Partager" />
+
+                <IconButton icon={<EditIcon />} size="sm" variant="ghost" colorScheme="blue" onClick={() => setIsEditing(true)} aria-label="Modifier" />
                 <IconButton icon={<DeleteIcon />} size="sm" variant="ghost" colorScheme="red" onClick={handleDelete} isLoading={isLoading} aria-label="Supprimer" />
-            </Box>
+            </HStack>
         </Flex>
       </Box>
+
+      {/* MODAL DE GÉNÉRATION DE DOCUMENTS */}
+      <DocumentGenerator
+        isOpen={isDocGenOpen}
+        onClose={onDocGenClose}
+        property={property}
+        token={token}
+      />
     </Box>
   );
 }
