@@ -1464,8 +1464,12 @@ app.post('/api/properties/:id/stage-photo', authenticateToken, async (req, res) 
     const selectedPrompt = stylePrompts[style] || stylePrompts.modern;
 
     console.log(`🛋️ Staging virtuel pour bien ${propertyId} - Style: ${style}`);
+    console.log(`📸 Image URL: ${property.imageUrl}`);
+    console.log(`📝 Prompt: ${selectedPrompt}`);
 
     // 3. Utiliser le modèle interior-ai (erayyavuz/interior-ai) - Coût: ~0.063$ par génération
+    console.log(`⏳ Démarrage de la génération Replicate... (peut prendre 60-90 secondes)`);
+
     const output = await replicate.run(
       "erayyavuz/interior-ai:e299c531485aac511610a878ef44b554381355de5ee032d109fcae5352f39fa9",
       {
@@ -1476,8 +1480,13 @@ app.post('/api/properties/:id/stage-photo', authenticateToken, async (req, res) 
       }
     );
 
+    console.log(`✅ Génération Replicate terminée !`);
+    console.log(`📦 Output type: ${typeof output}, isArray: ${Array.isArray(output)}`);
+    console.log(`📦 Output value:`, output);
+
     // 4. L'output de Replicate est généralement une URL d'image
     const stagedImageUrl = Array.isArray(output) ? output[0] : output;
+    console.log(`🖼️ URL finale: ${stagedImageUrl}`);
 
     // 5. Sauvegarder l'URL dans la base de données
     await prisma.property.update({
