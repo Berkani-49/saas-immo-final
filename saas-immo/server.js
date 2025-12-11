@@ -1420,6 +1420,100 @@ app.post('/api/properties/:id/enhance-photo', authenticateToken, async (req, res
   }
 });
 
+// ========================================
+// 🛋️ HOME STAGING VIRTUEL - Meubler une pièce vide avec IA
+// ========================================
+app.post('/api/properties/:id/stage-photo', authenticateToken, async (req, res) => {
+  try {
+    const propertyId = parseInt(req.params.id);
+    const { style } = req.body; // Style: 'modern', 'scandinavian', 'industrial', 'classic', 'bohemian'
+
+    // 1. Vérifier que le bien existe et appartient à l'agent
+    const property = await prisma.property.findUnique({
+      where: { id: propertyId }
+    });
+
+    if (!property) {
+      return res.status(404).json({ error: "Bien non trouvé" });
+    }
+
+    if (property.agentId !== req.user.userId) {
+      return res.status(403).json({ error: "Non autorisé" });
+    }
+
+    if (!property.imageUrl) {
+      return res.status(400).json({ error: "Ce bien n'a pas de photo" });
+    }
+
+    // 2. Appeler l'API Replicate pour le staging virtuel
+    const Replicate = require('replicate');
+    const replicate = new Replicate({
+      auth: process.env.REPLICATE_API_TOKEN,
+    });
+
+    // Mapping des styles vers des prompts efficaces
+    const stylePrompts = {
+      modern: "modern minimalist interior design, clean lines, neutral colors, contemporary furniture, large windows, natural light, professional photography",
+      scandinavian: "scandinavian interior design, light wood, white walls, hygge atmosphere, minimalist nordic style, cozy and bright, professional photography",
+      industrial: "industrial loft interior design, exposed brick, metal fixtures, wooden beams, urban style, concrete floors, professional photography",
+      classic: "classic elegant interior design, traditional furniture, luxurious fabrics, ornate details, sophisticated style, professional photography",
+      bohemian: "bohemian interior design, colorful textiles, plants, eclectic decor, warm atmosphere, artistic style, professional photography"
+    };
+
+    const selectedPrompt = stylePrompts[style] || stylePrompts.modern;
+
+    console.log(`🛋️ Staging virtuel pour bien ${propertyId} - Style: ${style}`);
+
+    // 3. Utiliser le modèle interior-ai ou roomGPT
+    const output = await replicate.run(
+      "adirik/interior-design:76604baddc85003d0ce8f37e49f2f3b52f0a83b5e5bf96cb86dc2b0c0e2faa6a",
+      {
+        input: {
+          image: property.imageUrl,
+          prompt: selectedPrompt,
+          num_inference_steps: 50,
+          guidance_scale: 7.5
+        }
+      }
+    );
+
+    // 4. L'output de Replicate est généralement une URL d'image
+    const stagedImageUrl = Array.isArray(output) ? output[0] : output;
+
+    // 5. Sauvegarder l'URL dans la base de données
+    await prisma.property.update({
+      where: { id: propertyId },
+      data: {
+        imageUrlStaged: stagedImageUrl,
+        stagingStyle: style
+      }
+    });
+
+    // 6. Logger l'activité
+    await prisma.activityLog.create({
+      data: {
+        action: 'HOME_STAGING_VIRTUEL',
+        description: `Home staging virtuel appliqué (${style}) sur ${property.address}`,
+        agentId: req.user.userId
+      }
+    });
+
+    res.json({
+      success: true,
+      stagedUrl: stagedImageUrl,
+      style: style,
+      message: `✨ Votre pièce a été meublée avec le style ${style} !`
+    });
+
+  } catch (error) {
+    console.error("❌ Erreur home staging virtuel:", error);
+    res.status(500).json({
+      error: "Erreur lors du staging virtuel",
+      details: error.message
+    });
+  }
+});
+
 // DÉMARRAGE
 app.listen(PORT, () => {
   console.log(`✅ Serveur OK sur port ${PORT}`);

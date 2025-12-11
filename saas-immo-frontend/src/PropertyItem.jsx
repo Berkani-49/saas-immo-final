@@ -8,10 +8,11 @@ import {
 } from '@chakra-ui/react';
 import { EditIcon, DeleteIcon } from '@chakra-ui/icons';
 import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaShareAlt } from 'react-icons/fa';
-import { FiFileText, FiZap } from 'react-icons/fi';
+import { FiFileText, FiZap, FiHome } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import { supabase } from './supabaseClient';
 import DocumentGenerator from './components/DocumentGenerator';
+import StagingModal from './components/StagingModal';
 
 export default function PropertyItem({ property, token, onPropertyDeleted, onPropertyUpdated }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -21,10 +22,14 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
   const [isLoading, setIsLoading] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [showEnhanced, setShowEnhanced] = useState(false);
+  const [showStaged, setShowStaged] = useState(false);
   const toast = useToast();
 
   // Modal de génération de documents
   const { isOpen: isDocGenOpen, onOpen: onDocGenOpen, onClose: onDocGenClose } = useDisclosure();
+
+  // Modal de home staging virtuel
+  const { isOpen: isStagingOpen, onOpen: onStagingOpen, onClose: onStagingClose } = useDisclosure();
 
   // --- ENHANCE PHOTO (Nouvelle fonction IA) ---
   const handleEnhancePhoto = async () => {
@@ -165,7 +170,11 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
     >
       <Box h="200px" w="100%" position="relative" overflow="hidden">
         <Image
-          src={(showEnhanced && property.imageUrlEnhanced) ? property.imageUrlEnhanced : (property.imageUrl || "https://via.placeholder.com/400x300?text=Pas+de+photo")}
+          src={
+            (showStaged && property.imageUrlStaged) ? property.imageUrlStaged :
+            (showEnhanced && property.imageUrlEnhanced) ? property.imageUrlEnhanced :
+            (property.imageUrl || "https://via.placeholder.com/400x300?text=Pas+de+photo")
+          }
           alt="Bien"
           w="100%" h="100%" objectFit="cover"
           transition="0.3s"
@@ -178,8 +187,21 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
             {property.price.toLocaleString()} €
         </Badge>
 
+        {/* Badge Home Staging Virtuel */}
+        {property.imageUrlStaged && (
+          <Badge
+            position="absolute" top={3} left={3}
+            colorScheme="purple" fontSize="0.8em" px={2} py={1} borderRadius="md" shadow="md"
+            cursor="pointer"
+            onClick={() => setShowStaged(!showStaged)}
+            title={showStaged ? "Voir photo originale" : `Voir version ${property.stagingStyle}`}
+          >
+            🛋️ {showStaged ? property.stagingStyle : "Original"}
+          </Badge>
+        )}
+
         {/* Badge Photo Améliorée */}
-        {property.imageUrlEnhanced && (
+        {property.imageUrlEnhanced && !property.imageUrlStaged && (
           <Badge
             position="absolute" top={3} left={3}
             colorScheme="yellow" fontSize="0.8em" px={2} py={1} borderRadius="md" shadow="md"
@@ -236,6 +258,19 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
             ) : <Spacer />}
 
             <HStack spacing={1}>
+                {/* BOUTON HOME STAGING 🛋️ */}
+                {!property.imageUrlStaged && property.imageUrl && (
+                  <IconButton
+                    icon={<FiHome />}
+                    size="sm"
+                    variant="ghost"
+                    colorScheme="purple"
+                    onClick={onStagingOpen}
+                    aria-label="Home Staging Virtuel"
+                    title="Meubler la pièce avec IA"
+                  />
+                )}
+
                 {/* BOUTON AMÉLIORER PHOTO ✨ */}
                 {!property.imageUrlEnhanced && property.imageUrl && (
                   <IconButton
@@ -276,6 +311,15 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
         onClose={onDocGenClose}
         property={property}
         token={token}
+      />
+
+      {/* MODAL DE HOME STAGING VIRTUEL */}
+      <StagingModal
+        isOpen={isStagingOpen}
+        onClose={onStagingClose}
+        property={property}
+        token={token}
+        onPropertyUpdated={onPropertyUpdated}
       />
     </Box>
   );
