@@ -3,17 +3,17 @@
 import React from 'react';
 import { Box, Flex, Text, Icon, SimpleGrid, IconButton } from '@chakra-ui/react';
 import { Outlet, NavLink as RouterNavLink, useLocation } from 'react-router-dom';
-// 1. On ajoute l'icône FiBriefcase
-import { FiHome, FiList, FiUsers, FiCheckSquare, FiFileText, FiBriefcase, FiCreditCard, FiLogOut } from 'react-icons/fi';
+// 1. On ajoute les icônes nécessaires
+import { FiHome, FiList, FiUsers, FiCheckSquare, FiCalendar, FiMenu, FiLogOut } from 'react-icons/fi';
 import Sidebar from './Sidebar.jsx';
 
-// Navigation mobile - Seulement les fonctions essentielles
+// Navigation mobile - Fonctions essentielles + menu
 const MobileNavItems = [
   { name: 'Accueil', icon: FiHome, path: '/' },
   { name: 'Biens', icon: FiList, path: '/biens' },
   { name: 'Contacts', icon: FiUsers, path: '/contacts' },
   { name: 'Tâches', icon: FiCheckSquare, path: '/taches' },
-  { name: 'Plus', icon: FiBriefcase, path: '/equipe' },
+  { name: 'RDV', icon: FiCalendar, path: '/rendez-vous' },
 ];
 
 export default function Layout({ onLogout }) {
