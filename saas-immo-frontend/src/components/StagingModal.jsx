@@ -58,33 +58,99 @@ export default function StagingModal({ isOpen, onClose, property, token, onPrope
     setIsStaging(true);
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
+
+      // 1. Démarrer la génération (retourne immédiatement)
       const response = await axios.post(
         `https://saas-immo.onrender.com/api/properties/${property.id}/stage-photo`,
         { style: selectedStyle },
         config
       );
 
-      // Mettre à jour le bien avec la photo meublée
-      onPropertyUpdated({ ...property, imageUrlStaged: response.data.stagedUrl, stagingStyle: selectedStyle });
+      const predictionId = response.data.predictionId;
 
       toast({
-        title: "🛋️ Home staging réussi !",
-        description: response.data.message,
-        status: "success",
-        duration: 5000,
+        title: "⏳ Génération lancée !",
+        description: "Cela prendra 60-90 secondes. Veuillez patienter...",
+        status: "info",
+        duration: 3000,
         isClosable: true
       });
 
-      onClose();
+      // 2. Polling toutes les 3 secondes pour vérifier le statut
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusResponse = await axios.get(
+            `https://saas-immo.onrender.com/api/properties/${property.id}/stage-status/${predictionId}?style=${selectedStyle}`,
+            config
+          );
+
+          console.log(`🔄 Statut: ${statusResponse.data.status}`);
+
+          if (statusResponse.data.status === 'succeeded') {
+            clearInterval(pollInterval);
+            setIsStaging(false);
+
+            // Mettre à jour le bien avec la photo meublée
+            onPropertyUpdated({
+              ...property,
+              imageUrlStaged: statusResponse.data.stagedUrl,
+              stagingStyle: selectedStyle
+            });
+
+            toast({
+              title: "🛋️ Home staging réussi !",
+              description: statusResponse.data.message,
+              status: "success",
+              duration: 5000,
+              isClosable: true
+            });
+
+            onClose();
+          } else if (statusResponse.data.status === 'failed') {
+            clearInterval(pollInterval);
+            setIsStaging(false);
+
+            toast({
+              title: "❌ Échec",
+              description: statusResponse.data.error || "La génération a échoué.",
+              status: "error",
+              duration: 5000
+            });
+          }
+          // Sinon, on continue le polling (starting, processing)
+        } catch (pollError) {
+          console.error("Erreur polling:", pollError);
+          clearInterval(pollInterval);
+          setIsStaging(false);
+          toast({
+            title: "Erreur",
+            description: "Impossible de vérifier le statut.",
+            status: "error"
+          });
+        }
+      }, 3000); // Vérifier toutes les 3 secondes
+
+      // Timeout de sécurité après 2 minutes
+      setTimeout(() => {
+        clearInterval(pollInterval);
+        if (isStaging) {
+          setIsStaging(false);
+          toast({
+            title: "⏱️ Timeout",
+            description: "La génération prend plus de temps que prévu. Réessayez plus tard.",
+            status: "warning"
+          });
+        }
+      }, 120000); // 2 minutes max
+
     } catch (error) {
       console.error("Erreur home staging:", error);
       toast({
         title: "Erreur",
-        description: error.response?.data?.details || "Impossible de meubler la pièce.",
+        description: error.response?.data?.details || "Impossible de démarrer la génération.",
         status: "error",
         duration: 5000
       });
-    } finally {
       setIsStaging(false);
     }
   };
@@ -177,8 +243,8 @@ export default function StagingModal({ isOpen, onClose, property, token, onPrope
 
             <Box bg="yellow.50" p={3} borderRadius="md" borderWidth="1px" borderColor="yellow.200">
               <Text fontSize="xs" color="yellow.800">
-                ⚠️ <strong>Note:</strong> Le home staging virtuel coûte environ 0.05$ par génération via l'API Replicate.
-                Le traitement peut prendre 30-60 secondes.
+                ⚠️ <strong>Note:</strong> Le home staging virtuel coûte environ 0.06$ par génération via l'API Replicate.
+                Le traitement peut prendre 60-90 secondes.
               </Text>
             </Box>
           </VStack>

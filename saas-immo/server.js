@@ -1467,56 +1467,112 @@ app.post('/api/properties/:id/stage-photo', authenticateToken, async (req, res) 
     console.log(`📸 Image URL: ${property.imageUrl}`);
     console.log(`📝 Prompt: ${selectedPrompt}`);
 
-    // 3. Utiliser le modèle interior-ai (erayyavuz/interior-ai) - Coût: ~0.063$ par génération
-    console.log(`⏳ Démarrage de la génération Replicate... (peut prendre 60-90 secondes)`);
+    // 3. Créer une prédiction ASYNCHRONE (retourne immédiatement sans attendre)
+    console.log(`⏳ Création de la prédiction Replicate (asynchrone)...`);
 
-    const output = await replicate.run(
-      "erayyavuz/interior-ai:e299c531485aac511610a878ef44b554381355de5ee032d109fcae5352f39fa9",
-      {
-        input: {
-          input: property.imageUrl,  // Le paramètre s'appelle "input" (pas "image")
-          prompt: selectedPrompt
-        }
-      }
-    );
-
-    console.log(`✅ Génération Replicate terminée !`);
-    console.log(`📦 Output type: ${typeof output}, isArray: ${Array.isArray(output)}`);
-    console.log(`📦 Output value:`, output);
-
-    // 4. L'output de Replicate est généralement une URL d'image
-    const stagedImageUrl = Array.isArray(output) ? output[0] : output;
-    console.log(`🖼️ URL finale: ${stagedImageUrl}`);
-
-    // 5. Sauvegarder l'URL dans la base de données
-    await prisma.property.update({
-      where: { id: propertyId },
-      data: {
-        imageUrlStaged: stagedImageUrl,
-        stagingStyle: style
+    const prediction = await replicate.predictions.create({
+      version: "e299c531485aac511610a878ef44b554381355de5ee032d109fcae5352f39fa9",
+      input: {
+        input: property.imageUrl,
+        prompt: selectedPrompt
       }
     });
 
-    // 6. Logger l'activité
-    await prisma.activityLog.create({
-      data: {
-        action: 'HOME_STAGING_VIRTUEL',
-        description: `Home staging virtuel appliqué (${style}) sur ${property.address}`,
-        agentId: req.user.id
-      }
-    });
+    console.log(`✅ Prédiction créée ! ID: ${prediction.id}, Status: ${prediction.status}`);
+    console.log(`📦 URL de prédiction:`, prediction.urls?.get);
 
+    // 4. Retourner immédiatement l'ID de prédiction au frontend
+    // Le frontend fera du polling pour vérifier le statut
     res.json({
       success: true,
-      stagedUrl: stagedImageUrl,
-      style: style,
-      message: `✨ Votre pièce a été meublée avec le style ${style} !`
+      predictionId: prediction.id,
+      status: prediction.status,
+      message: `🛋️ Génération en cours... Cela prendra 60-90 secondes.`
     });
 
   } catch (error) {
     console.error("❌ Erreur home staging virtuel:", error);
     res.status(500).json({
       error: "Erreur lors du staging virtuel",
+      details: error.message
+    });
+  }
+});
+
+// ========================================
+// 🔄 POLLING - Vérifier le statut d'une prédiction Replicate
+// ========================================
+app.get('/api/properties/:id/stage-status/:predictionId', authenticateToken, async (req, res) => {
+  try {
+    const propertyId = parseInt(req.params.id);
+    const { predictionId } = req.params;
+
+    // Vérifier que le bien appartient à l'agent
+    const property = await prisma.property.findUnique({
+      where: { id: propertyId }
+    });
+
+    if (!property || property.agentId !== req.user.id) {
+      return res.status(403).json({ error: "Non autorisé" });
+    }
+
+    // Récupérer le statut de la prédiction Replicate
+    const Replicate = require('replicate');
+    const replicate = new Replicate({
+      auth: process.env.REPLICATE_API_TOKEN,
+    });
+
+    const prediction = await replicate.predictions.get(predictionId);
+
+    console.log(`🔄 Statut prédiction ${predictionId}: ${prediction.status}`);
+
+    // Si la prédiction est réussie, sauvegarder l'image dans la BDD
+    if (prediction.status === 'succeeded' && prediction.output) {
+      const stagedImageUrl = Array.isArray(prediction.output) ? prediction.output[0] : prediction.output;
+
+      await prisma.property.update({
+        where: { id: propertyId },
+        data: {
+          imageUrlStaged: stagedImageUrl,
+          stagingStyle: req.query.style || 'modern'
+        }
+      });
+
+      await prisma.activityLog.create({
+        data: {
+          action: 'HOME_STAGING_VIRTUEL',
+          description: `Home staging virtuel appliqué sur ${property.address}`,
+          agentId: req.user.id
+        }
+      });
+
+      console.log(`✅ Image sauvegardée: ${stagedImageUrl}`);
+
+      return res.json({
+        status: 'succeeded',
+        stagedUrl: stagedImageUrl,
+        message: `✨ Votre pièce a été meublée !`
+      });
+    }
+
+    // Si échec
+    if (prediction.status === 'failed') {
+      return res.json({
+        status: 'failed',
+        error: prediction.error || "La génération a échoué"
+      });
+    }
+
+    // Sinon, toujours en cours (starting, processing)
+    res.json({
+      status: prediction.status,
+      message: `⏳ Génération en cours... (${prediction.status})`
+    });
+
+  } catch (error) {
+    console.error("❌ Erreur vérification statut:", error);
+    res.status(500).json({
+      error: "Erreur lors de la vérification du statut",
       details: error.message
     });
   }
