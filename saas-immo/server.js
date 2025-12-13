@@ -303,18 +303,30 @@ app.put('/api/properties/:id', authenticateToken, async (req, res) => {
         });
         if (!property) return res.status(404).json({ error: "Bien non trouvé ou non autorisé" });
 
+        // Extraire uniquement les champs autorisés (éviter les champs de relation)
+        const { address, city, postalCode, price, area, rooms, bedrooms, description, imageUrl } = req.body;
+
         const updated = await prisma.property.update({
             where: { id: parseInt(req.params.id) },
-            data: { ...req.body,
-                price: parseInt(req.body.price),
-                area: parseInt(req.body.area),
-                rooms: parseInt(req.body.rooms),
-                bedrooms: parseInt(req.body.bedrooms)
-            }
+            data: {
+                address,
+                city,
+                postalCode,
+                price: price ? parseInt(price) : property.price,
+                area: area ? parseInt(area) : property.area,
+                rooms: rooms ? parseInt(rooms) : property.rooms,
+                bedrooms: bedrooms ? parseInt(bedrooms) : property.bedrooms,
+                description,
+                imageUrl
+            },
+            include: { images: { orderBy: { order: 'asc' } } } // Inclure les images dans la réponse
         });
         logActivity(req.user.id, "MODIF_BIEN", `Modification : ${updated.address}`);
         res.json(updated);
-    } catch (e) { res.status(500).json({ error: "Erreur" }); }
+    } catch (e) {
+        console.error("Erreur PUT /api/properties/:id:", e);
+        res.status(500).json({ error: "Erreur lors de la mise à jour", details: e.message });
+    }
 });
 
 app.delete('/api/properties/:id', authenticateToken, async (req, res) => {
@@ -335,9 +347,185 @@ app.get('/api/properties/:id', authenticateToken, async (req, res) => {
     // 🔒 ISOLATION : Récupérer uniquement si le bien appartient à l'agent
     const p = await prisma.property.findFirst({
         where: { id: parseInt(req.params.id), agentId: req.user.id },
-        include: { agent: true }
+        include: { agent: true, images: { orderBy: { order: 'asc' } } }
     });
     p ? res.json(p) : res.status(404).json({ error: "Non trouvé ou non autorisé" });
+});
+
+// ================================
+// 📸 GESTION DES IMAGES MULTIPLES
+// ================================
+
+// Ajouter une photo à un bien
+app.post('/api/properties/:id/images', authenticateToken, async (req, res) => {
+    try {
+        const propertyId = parseInt(req.params.id);
+        const { url, caption, isPrimary } = req.body;
+
+        // Vérifier que le bien appartient à l'agent
+        const property = await prisma.property.findFirst({
+            where: { id: propertyId, agentId: req.user.id }
+        });
+
+        if (!property) {
+            return res.status(404).json({ error: "Bien non trouvé" });
+        }
+
+        // Si cette photo est définie comme principale, retirer le statut primary des autres
+        if (isPrimary) {
+            await prisma.propertyImage.updateMany({
+                where: { propertyId, isPrimary: true },
+                data: { isPrimary: false }
+            });
+        }
+
+        // Compter le nombre de photos existantes pour définir l'ordre
+        const imageCount = await prisma.propertyImage.count({
+            where: { propertyId }
+        });
+
+        // Créer la nouvelle image
+        const newImage = await prisma.propertyImage.create({
+            data: {
+                url,
+                caption: caption || null,
+                isPrimary: isPrimary || false,
+                order: imageCount,
+                propertyId
+            }
+        });
+
+        logActivity(req.user.id, "PHOTO_AJOUTÉE", `Photo ajoutée au bien ${property.address}`);
+
+        res.status(201).json(newImage);
+    } catch (error) {
+        console.error("Erreur ajout image:", error);
+        res.status(500).json({ error: "Erreur lors de l'ajout de l'image" });
+    }
+});
+
+// Récupérer toutes les photos d'un bien
+app.get('/api/properties/:id/images', authenticateToken, async (req, res) => {
+    try {
+        const propertyId = parseInt(req.params.id);
+
+        // Vérifier que le bien appartient à l'agent
+        const property = await prisma.property.findFirst({
+            where: { id: propertyId, agentId: req.user.id }
+        });
+
+        if (!property) {
+            return res.status(404).json({ error: "Bien non trouvé" });
+        }
+
+        const images = await prisma.propertyImage.findMany({
+            where: { propertyId },
+            orderBy: [
+                { isPrimary: 'desc' }, // Photo principale en premier
+                { order: 'asc' }        // Puis par ordre
+            ]
+        });
+
+        res.json(images);
+    } catch (error) {
+        console.error("Erreur récupération images:", error);
+        res.status(500).json({ error: "Erreur lors de la récupération des images" });
+    }
+});
+
+// Supprimer une photo
+app.delete('/api/properties/:propertyId/images/:imageId', authenticateToken, async (req, res) => {
+    try {
+        const propertyId = parseInt(req.params.propertyId);
+        const imageId = parseInt(req.params.imageId);
+
+        // Vérifier que le bien appartient à l'agent
+        const property = await prisma.property.findFirst({
+            where: { id: propertyId, agentId: req.user.id }
+        });
+
+        if (!property) {
+            return res.status(404).json({ error: "Bien non trouvé" });
+        }
+
+        // Supprimer l'image
+        await prisma.propertyImage.delete({
+            where: { id: imageId }
+        });
+
+        logActivity(req.user.id, "PHOTO_SUPPRIMÉE", `Photo supprimée du bien ${property.address}`);
+
+        res.status(204).send();
+    } catch (error) {
+        console.error("Erreur suppression image:", error);
+        res.status(500).json({ error: "Erreur lors de la suppression de l'image" });
+    }
+});
+
+// Définir une photo comme principale
+app.patch('/api/properties/:propertyId/images/:imageId/set-primary', authenticateToken, async (req, res) => {
+    try {
+        const propertyId = parseInt(req.params.propertyId);
+        const imageId = parseInt(req.params.imageId);
+
+        // Vérifier que le bien appartient à l'agent
+        const property = await prisma.property.findFirst({
+            where: { id: propertyId, agentId: req.user.id }
+        });
+
+        if (!property) {
+            return res.status(404).json({ error: "Bien non trouvé" });
+        }
+
+        // Retirer le statut primary de toutes les images
+        await prisma.propertyImage.updateMany({
+            where: { propertyId, isPrimary: true },
+            data: { isPrimary: false }
+        });
+
+        // Définir cette image comme principale
+        const updatedImage = await prisma.propertyImage.update({
+            where: { id: imageId },
+            data: { isPrimary: true }
+        });
+
+        res.json(updatedImage);
+    } catch (error) {
+        console.error("Erreur mise à jour image principale:", error);
+        res.status(500).json({ error: "Erreur lors de la mise à jour" });
+    }
+});
+
+// Réorganiser l'ordre des photos
+app.put('/api/properties/:id/images/reorder', authenticateToken, async (req, res) => {
+    try {
+        const propertyId = parseInt(req.params.id);
+        const { imageIds } = req.body; // Array d'IDs dans le nouvel ordre
+
+        // Vérifier que le bien appartient à l'agent
+        const property = await prisma.property.findFirst({
+            where: { id: propertyId, agentId: req.user.id }
+        });
+
+        if (!property) {
+            return res.status(404).json({ error: "Bien non trouvé" });
+        }
+
+        // Mettre à jour l'ordre de chaque image
+        const updates = imageIds.map((imageId, index) =>
+            prisma.propertyImage.update({
+                where: { id: imageId },
+                data: { order: index }
+            })
+        );
+
+        await prisma.$transaction(updates);
+
+        res.json({ success: true, message: "Ordre mis à jour" });
+    } catch (error) {
+        console.error("Erreur réorganisation images:", error);
+        res.status(500).json({ error: "Erreur lors de la réorganisation" });
+    }
 });
 
 // CONTACTS

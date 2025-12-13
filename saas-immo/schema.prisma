@@ -59,6 +59,9 @@ model Property {
   // Relation many-to-many avec Contact (propriétaires)
   owners    PropertyOwner[]
 
+  // 📸 Photos multiples du bien
+  images    PropertyImage[]
+
   @@index([agentId])
 }
 
@@ -79,6 +82,12 @@ model Contact {
   minBedrooms Int?     // Nombre minimum de chambres
   minArea     Int?     // Surface minimum (m²)
 
+  // 🔔 PRÉFÉRENCES DE NOTIFICATIONS
+  notifyByEmail Boolean @default(true)  // Recevoir des alertes par email
+  notifyBySMS   Boolean @default(false) // Recevoir des alertes par SMS
+  notifyByPush  Boolean @default(false) // Recevoir des notifications push
+  fcmToken      String? // Token Firebase pour notifications push
+
   agent     User @relation(fields: [agentId], references: [id], onDelete: Cascade)
   agentId   Int
   tasks     Task[]
@@ -88,6 +97,9 @@ model Contact {
 
   // Relation many-to-many avec Property (biens possédés)
   properties PropertyOwner[]
+
+  // Notifications envoyées à ce contact
+  notifications Notification[]
 
   @@index([agentId])
 }
@@ -180,4 +192,45 @@ model Appointment {
 
   @@index([agentId])
   @@index([appointmentDate])
+}
+
+// --- MODÈLE NOTIFICATIONS (Historique des alertes envoyées) ---
+model Notification {
+  id          Int      @id @default(autoincrement())
+  type        String   // "NEW_PROPERTY_MATCH", "APPOINTMENT_REMINDER", "NEW_LEAD", etc.
+  channel     String   // "EMAIL", "SMS", "PUSH"
+  recipient   String   // Email ou numéro de téléphone
+  subject     String?  // Sujet de l'email
+  body        String   // Contenu du message
+  status      String   @default("SENT") // "SENT", "FAILED", "PENDING"
+  sentAt      DateTime @default(now())
+
+  // Métadonnées optionnelles (JSON stringifié)
+  metadata    String?  // Ex: {"propertyId": 123, "matchScore": 85}
+
+  // Lien avec le contact (optionnel)
+  contact     Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  contactId   Int?
+
+  @@index([contactId])
+  @@index([type])
+  @@index([sentAt])
+}
+
+// --- MODÈLE IMAGES DES BIENS (Photos multiples) ---
+model PropertyImage {
+  id          Int      @id @default(autoincrement())
+  url         String   // URL de l'image (Supabase, S3, ou base64)
+  isPrimary   Boolean  @default(false) // Photo principale affichée en premier
+  order       Int      @default(0) // Ordre d'affichage (0 = première)
+  caption     String?  // Légende de la photo (ex: "Salon", "Cuisine", "Chambre 1")
+  type        String   @default("ORIGINAL") // "ORIGINAL", "ENHANCED", "STAGED"
+  createdAt   DateTime @default(now())
+
+  // Lien avec le bien
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  propertyId  Int
+
+  @@index([propertyId])
+  @@index([isPrimary])
 }

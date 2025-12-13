@@ -1,16 +1,18 @@
-// Fichier : src/AddPropertyForm.jsx (Version Finale avec Photo + Propriétaires + Matching)
+// Fichier : src/AddPropertyForm.jsx (Version Finale avec Photos Multiples + Propriétaires + Matching)
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Box, Button, FormControl, FormLabel, Input, Textarea, HStack, VStack, Heading, useToast, Text, Select, Badge, Wrap, IconButton, useDisclosure } from '@chakra-ui/react';
+import { Box, Button, FormControl, FormLabel, Input, Textarea, HStack, VStack, Heading, useToast, Text, Select, Badge, Wrap, IconButton, useDisclosure, Divider } from '@chakra-ui/react';
 import { CloseIcon } from '@chakra-ui/icons';
 import { supabase } from './supabaseClient';
 import MatchingModal from './components/MatchingModal';
+import PropertyImageGallery from './components/PropertyImageGallery';
 
 export default function AddPropertyForm({ token, onPropertyAdded }) {
   // État pour le modal de matching
   const { isOpen: isMatchingOpen, onOpen: onMatchingOpen, onClose: onMatchingClose } = useDisclosure();
   const [currentProperty, setCurrentProperty] = useState(null);
+  const [createdPropertyId, setCreatedPropertyId] = useState(null); // Pour afficher la galerie après création
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [postalCode, setPostalCode] = useState('');
@@ -155,13 +157,21 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
 
       onPropertyAdded(newProperty);
 
-      // Reset
+      // Stocker l'ID du bien créé pour afficher la galerie de photos
+      setCreatedPropertyId(newProperty.id);
+
+      // Reset des champs (sauf createdPropertyId)
       setAddress(''); setCity(''); setPostalCode(''); setPrice('');
       setArea(''); setRooms(''); setBedrooms(''); setDescription('');
       setImageFile(null);
       setSelectedOwners([]);
       setSelectedContactId('');
-      toast({ title: "Bien ajouté avec succès !", status: "success" });
+      toast({
+        title: "Bien ajouté avec succès !",
+        description: "Vous pouvez maintenant ajouter des photos",
+        status: "success",
+        duration: 4000
+      });
 
       // 🎯 MATCHING AUTOMATIQUE - Ouvrir le modal avec les acheteurs correspondants
       setCurrentProperty(newProperty);
@@ -178,30 +188,38 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
 
   return (
     <Box p={5} shadow="md" borderWidth="1px" borderRadius="lg" bg="white" mb={6}>
-      <Heading size="md" mb={4}>Ajouter un nouveau bien</Heading>
-      <form onSubmit={handleSubmit}>
-        <VStack spacing={4}>
-          <FormControl isRequired>
-            <FormLabel>Adresse</FormLabel>
-            <Input value={address} onChange={(e) => setAddress(e.target.value)} />
-          </FormControl>
-          <HStack width="full">
-            <FormControl><FormLabel>Ville</FormLabel><Input value={city} onChange={(e) => setCity(e.target.value)} /></FormControl>
-            <FormControl><FormLabel>Code Postal</FormLabel><Input value={postalCode} onChange={(e) => setPostalCode(e.target.value)} /></FormControl>
-          </HStack>
-          <HStack width="full">
-            <FormControl isRequired><FormLabel>Prix (€)</FormLabel><Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} /></FormControl>
-            <FormControl isRequired><FormLabel>Surface (m²)</FormLabel><Input type="number" value={area} onChange={(e) => setArea(e.target.value)} /></FormControl>
-          </HStack>
-          <HStack width="full">
-            <FormControl><FormLabel>Pièces</FormLabel><Input type="number" value={rooms} onChange={(e) => setRooms(e.target.value)} /></FormControl>
-            <FormControl><FormLabel>Chambres</FormLabel><Input type="number" value={bedrooms} onChange={(e) => setBedrooms(e.target.value)} /></FormControl>
-          </HStack>
-          <FormControl>
-            <FormLabel>Photo du bien</FormLabel>
-            <Input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files[0])} p={1} />
-            {imageFile && <Text fontSize="sm" color="green.500" mt={1}>{imageFile.name}</Text>}
-          </FormControl>
+      <Heading size="md" mb={4}>
+        {createdPropertyId ? 'Ajouter des photos au bien' : 'Ajouter un nouveau bien'}
+      </Heading>
+
+      {/* Afficher le formulaire OU la galerie de photos */}
+      {!createdPropertyId ? (
+        <form onSubmit={handleSubmit}>
+          <VStack spacing={4}>
+            <FormControl isRequired>
+              <FormLabel>Adresse</FormLabel>
+              <Input value={address} onChange={(e) => setAddress(e.target.value)} />
+            </FormControl>
+            <HStack width="full">
+              <FormControl><FormLabel>Ville</FormLabel><Input value={city} onChange={(e) => setCity(e.target.value)} /></FormControl>
+              <FormControl><FormLabel>Code Postal</FormLabel><Input value={postalCode} onChange={(e) => setPostalCode(e.target.value)} /></FormControl>
+            </HStack>
+            <HStack width="full">
+              <FormControl isRequired><FormLabel>Prix (€)</FormLabel><Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} /></FormControl>
+              <FormControl isRequired><FormLabel>Surface (m²)</FormLabel><Input type="number" value={area} onChange={(e) => setArea(e.target.value)} /></FormControl>
+            </HStack>
+            <HStack width="full">
+              <FormControl><FormLabel>Pièces</FormLabel><Input type="number" value={rooms} onChange={(e) => setRooms(e.target.value)} /></FormControl>
+              <FormControl><FormLabel>Chambres</FormLabel><Input type="number" value={bedrooms} onChange={(e) => setBedrooms(e.target.value)} /></FormControl>
+            </HStack>
+            <FormControl>
+              <FormLabel>Photo du bien (optionnel - vous pourrez en ajouter plusieurs après)</FormLabel>
+              <Input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files[0])} p={1} />
+              {imageFile && <Text fontSize="sm" color="green.500" mt={1}>{imageFile.name}</Text>}
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                💡 Vous pourrez ajouter plusieurs photos après la création du bien
+              </Text>
+            </FormControl>
           <FormControl>
             <FormLabel>Description</FormLabel>
             <Textarea
@@ -281,13 +299,43 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
               </Wrap>
             )}
           </FormControl>
-          <Button type="submit" colorScheme="blue" width="full" 
-            isLoading={isSubmitting || uploading}
-            loadingText={uploading ? "Envoi photo..." : "Enregistrement..."}>
-            Ajouter le bien
+            <Button type="submit" colorScheme="blue" width="full"
+              isLoading={isSubmitting || uploading}
+              loadingText={uploading ? "Envoi photo..." : "Enregistrement..."}>
+              Ajouter le bien
+            </Button>
+          </VStack>
+        </form>
+      ) : (
+        /* Galerie de photos après création du bien */
+        <VStack spacing={6} align="stretch">
+          <PropertyImageGallery
+            propertyId={createdPropertyId}
+            token={token}
+            onImagesChange={(images) => {
+              console.log(`${images.length} photo(s) pour ce bien`);
+            }}
+          />
+
+          <Divider />
+
+          <Button
+            colorScheme="green"
+            variant="outline"
+            onClick={() => {
+              setCreatedPropertyId(null);
+              toast({
+                title: "Prêt pour un nouveau bien",
+                description: "Vous pouvez créer un autre bien",
+                status: "info",
+                duration: 2000
+              });
+            }}
+          >
+            ➕ Ajouter un autre bien
           </Button>
         </VStack>
-      </form>
+      )}
 
       {/* 🎯 MODAL DE MATCHING AUTOMATIQUE */}
       <MatchingModal
