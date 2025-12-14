@@ -15,6 +15,7 @@ export default function PropertyDetail({ token }) {
   const { propertyId } = useParams();
   const [property, setProperty] = useState(null);
   const [images, setImages] = useState([]);
+  const [selectedImageUrl, setSelectedImageUrl] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -32,6 +33,12 @@ export default function PropertyDetail({ token }) {
           config
         );
         setImages(imagesResponse.data);
+
+        // Définir l'image principale par défaut
+        if (imagesResponse.data.length > 0) {
+          const primaryImage = imagesResponse.data.find(img => img.isPrimary);
+          setSelectedImageUrl(primaryImage?.url || imagesResponse.data[0]?.url);
+        }
       } catch (err) {
         setError("Impossible de charger le bien.");
       } finally {
@@ -54,10 +61,10 @@ export default function PropertyDetail({ token }) {
         <Box flex="1">
             {images.length > 0 ? (
               <Box>
-                {/* Image principale */}
+                {/* Image principale - grande taille */}
                 <Image
-                    src={images.find(img => img.isPrimary)?.url || images[0]?.url}
-                    alt="Photo principale"
+                    src={selectedImageUrl || images[0]?.url}
+                    alt="Photo sélectionnée"
                     borderRadius="xl"
                     shadow="lg"
                     objectFit="cover"
@@ -66,7 +73,7 @@ export default function PropertyDetail({ token }) {
                     mb={4}
                 />
 
-                {/* Miniatures des autres photos */}
+                {/* Miniatures cliquables */}
                 {images.length > 1 && (
                   <SimpleGrid columns={{ base: 3, md: 4 }} spacing={2}>
                     {images.map((img) => (
@@ -79,9 +86,11 @@ export default function PropertyDetail({ token }) {
                         w="100%"
                         h="80px"
                         cursor="pointer"
-                        border={img.isPrimary ? "3px solid" : "1px solid"}
-                        borderColor={img.isPrimary ? "blue.500" : "gray.200"}
-                        _hover={{ opacity: 0.8 }}
+                        border={selectedImageUrl === img.url ? "3px solid" : "1px solid"}
+                        borderColor={selectedImageUrl === img.url ? "blue.500" : "gray.200"}
+                        _hover={{ opacity: 0.8, transform: 'scale(1.05)' }}
+                        transition="all 0.2s"
+                        onClick={() => setSelectedImageUrl(img.url)}
                       />
                     ))}
                   </SimpleGrid>
