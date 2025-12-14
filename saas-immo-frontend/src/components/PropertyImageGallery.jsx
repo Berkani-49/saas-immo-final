@@ -98,6 +98,13 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
       const publicUrl = uploadResponse.data.url;
 
       // 2. Enregistrer dans la base de données via l'API
+      const jsonConfig = {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      };
+
       await axios.post(
         `https://saas-immo.onrender.com/api/properties/${propertyId}/images`,
         {
@@ -105,7 +112,7 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
           caption: null,
           isPrimary: images.length === 0 // Première photo = principale
         },
-        config
+        jsonConfig
       );
 
       toast({
