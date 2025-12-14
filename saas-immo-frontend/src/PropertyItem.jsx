@@ -1,10 +1,10 @@
-// Fichier : src/PropertyItem.jsx (Version Finale avec Partage + Documents PDF)
+// Fichier : src/PropertyItem.jsx (Version Finale avec Partage + Documents PDF + Photos Multiples)
 
 import React, { useState } from 'react';
 import axios from 'axios';
 import {
   Box, Text, Button, IconButton, Flex, Badge, Image, VStack, HStack, useToast,
-  FormControl, FormLabel, Input, Textarea, Spacer, useDisclosure
+  FormControl, FormLabel, Input, Textarea, Spacer, useDisclosure, Divider
 } from '@chakra-ui/react';
 import { EditIcon, DeleteIcon } from '@chakra-ui/icons';
 import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaShareAlt } from 'react-icons/fa';
@@ -13,6 +13,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from './supabaseClient';
 import DocumentGenerator from './components/DocumentGenerator';
 import StagingModal from './components/StagingModal';
+import PropertyImageGallery from './components/PropertyImageGallery';
 
 export default function PropertyItem({ property, token, onPropertyDeleted, onPropertyUpdated }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -141,7 +142,7 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
         <form onSubmit={handleSave}>
           <VStack spacing={3} align="stretch">
             <Text fontWeight="bold" color="blue.600">Modifier le bien</Text>
-            <FormControl><FormLabel fontSize="sm">Nouvelle photo</FormLabel><Input type="file" accept="image/*" p={1} onChange={(e) => setNewImageFile(e.target.files[0])} /></FormControl>
+            <FormControl><FormLabel fontSize="sm">Nouvelle photo (ancienne méthode)</FormLabel><Input type="file" accept="image/*" p={1} onChange={(e) => setNewImageFile(e.target.files[0])} /></FormControl>
             <Input name="address" value={editData.address} onChange={handleChange} placeholder="Adresse" />
             <HStack>
                 <Input name="city" value={editData.city} onChange={handleChange} placeholder="Ville" />
@@ -155,6 +156,18 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
               <Button type="submit" colorScheme="green" size="sm" isLoading={isLoading || isUploading}>Sauvegarder</Button>
               <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)}>Annuler</Button>
             </Flex>
+
+            <Divider my={4} />
+
+            {/* 📸 GALERIE DE PHOTOS MULTIPLES */}
+            <Text fontWeight="bold" color="blue.600" mb={2}>Photos du bien</Text>
+            <PropertyImageGallery
+              propertyId={property.id}
+              token={token}
+              onImagesChange={(images) => {
+                console.log(`${images.length} photo(s) mise(s) à jour`);
+              }}
+            />
           </VStack>
         </form>
       </Box>

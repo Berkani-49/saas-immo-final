@@ -13,6 +13,8 @@ const PDFDocument = require('pdfkit');
 const sharp = require('sharp');
 const https = require('https');
 const http = require('http');
+const multer = require('multer');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const prisma = new PrismaClient();
@@ -35,6 +37,28 @@ if (!process.env.OPENAI_API_KEY) {
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
+
+// Supabase client avec service_role pour bypasser RLS
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+// Configuration de multer pour gérer les uploads en mémoire
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB max
+  },
+  fileFilter: (req, file, cb) => {
+    // Accepter seulement les images
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Seulement les fichiers image sont acceptés'));
+    }
+  }
+});
 
 // --- 1. MIDDLEWARES (CORS + JSON) - EN PREMIER ---
 // Liste des origines autorisées (frontend Vercel + localhost dev)
@@ -355,6 +379,57 @@ app.get('/api/properties/:id', authenticateToken, async (req, res) => {
 // ================================
 // 📸 GESTION DES IMAGES MULTIPLES
 // ================================
+
+// 🔄 ROUTE D'UPLOAD - Upload une photo vers Supabase (bypass RLS)
+app.post('/api/upload-image', authenticateToken, upload.single('image'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: "Aucun fichier fourni" });
+        }
+
+        // Générer un nom de fichier unique
+        const fileExt = req.file.originalname.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = fileName;
+
+        // Upload vers Supabase Storage en utilisant le service_role (bypass RLS)
+        const { data, error: uploadError } = await supabase.storage
+            .from('property-images')
+            .upload(filePath, req.file.buffer, {
+                contentType: req.file.mimetype,
+                cacheControl: '3600',
+                upsert: false
+            });
+
+        if (uploadError) {
+            console.error("Erreur upload Supabase:", uploadError);
+            return res.status(500).json({
+                error: "Erreur lors de l'upload",
+                details: uploadError.message
+            });
+        }
+
+        // Récupérer l'URL publique
+        const { data: { publicUrl } } = supabase.storage
+            .from('property-images')
+            .getPublicUrl(filePath);
+
+        console.log(`✅ Photo uploadée avec succès: ${publicUrl}`);
+
+        res.json({
+            success: true,
+            url: publicUrl,
+            fileName: fileName
+        });
+
+    } catch (error) {
+        console.error("Erreur route upload:", error);
+        res.status(500).json({
+            error: "Erreur serveur lors de l'upload",
+            details: error.message
+        });
+    }
+});
 
 // Ajouter une photo à un bien
 app.post('/api/properties/:id/images', authenticateToken, async (req, res) => {
@@ -1491,6 +1566,7 @@ app.get('/api/properties/:id/documents/offre-achat', authenticateToken, async (r
     doc.text('Date :', 70, signatureY + 110);
 
     // Signature de l'agent
+    
     doc.text("L'Agent immobilier :", 350, signatureY);
     doc.text(`${property.agent.firstName} ${property.agent.lastName}`, 350, signatureY + 20);
     doc.text('Signature :', 350, signatureY + 40);

@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  Box, Button, Image, Grid, IconButton, Input, Badge, Text, VStack, HStack,
+  Box, Image, Grid, IconButton, Input, Badge, Text, HStack,
   useToast, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody,
   ModalCloseButton, useDisclosure, Spinner, FormControl, FormLabel
 } from '@chakra-ui/react';
 import { DeleteIcon, StarIcon, ViewIcon } from '@chakra-ui/icons';
 import axios from 'axios';
-import { supabase } from '../supabaseClient';
 
 export default function PropertyImageGallery({ propertyId, token, onImagesChange }) {
   const [images, setImages] = useState([]);
@@ -79,23 +78,26 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
 
     setUploading(true);
     try {
-      // 1. Upload sur Supabase Storage
-      const fileName = `property_${propertyId}_${Date.now()}_${file.name}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('property-images')
-        .upload(fileName, file);
+      // 1. Upload via le backend (qui upload vers Supabase avec service_role pour bypass RLS)
+      const formData = new FormData();
+      formData.append('image', file);
 
-      if (uploadError) {
-        throw new Error(`Erreur upload Supabase: ${uploadError.message}`);
-      }
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      };
 
-      // 2. Récupérer l'URL publique
-      const { data: { publicUrl } } = supabase.storage
-        .from('property-images')
-        .getPublicUrl(fileName);
+      const uploadResponse = await axios.post(
+        'https://saas-immo.onrender.com/api/upload-image',
+        formData,
+        config
+      );
 
-      // 3. Enregistrer dans la base de données via l'API
-      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const publicUrl = uploadResponse.data.url;
+
+      // 2. Enregistrer dans la base de données via l'API
       await axios.post(
         `https://saas-immo.onrender.com/api/properties/${propertyId}/images`,
         {
@@ -129,30 +131,18 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
   };
 
   // Fonction pour supprimer une photo
-  const handleDelete = async (imageId, imageUrl) => {
+  const handleDelete = async (imageId) => {
     if (!window.confirm('Voulez-vous vraiment supprimer cette photo ?')) {
       return;
     }
 
     try {
-      // 1. Supprimer de la base de données
+      // Supprimer de la base de données (le backend s'occupe aussi de supprimer du storage)
       const config = { headers: { Authorization: `Bearer ${token}` } };
       await axios.delete(
         `https://saas-immo.onrender.com/api/properties/${propertyId}/images/${imageId}`,
         config
       );
-
-      // 2. Supprimer de Supabase Storage (optionnel)
-      try {
-        const fileName = imageUrl.split('/').pop();
-        if (fileName && !imageUrl.includes('placeholder')) {
-          await supabase.storage
-            .from('property-images')
-            .remove([fileName]);
-        }
-      } catch (storageError) {
-        console.warn('Erreur suppression storage:', storageError);
-      }
 
       toast({
         title: 'Photo supprimée',
@@ -380,7 +370,7 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
                     size="sm"
                     variant="ghost"
                     colorScheme="red"
-                    onClick={() => handleDelete(img.id, img.url)}
+                    onClick={() => handleDelete(img.id)}
                     aria-label="Supprimer"
                     title="Supprimer"
                   />

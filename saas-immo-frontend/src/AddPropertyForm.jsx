@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Box, Button, FormControl, FormLabel, Input, Textarea, HStack, VStack, Heading, useToast, Text, Select, Badge, Wrap, IconButton, useDisclosure, Divider } from '@chakra-ui/react';
 import { CloseIcon } from '@chakra-ui/icons';
-import { supabase } from './supabaseClient';
 import MatchingModal from './components/MatchingModal';
 import PropertyImageGallery from './components/PropertyImageGallery';
 
@@ -109,21 +108,27 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
     let finalImageUrl = null;
 
     try {
-      // 1. Upload de l'image (si elle existe)
+      // 1. Upload de l'image via le backend (si elle existe)
       if (imageFile) {
         setUploading(true);
-        const fileExt = imageFile.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `${fileName}`;
 
-        const { error: uploadError } = await supabase.storage
-          .from('properties') // Nom de ton bucket
-          .upload(filePath, imageFile);
+        const formData = new FormData();
+        formData.append('image', imageFile);
 
-        if (uploadError) throw uploadError;
+        const uploadConfig = {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        };
 
-        const { data } = supabase.storage.from('properties').getPublicUrl(filePath);
-        finalImageUrl = data.publicUrl;
+        const uploadResponse = await axios.post(
+          'https://saas-immo.onrender.com/api/upload-image',
+          formData,
+          uploadConfig
+        );
+
+        finalImageUrl = uploadResponse.data.url;
         setUploading(false);
       }
 
