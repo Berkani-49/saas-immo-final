@@ -463,6 +463,19 @@ app.post('/api/properties/:id/images', authenticateToken, async (req, res) => {
         const propertyId = parseInt(req.params.id);
         const { url, caption, isPrimary } = req.body;
 
+        // DEBUG: Log pour diagnostiquer le problème
+        console.log('🔍 DEBUG - req.body:', JSON.stringify(req.body, null, 2));
+        console.log('🔍 DEBUG - url value:', url);
+        console.log('🔍 DEBUG - url type:', typeof url);
+
+        // Validation: vérifier que l'URL est présente
+        if (!url) {
+            return res.status(400).json({
+                error: "URL manquante",
+                details: "Le paramètre 'url' est requis pour ajouter une image"
+            });
+        }
+
         // Vérifier que le bien appartient à l'agent
         const property = await prisma.property.findFirst({
             where: { id: propertyId, agentId: req.user.id }
