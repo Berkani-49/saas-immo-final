@@ -1802,6 +1802,72 @@ app.post('/api/properties/:id/stage-photo', authenticateToken, async (req, res) 
   }
 });
 
+// 🛋️ HOME STAGING VIRTUEL - Meubler UNE IMAGE SPÉCIFIQUE avec IA
+// ========================================
+app.post('/api/properties/:id/stage-image', authenticateToken, async (req, res) => {
+  try {
+    const propertyId = parseInt(req.params.id);
+    const { imageUrl, imageId, style } = req.body;
+
+    // Vérifier que le bien appartient à l'agent
+    const property = await prisma.property.findUnique({
+      where: { id: propertyId }
+    });
+
+    if (!property || property.agentId !== req.user.id) {
+      return res.status(403).json({ error: "Non autorisé" });
+    }
+
+    if (!imageUrl) {
+      return res.status(400).json({ error: "URL d'image manquante" });
+    }
+
+    // Appeler Replicate pour le staging
+    const Replicate = require('replicate');
+    const replicate = new Replicate({
+      auth: process.env.REPLICATE_API_TOKEN,
+    });
+
+    const stylePrompts = {
+      modern: "modern minimalist interior design, clean lines, neutral colors, contemporary furniture, large windows, natural light, professional photography",
+      scandinavian: "scandinavian interior design, light wood, white walls, hygge atmosphere, minimalist nordic style, cozy and bright, professional photography",
+      industrial: "industrial loft interior design, exposed brick, metal fixtures, wooden beams, urban style, concrete floors, professional photography",
+      classic: "classic elegant interior design, traditional furniture, luxurious fabrics, ornate details, sophisticated style, professional photography",
+      bohemian: "bohemian interior design, colorful textiles, plants, eclectic decor, warm atmosphere, artistic style, professional photography"
+    };
+
+    const selectedPrompt = stylePrompts[style] || stylePrompts.modern;
+
+    console.log(`🛋️ Staging image ${imageId} pour bien ${propertyId} - Style: ${style}`);
+    console.log(`📸 Image URL: ${imageUrl}`);
+
+    const prediction = await replicate.predictions.create({
+      version: "76604baddc85b1b4616e1c6475eca080da339c8875bd4996705440484a6eac38",
+      input: {
+        image: imageUrl,
+        prompt: selectedPrompt
+      }
+    });
+
+    console.log(`✅ Prédiction créée ! ID: ${prediction.id}`);
+
+    res.json({
+      success: true,
+      predictionId: prediction.id,
+      status: prediction.status,
+      imageId: imageId,
+      message: `🛋️ Génération en cours... Cela prendra 60-90 secondes.`
+    });
+
+  } catch (error) {
+    console.error("❌ Erreur staging image:", error);
+    res.status(500).json({
+      error: "Erreur lors du staging",
+      details: error.message
+    });
+  }
+});
+
 // ========================================
 // 🔄 POLLING - Vérifier le statut d'une prédiction Replicate
 // ========================================
@@ -1832,30 +1898,66 @@ app.get('/api/properties/:id/stage-status/:predictionId', authenticateToken, asy
     // Si la prédiction est réussie, sauvegarder l'image dans la BDD
     if (prediction.status === 'succeeded' && prediction.output) {
       const stagedImageUrl = Array.isArray(prediction.output) ? prediction.output[0] : prediction.output;
+      const imageId = req.query.imageId; // Si présent, on ajoute une nouvelle photo à la galerie
 
-      await prisma.property.update({
-        where: { id: propertyId },
-        data: {
-          imageUrlStaged: stagedImageUrl,
-          stagingStyle: req.query.style || 'modern'
-        }
-      });
+      if (imageId) {
+        // Cas 1: Ajouter la photo meublée à la galerie PropertyImage
+        const imageCount = await prisma.propertyImage.count({
+          where: { propertyId }
+        });
 
-      await prisma.activityLog.create({
-        data: {
-          action: 'HOME_STAGING_VIRTUEL',
-          description: `Home staging virtuel appliqué sur ${property.address}`,
-          agentId: req.user.id
-        }
-      });
+        await prisma.propertyImage.create({
+          data: {
+            url: stagedImageUrl,
+            caption: `Photo meublée (${req.query.style || 'modern'})`,
+            isPrimary: false,
+            type: 'ENHANCED',
+            order: imageCount,
+            propertyId: propertyId
+          }
+        });
 
-      console.log(`✅ Image sauvegardée: ${stagedImageUrl}`);
+        console.log(`✅ Photo meublée ajoutée à la galerie: ${stagedImageUrl}`);
 
-      return res.json({
-        status: 'succeeded',
-        stagedUrl: stagedImageUrl,
-        message: `✨ Votre pièce a été meublée !`
-      });
+        await prisma.activityLog.create({
+          data: {
+            action: 'HOME_STAGING_VIRTUEL',
+            description: `Home staging virtuel appliqué sur une photo de ${property.address}`,
+            agentId: req.user.id
+          }
+        });
+
+        return res.json({
+          status: 'succeeded',
+          stagedUrl: stagedImageUrl,
+          message: `✨ Photo meublée ajoutée à la galerie !`
+        });
+      } else {
+        // Cas 2: Mise à jour de property.imageUrlStaged (ancien comportement)
+        await prisma.property.update({
+          where: { id: propertyId },
+          data: {
+            imageUrlStaged: stagedImageUrl,
+            stagingStyle: req.query.style || 'modern'
+          }
+        });
+
+        await prisma.activityLog.create({
+          data: {
+            action: 'HOME_STAGING_VIRTUEL',
+            description: `Home staging virtuel appliqué sur ${property.address}`,
+            agentId: req.user.id
+          }
+        });
+
+        console.log(`✅ Image sauvegardée: ${stagedImageUrl}`);
+
+        return res.json({
+          status: 'succeeded',
+          stagedUrl: stagedImageUrl,
+          message: `✨ Votre pièce a été meublée !`
+        });
+      }
     }
 
     // Si échec

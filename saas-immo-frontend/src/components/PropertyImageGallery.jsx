@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import {
   Box, Image, Grid, IconButton, Input, Badge, Text, HStack,
   useToast, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody,
-  ModalCloseButton, useDisclosure, Spinner, FormControl, FormLabel
+  ModalCloseButton, useDisclosure, Spinner, FormControl, FormLabel, Button,
+  VStack, SimpleGrid
 } from '@chakra-ui/react';
 import { DeleteIcon, StarIcon, ViewIcon } from '@chakra-ui/icons';
+import { FiHome } from 'react-icons/fi';
 import axios from 'axios';
 
 export default function PropertyImageGallery({ propertyId, token, onImagesChange }) {
@@ -12,8 +14,21 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [stagingImageId, setStagingImageId] = useState(null);
+  const [selectedStyle, setSelectedStyle] = useState('modern');
+  const [isStaging, setIsStaging] = useState(false);
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen: isStagingOpen, onOpen: onStagingOpen, onClose: onStagingClose } = useDisclosure();
+
+  // Styles disponibles pour le staging
+  const stagingStyles = [
+    { id: 'modern', name: 'Moderne', emoji: '🏠', color: 'blue' },
+    { id: 'scandinavian', name: 'Scandinave', emoji: '🌿', color: 'teal' },
+    { id: 'industrial', name: 'Industriel', emoji: '🏭', color: 'orange' },
+    { id: 'classic', name: 'Classique', emoji: '👑', color: 'purple' },
+    { id: 'bohemian', name: 'Bohème', emoji: '🎨', color: 'pink' }
+  ];
 
   // Charger les images au montage du composant
   useEffect(() => {
@@ -207,6 +222,93 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
     onOpen();
   };
 
+  // Fonction pour ouvrir le modal de staging pour une photo
+  const handleOpenStaging = (imageId) => {
+    setStagingImageId(imageId);
+    onStagingOpen();
+  };
+
+  // Fonction pour appliquer le staging IA à une photo
+  const handleStagePhoto = async () => {
+    if (!stagingImageId) return;
+
+    setIsStaging(true);
+    try {
+      const config = { headers: { 'Authorization': `Bearer ${token}` } };
+      const imageToStage = images.find(img => img.id === stagingImageId);
+
+      // Appeler l'API de staging avec l'URL de l'image spécifique
+      const response = await axios.post(
+        `https://saas-immo.onrender.com/api/properties/${propertyId}/stage-image`,
+        {
+          imageUrl: imageToStage.url,
+          imageId: stagingImageId,
+          style: selectedStyle
+        },
+        config
+      );
+
+      const predictionId = response.data.predictionId;
+
+      toast({
+        title: "⏳ Génération lancée !",
+        description: "Cela prendra 60-90 secondes. Veuillez patienter...",
+        status: "info",
+        duration: 3000,
+        isClosable: true
+      });
+
+      // Polling pour vérifier le statut
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusResponse = await axios.get(
+            `https://saas-immo.onrender.com/api/properties/${propertyId}/stage-status/${predictionId}?style=${selectedStyle}&imageId=${stagingImageId}`,
+            config
+          );
+
+          if (statusResponse.data.status === 'succeeded') {
+            clearInterval(pollInterval);
+            setIsStaging(false);
+            onStagingClose();
+
+            toast({
+              title: "✨ Photo meublée générée !",
+              description: "La photo avec meubles virtuels a été ajoutée à la galerie",
+              status: "success",
+              duration: 5000,
+              isClosable: true
+            });
+
+            // Recharger les images
+            loadImages();
+          } else if (statusResponse.data.status === 'failed') {
+            clearInterval(pollInterval);
+            setIsStaging(false);
+            toast({
+              title: "❌ Échec de la génération",
+              description: "Une erreur est survenue lors de la génération",
+              status: "error",
+              duration: 5000,
+              isClosable: true
+            });
+          }
+        } catch (error) {
+          console.error('Erreur polling:', error);
+        }
+      }, 3000);
+
+    } catch (error) {
+      console.error('Erreur staging:', error);
+      setIsStaging(false);
+      toast({
+        title: 'Erreur',
+        description: error.response?.data?.error || 'Impossible de démarrer le staging',
+        status: 'error',
+        duration: 5000,
+      });
+    }
+  };
+
   if (loading) {
     return (
       <Box textAlign="center" py={10}>
@@ -371,6 +473,19 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
                     />
                   )}
 
+                  {/* Bouton ajouter meubles IA - seulement pour les photos ORIGINAL */}
+                  {img.type === 'ORIGINAL' && (
+                    <IconButton
+                      icon={<FiHome />}
+                      size="sm"
+                      variant="ghost"
+                      colorScheme="purple"
+                      onClick={() => handleOpenStaging(img.id)}
+                      aria-label="Ajouter meubles IA"
+                      title="Ajouter meubles IA"
+                    />
+                  )}
+
                   {/* Bouton supprimer */}
                   <IconButton
                     icon={<DeleteIcon />}
@@ -410,6 +525,62 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
                 borderRadius="lg"
               />
             )}
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+
+      {/* Modal pour choisir le style de staging IA */}
+      <Modal isOpen={isStagingOpen} onClose={onStagingClose} size="xl">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>🎨 Ajouter des meubles avec l'IA</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            <VStack spacing={4} align="stretch">
+              <Text fontSize="sm" color="gray.600">
+                Choisissez un style de décoration pour cette photo :
+              </Text>
+
+              {/* Grille des styles */}
+              <SimpleGrid columns={2} spacing={3}>
+                {stagingStyles.map((style) => (
+                  <Box
+                    key={style.id}
+                    p={4}
+                    borderWidth="2px"
+                    borderRadius="lg"
+                    borderColor={selectedStyle === style.id ? `${style.color}.500` : 'gray.200'}
+                    bg={selectedStyle === style.id ? `${style.color}.50` : 'white'}
+                    cursor="pointer"
+                    onClick={() => setSelectedStyle(style.id)}
+                    transition="all 0.2s"
+                    _hover={{ transform: 'scale(1.02)', shadow: 'md' }}
+                  >
+                    <VStack spacing={2}>
+                      <Text fontSize="3xl">{style.emoji}</Text>
+                      <Text fontWeight="bold" color={selectedStyle === style.id ? `${style.color}.700` : 'gray.700'}>
+                        {style.name}
+                      </Text>
+                    </VStack>
+                  </Box>
+                ))}
+              </SimpleGrid>
+
+              <Button
+                colorScheme="purple"
+                size="lg"
+                onClick={handleStagePhoto}
+                isLoading={isStaging}
+                loadingText="Génération en cours..."
+                leftIcon={<FiHome />}
+              >
+                Générer la photo meublée
+              </Button>
+
+              <Text fontSize="xs" color="gray.500" textAlign="center">
+                ⏱️ La génération prend environ 60-90 secondes
+              </Text>
+            </VStack>
           </ModalBody>
         </ModalContent>
       </Modal>
