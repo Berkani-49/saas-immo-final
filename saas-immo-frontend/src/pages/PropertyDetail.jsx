@@ -14,6 +14,7 @@ import PropertyOwners from '../components/PropertyOwners.jsx';
 export default function PropertyDetail({ token }) {
   const { propertyId } = useParams();
   const [property, setProperty] = useState(null);
+  const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -24,6 +25,13 @@ export default function PropertyDetail({ token }) {
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
         const response = await axios.get(`https://saas-immo.onrender.com/api/properties/${propertyId}`, config);
         setProperty(response.data);
+
+        // Charger les photos multiples
+        const imagesResponse = await axios.get(
+          `https://saas-immo.onrender.com/api/properties/${propertyId}/images`,
+          config
+        );
+        setImages(imagesResponse.data);
       } catch (err) {
         setError("Impossible de charger le bien.");
       } finally {
@@ -42,12 +50,54 @@ export default function PropertyDetail({ token }) {
       <Button onClick={() => navigate(-1)} mb={4} size="sm">Retour</Button>
       
       <Flex direction={{ base: 'column', md: 'row' }} gap={8}>
-        {/* COLONNE GAUCHE : IMAGE */}
+        {/* COLONNE GAUCHE : IMAGE(S) */}
         <Box flex="1">
-            <Image 
-                src={property.imageUrl || "https://via.placeholder.com/600x400?text=Pas+de+photo"} 
-                alt="Bien" borderRadius="xl" shadow="lg" objectFit="cover" w="100%" h="400px"
-            />
+            {images.length > 0 ? (
+              <Box>
+                {/* Image principale */}
+                <Image
+                    src={images.find(img => img.isPrimary)?.url || images[0]?.url}
+                    alt="Photo principale"
+                    borderRadius="xl"
+                    shadow="lg"
+                    objectFit="cover"
+                    w="100%"
+                    h="400px"
+                    mb={4}
+                />
+
+                {/* Miniatures des autres photos */}
+                {images.length > 1 && (
+                  <SimpleGrid columns={{ base: 3, md: 4 }} spacing={2}>
+                    {images.map((img) => (
+                      <Image
+                        key={img.id}
+                        src={img.url}
+                        alt={img.caption || "Photo"}
+                        borderRadius="md"
+                        objectFit="cover"
+                        w="100%"
+                        h="80px"
+                        cursor="pointer"
+                        border={img.isPrimary ? "3px solid" : "1px solid"}
+                        borderColor={img.isPrimary ? "blue.500" : "gray.200"}
+                        _hover={{ opacity: 0.8 }}
+                      />
+                    ))}
+                  </SimpleGrid>
+                )}
+              </Box>
+            ) : (
+              <Image
+                  src={property.imageUrl || "https://via.placeholder.com/600x400?text=Pas+de+photo"}
+                  alt="Bien"
+                  borderRadius="xl"
+                  shadow="lg"
+                  objectFit="cover"
+                  w="100%"
+                  h="400px"
+              />
+            )}
         </Box>
 
         {/* COLONNE DROITE : INFOS */}
