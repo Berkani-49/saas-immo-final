@@ -38,11 +38,26 @@ if (!process.env.OPENAI_API_KEY) {
 const resend = new Resend(process.env.RESEND_API_KEY);
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 
-// Supabase client avec service_role pour bypasser RLS
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+// Vérification des variables Supabase
+if (!process.env.SUPABASE_URL) {
+  console.error('❌ ERREUR : SUPABASE_URL manquant dans les variables d\'environnement');
+  console.error('📝 Ajoutez SUPABASE_URL sur Render : https://wcybvmyamnpkwpuabvqq.supabase.co');
+}
+if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  console.error('❌ ERREUR : SUPABASE_SERVICE_ROLE_KEY manquant dans les variables d\'environnement');
+  console.error('📝 Ajoutez SUPABASE_SERVICE_ROLE_KEY sur Render (clé service_role depuis Supabase)');
+}
+
+// Supabase client avec service_role pour bypasser RLS (optionnel si non configuré)
+const supabase = (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY)
+  ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
+  : null;
+
+if (supabase) {
+  console.log('✅ Supabase Storage configuré');
+} else {
+  console.warn('⚠️  Supabase Storage non configuré - Upload de photos désactivé');
+}
 
 // Configuration de multer pour gérer les uploads en mémoire
 const upload = multer({
@@ -383,6 +398,15 @@ app.get('/api/properties/:id', authenticateToken, async (req, res) => {
 // 🔄 ROUTE D'UPLOAD - Upload une photo vers Supabase (bypass RLS)
 app.post('/api/upload-image', authenticateToken, upload.single('image'), async (req, res) => {
     try {
+        // Vérifier que Supabase est configuré
+        if (!supabase) {
+            console.error('❌ Supabase non configuré - variables manquantes');
+            return res.status(503).json({
+                error: "Service d'upload non configuré",
+                details: "Les variables d'environnement Supabase sont manquantes sur le serveur"
+            });
+        }
+
         if (!req.file) {
             return res.status(400).json({ error: "Aucun fichier fourni" });
         }
@@ -391,6 +415,8 @@ app.post('/api/upload-image', authenticateToken, upload.single('image'), async (
         const fileExt = req.file.originalname.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
         const filePath = fileName;
+
+        console.log(`📤 Tentative d'upload: ${fileName} (${req.file.size} bytes)`);
 
         // Upload vers Supabase Storage en utilisant le service_role (bypass RLS)
         const { data, error: uploadError } = await supabase.storage
