@@ -1079,9 +1079,148 @@ app.get('/api/properties/:id/matches', authenticateToken, async (req, res) => {
 app.get('/api/agents', authenticateToken, async (req, res) => {
     const agents = await prisma.user.findMany({
       orderBy: { createdAt: 'desc' },
-      select: { id: true, firstName: true, lastName: true, email: true, createdAt: true }
+      select: { id: true, firstName: true, lastName: true, email: true, role: true, createdAt: true }
     });
     res.json(agents);
+});
+
+// Supprimer un membre de l'équipe (réservé au patron)
+app.delete('/api/agents/:id', authenticateToken, async (req, res) => {
+  try {
+    const currentUserId = req.user.id;
+    const targetUserId = parseInt(req.params.id);
+
+    // Vérifier que l'utilisateur actuel est un OWNER
+    const currentUser = await prisma.user.findUnique({
+      where: { id: currentUserId },
+      select: { role: true }
+    });
+
+    if (currentUser.role !== 'OWNER') {
+      return res.status(403).json({
+        error: 'Accès refusé',
+        message: 'Seul le patron peut supprimer des membres de l\'équipe'
+      });
+    }
+
+    // Vérifier que l'utilisateur cible existe
+    const targetUser = await prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: { id: true, firstName: true, lastName: true, role: true }
+    });
+
+    if (!targetUser) {
+      return res.status(404).json({ error: 'Utilisateur introuvable' });
+    }
+
+    // Empêcher le patron de se supprimer lui-même
+    if (targetUserId === currentUserId) {
+      return res.status(400).json({
+        error: 'Action non autorisée',
+        message: 'Vous ne pouvez pas supprimer votre propre compte depuis cette interface'
+      });
+    }
+
+    // Empêcher de supprimer un autre patron
+    if (targetUser.role === 'OWNER') {
+      return res.status(400).json({
+        error: 'Action non autorisée',
+        message: 'Vous ne pouvez pas supprimer un autre patron'
+      });
+    }
+
+    console.log(`👤 Suppression du membre ${targetUser.firstName} ${targetUser.lastName} (ID: ${targetUserId})`);
+
+    // Supprimer toutes les données de l'utilisateur (même logique que RGPD)
+    const userProperties = await prisma.property.findMany({
+      where: { agentId: targetUserId },
+      select: { id: true }
+    });
+    const propertyIds = userProperties.map(p => p.id);
+
+    // Supprimer PropertyView
+    if (propertyIds.length > 0) {
+      await prisma.propertyView.deleteMany({
+        where: { propertyId: { in: propertyIds } }
+      });
+    }
+
+    // Supprimer PropertyImage
+    await prisma.propertyImage.deleteMany({
+      where: {
+        property: { agentId: targetUserId }
+      }
+    });
+
+    // Supprimer Task
+    await prisma.task.deleteMany({
+      where: { agentId: targetUserId }
+    });
+
+    // Supprimer Notification liées aux contacts
+    const userContacts = await prisma.contact.findMany({
+      where: { agentId: targetUserId },
+      select: { id: true }
+    });
+    const contactIds = userContacts.map(c => c.id);
+
+    if (contactIds.length > 0) {
+      await prisma.notification.deleteMany({
+        where: { contactId: { in: contactIds } }
+      });
+    }
+
+    // Supprimer Invoice
+    await prisma.invoice.deleteMany({
+      where: { agentId: targetUserId }
+    });
+
+    // Supprimer PropertyOwner
+    if (propertyIds.length > 0) {
+      await prisma.propertyOwner.deleteMany({
+        where: { propertyId: { in: propertyIds } }
+      });
+    }
+
+    // Supprimer Property
+    await prisma.property.deleteMany({
+      where: { agentId: targetUserId }
+    });
+
+    // Supprimer Contact
+    await prisma.contact.deleteMany({
+      where: { agentId: targetUserId }
+    });
+
+    // Supprimer Appointment
+    await prisma.appointment.deleteMany({
+      where: { agentId: targetUserId }
+    });
+
+    // Supprimer ActivityLog
+    await prisma.activityLog.deleteMany({
+      where: { agentId: targetUserId }
+    });
+
+    // Enfin, supprimer l'utilisateur
+    await prisma.user.delete({
+      where: { id: targetUserId }
+    });
+
+    console.log(`✅ Membre ${targetUser.firstName} ${targetUser.lastName} supprimé avec succès`);
+
+    res.json({
+      success: true,
+      message: `${targetUser.firstName} ${targetUser.lastName} a été supprimé de l'équipe`
+    });
+
+  } catch (error) {
+    console.error('❌ Erreur suppression membre équipe:', error);
+    res.status(500).json({
+      error: 'Erreur lors de la suppression du membre',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
 });
 
 // --- ROUTES RELATION BIEN-CONTACT (Propriétaires) ---
