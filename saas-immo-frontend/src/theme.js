@@ -8,7 +8,7 @@ const theme = extendTheme({
     brand: {
       50: '#F9F6F0',
       100: '#EEDDC2',
-      200: '#E3CQA2', // (Note: code approximatif pour la nuance claire)
+      200: '#E3CQA2',
       300: '#D8B98E',
       400: '#D4AF37', // Or classique
       500: '#C6A87C', // <--- LA COULEUR PRINCIPALE (Celle du site exemple)
@@ -25,26 +25,18 @@ const theme = extendTheme({
       600: '#A38860', // Le survol deviendra Or foncé
     }
   },
-  styles: {
-    global: {
-      'html, body': {
-        backgroundColor: '#F7F8FA', // Gris très pâle pro
-        color: '#2D3748',
-      },
-    },
-  },
   components: {
     Button: {
       baseStyle: {
         fontWeight: 'bold',
-        borderRadius: 'lg', // Boutons un peu plus arrondis
+        borderRadius: 'lg',
       },
     },
     Badge: {
       baseStyle: {
         borderRadius: 'md',
       }
-    }
+    },
   },
 });
 

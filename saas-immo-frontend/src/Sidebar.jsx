@@ -1,4 +1,4 @@
-// Fichier : src/Sidebar.jsx (Version Optimisée Mobile avec sections)
+// Fichier : src/Sidebar.jsx (Version Optimisée Mobile avec sections et Dark Mode)
 
 import React, { useState } from 'react';
 import { Box, VStack, Button, Heading, Spacer, CloseButton, Flex, Icon, Text, Divider, Collapse } from '@chakra-ui/react';
@@ -54,6 +54,7 @@ const navSections = [
 ];
 
 export default function Sidebar({ onLogout, onClose }) {
+
   // État pour gérer l'ouverture/fermeture des sections
   const [openSections, setOpenSections] = useState(
     navSections.reduce((acc, section) => {
@@ -80,9 +81,9 @@ export default function Sidebar({ onLogout, onClose }) {
           role="group"
           cursor="pointer"
           bg={isActive ? 'brand.500' : 'transparent'}
-          color={isActive ? 'white' : 'gray.400'}
+          color={isActive ? 'white' : 'gray.200'}
           _hover={{
-            bg: isActive ? 'brand.600' : 'gray.800',
+            bg: isActive ? 'brand.600' : 'whiteAlpha.200',
             color: 'white',
           }}
           transition="all 0.2s"
@@ -93,6 +94,7 @@ export default function Sidebar({ onLogout, onClose }) {
               mr="3"
               fontSize="16"
               as={icon}
+              color={isActive ? 'white' : 'gray.300'}
               _groupHover={{ color: 'white' }}
             />
           )}
@@ -110,17 +112,17 @@ export default function Sidebar({ onLogout, onClose }) {
       py="2"
       cursor="pointer"
       onClick={onToggle}
-      _hover={{ bg: 'gray.800' }}
+      _hover={{ bg: 'whiteAlpha.200' }}
       borderRadius="md"
       mx="2"
       mt="2"
     >
-      <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase" letterSpacing="wider">
+      <Text fontSize="xs" fontWeight="bold" color="gray.400" textTransform="uppercase" letterSpacing="wider">
         {title}
       </Text>
       <Icon
         as={isOpen ? FiChevronDown : FiChevronRight}
-        color="gray.500"
+        color="gray.400"
         w={3}
         h={3}
       />
@@ -138,47 +140,54 @@ export default function Sidebar({ onLogout, onClose }) {
       flexDirection="column"
       borderRight="1px"
       borderRightColor="gray.700"
-      overflowY="auto"
-      pb={24}
     >
-      <Flex h="20" alignItems="center" mx="8" justifyContent="space-between">
-        <Heading fontSize="xl" fontWeight="bold" letterSpacing="tight">
-          IMMO<Text as="span" color="brand.500">PRO</Text>
-        </Heading>
-        {onClose && <CloseButton display={{ base: 'flex', md: 'none' }} onClick={onClose} />}
-      </Flex>
+      {/* Partie scrollable */}
+      <Box flex="1" overflowY="auto" pb={32}>
+        <Flex h="20" alignItems="center" mx="8" justifyContent="space-between">
+          <Heading fontSize="xl" fontWeight="bold" letterSpacing="tight">
+            IMMO<Text as="span" color="brand.500">PRO</Text>
+          </Heading>
+          {onClose && <CloseButton display={{ base: 'flex', md: 'none' }} onClick={onClose} />}
+        </Flex>
 
-      <Divider borderColor="gray.700" mb={2} />
+        <Divider borderColor="gray.700" mb={2} />
 
-      <VStack align="stretch" spacing={0}>
-        {navSections.map((section) => (
-          <Box key={section.title}>
-            <SectionHeader
-              title={section.title}
-              isOpen={openSections[section.title]}
-              onToggle={() => toggleSection(section.title)}
-            />
-            <Collapse in={openSections[section.title]} animateOpacity>
-              <VStack align="stretch" spacing={0} pb={2}>
-                {section.items.map((link) => (
-                  <NavItem key={link.name} icon={link.icon} to={link.path}>
-                    {link.name}
-                  </NavItem>
-                ))}
-              </VStack>
-            </Collapse>
-          </Box>
-        ))}
-      </VStack>
+        <VStack align="stretch" spacing={0}>
+          {navSections.map((section) => (
+            <Box key={section.title}>
+              <SectionHeader
+                title={section.title}
+                isOpen={openSections[section.title]}
+                onToggle={() => toggleSection(section.title)}
+              />
+              <Collapse in={openSections[section.title]} animateOpacity>
+                <VStack align="stretch" spacing={0} pb={2}>
+                  {section.items.map((link) => (
+                    <NavItem key={link.name} icon={link.icon} to={link.path}>
+                      {link.name}
+                    </NavItem>
+                  ))}
+                </VStack>
+              </Collapse>
+            </Box>
+          ))}
+        </VStack>
+      </Box>
 
-      <Spacer />
-
-      <Box p={6} mt="auto">
-        <Button 
-          onClick={onLogout} 
-          width="full" 
-          variant="outline" 
-          colorScheme="red" 
+      {/* Boutons fixes en bas */}
+      <Box
+        position="sticky"
+        bottom="0"
+        p={6}
+        bg="brand.900"
+        borderTop="1px"
+        borderTopColor="gray.800"
+      >
+        <Button
+          onClick={onLogout}
+          width="full"
+          variant="outline"
+          colorScheme="red"
           leftIcon={<Icon as={FiLogOut} />}
           _hover={{ bg: 'red.500', color: 'white', borderColor: 'red.500' }}
         >

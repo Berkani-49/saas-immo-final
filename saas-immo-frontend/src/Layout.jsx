@@ -1,4 +1,4 @@
-// Fichier : src/Layout.jsx (Version Mobile avec Équipe)
+// Fichier : src/Layout.jsx (Version Mobile avec Équipe et Dark Mode)
 
 import React from 'react';
 import { Box, Flex, Text, Icon, SimpleGrid, IconButton } from '@chakra-ui/react';
@@ -21,11 +21,11 @@ export default function Layout({ onLogout }) {
 
   return (
     <Flex minH="100vh" w="100vw" bg="gray.50" overflowX="hidden" direction="column">
-      
+
       {/* --- SIDEBAR ORDI --- */}
-      <Box 
-        display={{ base: 'none', md: 'block' }} 
-        w="250px" minW="250px" h="100vh" 
+      <Box
+        display={{ base: 'none', md: 'block' }}
+        w="250px" minW="250px" h="100vh"
         position="fixed" left="0" top="0" zIndex="100"
         bg="brand.900"
       >
@@ -36,10 +36,12 @@ export default function Layout({ onLogout }) {
       <Flex
         display={{ base: 'flex', md: 'none' }}
         h="60px" alignItems="center" justifyContent="space-between"
-        bg="white" borderBottomWidth="1px" borderBottomColor="gray.200"
+        bg="white"
+        borderBottomWidth="1px"
+        borderBottomColor="gray.200"
         px={4} position="sticky" top="0" zIndex="90"
       >
-        <Box w="40px" /> {/* Spacer pour centrer le titre */}
+        <Box w="40px"></Box>
         <Text fontSize="lg" fontWeight="bold" color="brand.600">IMMO PRO</Text>
         <IconButton
           icon={<Icon as={FiLogOut} />}
@@ -67,7 +69,9 @@ export default function Layout({ onLogout }) {
       <Box
         display={{ base: 'block', md: 'none' }}
         position="fixed" bottom="0" left="0" w="100%"
-        bg="white" borderTopWidth="1px" borderTopColor="gray.200"
+        bg="white"
+        borderTopWidth="1px"
+        borderTopColor="gray.200"
         zIndex="999" pb="env(safe-area-inset-bottom)"
         boxShadow="0px -2px 10px rgba(0,0,0,0.05)"
       >
