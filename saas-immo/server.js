@@ -2065,10 +2065,27 @@ app.delete('/api/rgpd/delete-account', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Supprimer toutes les données associées à l'utilisateur
-    // L'ordre est important pour respecter les contraintes de clés étrangères
+    console.log(`🗑️  Début suppression compte utilisateur ${userId} (RGPD)`);
 
-    // 1. Supprimer les images des propriétés (et les fichiers sur Supabase)
+    // Supprimer toutes les données associées à l'utilisateur
+    // L'ordre est CRITIQUE pour respecter les contraintes de clés étrangères
+
+    // 1. Récupérer tous les IDs de propriétés de l'utilisateur
+    const userProperties = await prisma.property.findMany({
+      where: { agentId: userId },
+      select: { id: true }
+    });
+    const propertyIds = userProperties.map(p => p.id);
+
+    // 2. Supprimer les vues de propriétés (PropertyView)
+    if (propertyIds.length > 0) {
+      await prisma.propertyView.deleteMany({
+        where: { propertyId: { in: propertyIds } }
+      });
+      console.log('✓ PropertyView supprimées');
+    }
+
+    // 3. Supprimer les images des propriétés (et fichiers Supabase)
     const propertyImages = await prisma.propertyImage.findMany({
       where: {
         property: {
@@ -2077,8 +2094,8 @@ app.delete('/api/rgpd/delete-account', authenticateToken, async (req, res) => {
       }
     });
 
-    // Supprimer les fichiers images de Supabase Storage
-    if (supabase) {
+    // Supprimer les fichiers de Supabase Storage
+    if (supabase && propertyImages.length > 0) {
       for (const img of propertyImages) {
         try {
           const urlParts = img.url.split('/');
@@ -2097,43 +2114,73 @@ app.delete('/api/rgpd/delete-account', authenticateToken, async (req, res) => {
         }
       }
     });
+    console.log('✓ PropertyImage supprimées');
 
-    // 2. Supprimer les propriétés
-    await prisma.property.deleteMany({
-      where: { agentId: userId }
-    });
-
-    // 3. Supprimer les contacts
-    await prisma.contact.deleteMany({
-      where: { agentId: userId }
-    });
-
-    // 4. Supprimer les tâches
+    // 4. Supprimer les tâches (avant les propriétés et contacts)
     await prisma.task.deleteMany({
       where: { agentId: userId }
     });
+    console.log('✓ Task supprimées');
 
-    // 5. Supprimer les rendez-vous
-    await prisma.appointment.deleteMany({
-      where: { agentId: userId }
+    // 5. Récupérer tous les IDs de contacts de l'utilisateur
+    const userContacts = await prisma.contact.findMany({
+      where: { agentId: userId },
+      select: { id: true }
     });
+    const contactIds = userContacts.map(c => c.id);
 
-    // 6. Supprimer les factures
+    // 6. Supprimer les notifications liées aux contacts
+    if (contactIds.length > 0) {
+      await prisma.notification.deleteMany({
+        where: { contactId: { in: contactIds } }
+      });
+      console.log('✓ Notification supprimées');
+    }
+
+    // 7. Supprimer les factures (avant les contacts)
     await prisma.invoice.deleteMany({
       where: { agentId: userId }
     });
+    console.log('✓ Invoice supprimées');
 
-    // 7. Supprimer les activités
+    // 8. Supprimer les relations PropertyOwner (table de jonction)
+    if (propertyIds.length > 0) {
+      await prisma.propertyOwner.deleteMany({
+        where: { propertyId: { in: propertyIds } }
+      });
+      console.log('✓ PropertyOwner supprimées');
+    }
+
+    // 9. Supprimer les propriétés
+    await prisma.property.deleteMany({
+      where: { agentId: userId }
+    });
+    console.log('✓ Property supprimées');
+
+    // 10. Supprimer les contacts
+    await prisma.contact.deleteMany({
+      where: { agentId: userId }
+    });
+    console.log('✓ Contact supprimés');
+
+    // 11. Supprimer les rendez-vous
+    await prisma.appointment.deleteMany({
+      where: { agentId: userId }
+    });
+    console.log('✓ Appointment supprimés');
+
+    // 12. Supprimer les activités
     await prisma.activityLog.deleteMany({
       where: { agentId: userId }
     });
+    console.log('✓ ActivityLog supprimées');
 
-    // 8. Enfin, supprimer l'utilisateur
+    // 13. Enfin, supprimer l'utilisateur
     await prisma.user.delete({
       where: { id: userId }
     });
 
-    console.log(`✅ Compte utilisateur ${userId} supprimé (RGPD - Droit à l'oubli)`);
+    console.log(`✅ Compte utilisateur ${userId} supprimé définitivement (RGPD - Droit à l'oubli)`);
 
     res.json({
       success: true,
@@ -2141,8 +2188,12 @@ app.delete('/api/rgpd/delete-account', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Erreur suppression compte RGPD:', error);
-    res.status(500).json({ error: 'Erreur lors de la suppression du compte' });
+    console.error('❌ Erreur suppression compte RGPD:', error);
+    console.error('Détails:', error.message);
+    res.status(500).json({
+      error: 'Erreur lors de la suppression du compte',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
