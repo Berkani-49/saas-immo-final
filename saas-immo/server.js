@@ -2175,6 +2175,301 @@ app.delete('/api/rgpd/delete-account', authenticateToken, async (req, res) => {
   }
 });
 
+// ============================================
+// ROUTES ANALYTICS (Tableau de bord avancé)
+// ============================================
+
+// Track une vue de bien (appelé depuis PublicPropertyPage)
+app.post('/api/analytics/track-view', async (req, res) => {
+  try {
+    const { propertyId, referrer, userAgent, device } = req.body;
+
+    // Créer une vue
+    const view = await prisma.propertyView.create({
+      data: {
+        propertyId: parseInt(propertyId),
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: userAgent || req.headers['user-agent'],
+        referrer: referrer || req.headers.referer || 'Direct',
+        device: device || 'unknown',
+        viewedAt: new Date()
+      }
+    });
+
+    // Incrémenter le compteur de vues du bien
+    await prisma.property.update({
+      where: { id: parseInt(propertyId) },
+      data: {
+        views: {
+          increment: 1
+        }
+      }
+    });
+
+    res.json({ success: true, viewId: view.id });
+  } catch (error) {
+    console.error('Erreur tracking vue:', error);
+    res.status(500).json({ error: 'Erreur lors du tracking' });
+  }
+});
+
+// Mettre à jour la durée d'une vue
+app.post('/api/analytics/update-duration', async (req, res) => {
+  try {
+    const { propertyId, duration } = req.body;
+
+    // Trouver la vue la plus récente pour cette propriété et cet IP
+    const recentView = await prisma.propertyView.findFirst({
+      where: {
+        propertyId: parseInt(propertyId),
+        ipAddress: req.ip || req.connection.remoteAddress,
+        duration: null
+      },
+      orderBy: {
+        viewedAt: 'desc'
+      }
+    });
+
+    if (recentView) {
+      await prisma.propertyView.update({
+        where: { id: recentView.id },
+        data: { duration: parseInt(duration) }
+      });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Erreur update duration:', error);
+    res.status(500).json({ error: 'Erreur lors de la mise à jour de la durée' });
+  }
+});
+
+// Obtenir les statistiques globales d'un agent
+app.get('/api/analytics/overview', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Récupérer tous les biens de l'agent
+    const properties = await prisma.property.findMany({
+      where: { agentId: userId },
+      select: { id: true }
+    });
+
+    const propertyIds = properties.map(p => p.id);
+
+    // Total des vues sur les 30 derniers jours
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const totalViews = await prisma.propertyView.count({
+      where: {
+        propertyId: { in: propertyIds },
+        viewedAt: { gte: thirtyDaysAgo }
+      }
+    });
+
+    // Taux de conversion (vues qui ont converti)
+    const conversions = await prisma.propertyView.count({
+      where: {
+        propertyId: { in: propertyIds },
+        converted: true,
+        viewedAt: { gte: thirtyDaysAgo }
+      }
+    });
+
+    const conversionRate = totalViews > 0 ? ((conversions / totalViews) * 100).toFixed(2) : 0;
+
+    // Temps moyen passé sur les biens
+    const avgDuration = await prisma.propertyView.aggregate({
+      where: {
+        propertyId: { in: propertyIds },
+        duration: { not: null }
+      },
+      _avg: {
+        duration: true
+      }
+    });
+
+    // Vues par jour (derniers 30 jours)
+    const viewsByDay = await prisma.$queryRaw`
+      SELECT DATE(viewed_at) as date, COUNT(*) as count
+      FROM property_view
+      WHERE property_id = ANY(${propertyIds})
+        AND viewed_at >= ${thirtyDaysAgo}
+      GROUP BY DATE(viewed_at)
+      ORDER BY date ASC
+    `;
+
+    res.json({
+      totalViews,
+      conversions,
+      conversionRate: parseFloat(conversionRate),
+      avgDuration: Math.round(avgDuration._avg.duration || 0),
+      viewsByDay
+    });
+
+  } catch (error) {
+    console.error('Erreur analytics overview:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des statistiques' });
+  }
+});
+
+// Obtenir les statistiques détaillées par bien
+app.get('/api/analytics/properties', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Récupérer tous les biens avec leurs vues
+    const properties = await prisma.property.findMany({
+      where: { agentId: userId },
+      select: {
+        id: true,
+        address: true,
+        city: true,
+        price: true,
+        views: true
+      }
+    });
+
+    // Pour chaque bien, calculer les stats
+    const propertiesWithStats = await Promise.all(
+      properties.map(async (property) => {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        // Vues des 30 derniers jours
+        const recentViews = await prisma.propertyView.count({
+          where: {
+            propertyId: property.id,
+            viewedAt: { gte: thirtyDaysAgo }
+          }
+        });
+
+        // Temps moyen
+        const avgDuration = await prisma.propertyView.aggregate({
+          where: {
+            propertyId: property.id,
+            duration: { not: null }
+          },
+          _avg: {
+            duration: true
+          }
+        });
+
+        // Conversions
+        const conversions = await prisma.propertyView.count({
+          where: {
+            propertyId: property.id,
+            converted: true
+          }
+        });
+
+        return {
+          ...property,
+          recentViews,
+          avgDuration: Math.round(avgDuration._avg.duration || 0),
+          conversions,
+          conversionRate: recentViews > 0 ? ((conversions / recentViews) * 100).toFixed(2) : 0
+        };
+      })
+    );
+
+    // Trier par nombre de vues récentes
+    propertiesWithStats.sort((a, b) => b.recentViews - a.recentViews);
+
+    res.json(propertiesWithStats);
+
+  } catch (error) {
+    console.error('Erreur analytics properties:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des statistiques par bien' });
+  }
+});
+
+// Obtenir l'origine du trafic
+app.get('/api/analytics/traffic-sources', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const properties = await prisma.property.findMany({
+      where: { agentId: userId },
+      select: { id: true }
+    });
+
+    const propertyIds = properties.map(p => p.id);
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    // Grouper par referrer
+    const trafficSources = await prisma.propertyView.groupBy({
+      by: ['referrer'],
+      where: {
+        propertyId: { in: propertyIds },
+        viewedAt: { gte: thirtyDaysAgo }
+      },
+      _count: {
+        id: true
+      },
+      orderBy: {
+        _count: {
+          id: 'desc'
+        }
+      }
+    });
+
+    const formattedSources = trafficSources.map(source => ({
+      source: source.referrer || 'Direct',
+      count: source._count.id
+    }));
+
+    res.json(formattedSources);
+
+  } catch (error) {
+    console.error('Erreur traffic sources:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des sources de trafic' });
+  }
+});
+
+// Obtenir la répartition par appareil
+app.get('/api/analytics/devices', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const properties = await prisma.property.findMany({
+      where: { agentId: userId },
+      select: { id: true }
+    });
+
+    const propertyIds = properties.map(p => p.id);
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    // Grouper par device
+    const devices = await prisma.propertyView.groupBy({
+      by: ['device'],
+      where: {
+        propertyId: { in: propertyIds },
+        viewedAt: { gte: thirtyDaysAgo }
+      },
+      _count: {
+        id: true
+      }
+    });
+
+    const formattedDevices = devices.map(d => ({
+      device: d.device || 'Unknown',
+      count: d._count.id
+    }));
+
+    res.json(formattedDevices);
+
+  } catch (error) {
+    console.error('Erreur devices analytics:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des statistiques par appareil' });
+  }
+});
+
 // DÉMARRAGE
 app.listen(PORT, () => {
   console.log(`✅ Serveur OK sur port ${PORT}`);
@@ -2182,4 +2477,5 @@ app.listen(PORT, () => {
   console.log(`✅ Middleware OPTIONS configuré`);
   console.log(`✅ Replicate API: ${process.env.REPLICATE_API_TOKEN ? 'Configurée ✓' : 'NON configurée ✗'}`);
   console.log(`✅ Routes RGPD activées (Export + Suppression)`);
+  console.log(`✅ Routes Analytics activées (Tableau de bord avancé)`);
 });

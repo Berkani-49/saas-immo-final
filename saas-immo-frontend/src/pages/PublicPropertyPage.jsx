@@ -55,6 +55,53 @@ export default function PublicPropertyPage() {
     fetchPublicProperty();
   }, [id]);
 
+  // 📊 ANALYTICS: Tracker la vue et le temps passé
+  useEffect(() => {
+    if (!property) return;
+
+    const startTime = Date.now();
+
+    // Détecter le type d'appareil
+    const isMobile = /Mobile|Android|iPhone/i.test(navigator.userAgent);
+    const isTablet = /Tablet|iPad/i.test(navigator.userAgent);
+    const device = isMobile ? 'mobile' : (isTablet ? 'tablet' : 'desktop');
+
+    // Envoyer le tracking initial
+    const trackView = async () => {
+      try {
+        await axios.post('https://saas-immo.onrender.com/api/analytics/track-view', {
+          propertyId: id,
+          referrer: document.referrer || 'Direct',
+          userAgent: navigator.userAgent,
+          device
+        });
+      } catch (error) {
+        console.error('Erreur tracking:', error);
+      }
+    };
+
+    trackView();
+
+    // Tracker le temps passé quand l'utilisateur quitte la page
+    const handleBeforeUnload = () => {
+      const duration = Math.floor((Date.now() - startTime) / 1000); // en secondes
+      // Utiliser sendBeacon pour envoyer les données même si la page se ferme
+      if (navigator.sendBeacon && duration > 5) {
+        const blob = new Blob(
+          [JSON.stringify({ propertyId: id, duration })],
+          { type: 'application/json' }
+        );
+        navigator.sendBeacon('https://saas-immo.onrender.com/api/analytics/update-duration', blob);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [property, id]);
+
   const handleSendLead = async (e) => {
     e.preventDefault();
     if (!firstName || !email || !phone) {

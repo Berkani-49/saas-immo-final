@@ -234,3 +234,22 @@ model PropertyImage {
   @@index([propertyId])
   @@index([isPrimary])
 }
+
+// --- MODÈLE VUES DES BIENS (Analytics détaillés) ---
+model PropertyView {
+  id          Int      @id @default(autoincrement())
+  propertyId  Int      // ID du bien consulté
+  ipAddress   String?  // Adresse IP du visiteur (anonymisée)
+  userAgent   String?  // Navigateur et système d'exploitation
+  referrer    String?  // Origine du trafic (Google, Facebook, lien direct, etc.)
+  duration    Int?     // Temps passé sur la page (en secondes)
+  device      String?  // Type d'appareil (desktop, mobile, tablet)
+  country     String?  // Pays du visiteur (optionnel)
+  city        String?  // Ville du visiteur (optionnel)
+  converted   Boolean  @default(false) // Si le visiteur a demandé un contact
+  viewedAt    DateTime @default(now())
+
+  @@index([propertyId])
+  @@index([viewedAt])
+  @@index([converted])
+}
