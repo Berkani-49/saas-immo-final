@@ -22,6 +22,8 @@ import PropertyDetail from './pages/PropertyDetail.jsx';
 import ContactDetail from './pages/ContactDetail.jsx';
 import SecretRegister from './pages/SecretRegister.jsx';
 import AppointmentsPage from './pages/AppointmentsPage.jsx';
+import RGPDPage from './pages/RGPDPage.jsx';
+import CookieConsent from './components/CookieConsent.jsx';
 
 export default function App() {
   const [email, setEmail] = useState('');
@@ -61,6 +63,9 @@ export default function App() {
 
   return (
     <Box w="100%" minH="100vh">
+      {/* Bannière de consentement des cookies (RGPD) */}
+      <CookieConsent />
+
       <Routes>
         <Route path="/share/:id" element={<PublicPropertyPage />} />
         <Route path="/nouveau-membre-agence" element={<SecretRegister />} />
@@ -77,6 +82,7 @@ export default function App() {
             <Route path="activites" element={<ActivitiesPage token={token} />} />
             <Route path="equipe" element={<TeamPage token={token} />} />
             <Route path="estimate" element={<PriceEstimator token={token} />} />
+            <Route path="rgpd" element={<RGPDPage token={token} />} />
             <Route path="property/:propertyId" element={<PropertyDetail token={token} />} />
             <Route path="contact/:contactId" element={<ContactDetail token={token} />} />
           </Route>

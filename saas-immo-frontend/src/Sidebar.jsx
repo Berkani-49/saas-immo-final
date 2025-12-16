@@ -18,7 +18,8 @@ import {
   FiCreditCard,
   FiCalendar,
   FiChevronDown,
-  FiChevronRight
+  FiChevronRight,
+  FiShield
 } from 'react-icons/fi';
 
 // Navigation organisée par sections (repliables sur mobile)
@@ -48,6 +49,7 @@ const navSections = [
     items: [
       { name: 'Estimer', icon: FiTrendingUp, path: '/estimate' },
       { name: 'Abonnement', icon: FiCreditCard, path: '/abonnement' },
+      { name: 'RGPD', icon: FiShield, path: '/rgpd' },
     ],
     defaultOpen: false
   }

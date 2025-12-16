@@ -1983,10 +1983,203 @@ app.get('/api/properties/:id/stage-status/:predictionId', authenticateToken, asy
   }
 });
 
+// ============================================
+// ROUTES RGPD (Conformité légale)
+// ============================================
+
+// Export de toutes les données utilisateur (Droit d'accès)
+app.get('/api/rgpd/export-data', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Récupérer toutes les données de l'utilisateur
+    const userData = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        createdAt: true,
+        updatedAt: true,
+      }
+    });
+
+    const properties = await prisma.property.findMany({
+      where: { userId },
+      include: {
+        images: true
+      }
+    });
+
+    const contacts = await prisma.contact.findMany({
+      where: { userId }
+    });
+
+    const tasks = await prisma.task.findMany({
+      where: { userId }
+    });
+
+    const appointments = await prisma.appointment.findMany({
+      where: { userId }
+    });
+
+    const invoices = await prisma.invoice.findMany({
+      where: { userId }
+    });
+
+    const activities = await prisma.activity.findMany({
+      where: { userId }
+    });
+
+    // Données de l'abonnement
+    const subscription = await prisma.subscription.findUnique({
+      where: { userId }
+    });
+
+    // Préparer l'export complet
+    const exportData = {
+      exportDate: new Date().toISOString(),
+      notice: "Ceci est un export complet de toutes vos données personnelles conformément au RGPD (Article 15 - Droit d'accès)",
+      user: userData,
+      properties: properties,
+      contacts: contacts,
+      tasks: tasks,
+      appointments: appointments,
+      invoices: invoices,
+      activities: activities,
+      subscription: subscription,
+      statistics: {
+        totalProperties: properties.length,
+        totalContacts: contacts.length,
+        totalTasks: tasks.length,
+        totalAppointments: appointments.length,
+        totalInvoices: invoices.length,
+        totalActivities: activities.length
+      }
+    };
+
+    res.json(exportData);
+
+  } catch (error) {
+    console.error('Erreur export RGPD:', error);
+    res.status(500).json({ error: 'Erreur lors de l\'export des données' });
+  }
+});
+
+// Suppression définitive du compte (Droit à l'oubli)
+app.delete('/api/rgpd/delete-account', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Supprimer toutes les données associées à l'utilisateur
+    // L'ordre est important pour respecter les contraintes de clés étrangères
+
+    // 1. Supprimer les images des propriétés (et les fichiers sur Supabase)
+    const propertyImages = await prisma.propertyImage.findMany({
+      where: {
+        property: {
+          userId
+        }
+      }
+    });
+
+    // Supprimer les fichiers images de Supabase Storage
+    if (supabase) {
+      for (const img of propertyImages) {
+        try {
+          const urlParts = img.url.split('/');
+          const fileName = urlParts[urlParts.length - 1];
+          await supabase.storage.from('property-images').remove([fileName]);
+        } catch (err) {
+          console.warn('Erreur suppression image Supabase:', err);
+        }
+      }
+    }
+
+    await prisma.propertyImage.deleteMany({
+      where: {
+        property: {
+          userId
+        }
+      }
+    });
+
+    // 2. Supprimer les propriétés
+    await prisma.property.deleteMany({
+      where: { userId }
+    });
+
+    // 3. Supprimer les contacts
+    await prisma.contact.deleteMany({
+      where: { userId }
+    });
+
+    // 4. Supprimer les tâches
+    await prisma.task.deleteMany({
+      where: { userId }
+    });
+
+    // 5. Supprimer les rendez-vous
+    await prisma.appointment.deleteMany({
+      where: { userId }
+    });
+
+    // 6. Supprimer les factures
+    await prisma.invoice.deleteMany({
+      where: { userId }
+    });
+
+    // 7. Supprimer les activités
+    await prisma.activity.deleteMany({
+      where: { userId }
+    });
+
+    // 8. Supprimer l'abonnement Stripe (si existe)
+    const subscription = await prisma.subscription.findUnique({
+      where: { userId }
+    });
+
+    if (subscription?.stripeSubscriptionId) {
+      try {
+        // Annuler l'abonnement Stripe
+        await stripe.subscriptions.cancel(subscription.stripeSubscriptionId);
+      } catch (err) {
+        console.warn('Erreur annulation abonnement Stripe:', err);
+      }
+    }
+
+    await prisma.subscription.deleteMany({
+      where: { userId }
+    });
+
+    // 9. Supprimer les membres de l'équipe
+    await prisma.teamMember.deleteMany({
+      where: { userId }
+    });
+
+    // 10. Enfin, supprimer l'utilisateur
+    await prisma.user.delete({
+      where: { id: userId }
+    });
+
+    console.log(`✅ Compte utilisateur ${userId} supprimé (RGPD - Droit à l'oubli)`);
+
+    res.json({
+      success: true,
+      message: 'Votre compte et toutes vos données ont été supprimés définitivement'
+    });
+
+  } catch (error) {
+    console.error('Erreur suppression compte RGPD:', error);
+    res.status(500).json({ error: 'Erreur lors de la suppression du compte' });
+  }
+});
+
 // DÉMARRAGE
 app.listen(PORT, () => {
   console.log(`✅ Serveur OK sur port ${PORT}`);
   console.log(`✅ CORS Manuel activé - Version Dec 11 2025`);
   console.log(`✅ Middleware OPTIONS configuré`);
   console.log(`✅ Replicate API: ${process.env.REPLICATE_API_TOKEN ? 'Configurée ✓' : 'NON configurée ✗'}`);
+  console.log(`✅ Routes RGPD activées (Export + Suppression)`);
 });
