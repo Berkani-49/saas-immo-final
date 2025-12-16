@@ -2,7 +2,7 @@
 require('dotenv').config();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient, Prisma } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { OpenAI } = require('openai');
@@ -2291,14 +2291,18 @@ app.get('/api/analytics/overview', authenticateToken, async (req, res) => {
     });
 
     // Vues par jour (derniers 30 jours)
-    const viewsByDay = await prisma.$queryRaw`
-      SELECT DATE(viewed_at) as date, COUNT(*) as count
-      FROM property_view
-      WHERE property_id = ANY(${propertyIds})
-        AND viewed_at >= ${thirtyDaysAgo}
-      GROUP BY DATE(viewed_at)
-      ORDER BY date ASC
-    `;
+    let viewsByDay = [];
+
+    if (propertyIds.length > 0) {
+      viewsByDay = await prisma.$queryRaw`
+        SELECT DATE("viewedAt") as date, COUNT(*)::int as count
+        FROM "PropertyView"
+        WHERE "propertyId" IN (${Prisma.join(propertyIds)})
+          AND "viewedAt" >= ${thirtyDaysAgo}
+        GROUP BY DATE("viewedAt")
+        ORDER BY date ASC
+      `;
+    }
 
     res.json({
       totalViews,
