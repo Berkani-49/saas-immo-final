@@ -1998,42 +1998,37 @@ app.get('/api/rgpd/export-data', authenticateToken, async (req, res) => {
       select: {
         id: true,
         email: true,
-        name: true,
+        firstName: true,
+        lastName: true,
         createdAt: true,
-        updatedAt: true,
       }
     });
 
     const properties = await prisma.property.findMany({
-      where: { userId },
+      where: { agentId: userId },
       include: {
         images: true
       }
     });
 
     const contacts = await prisma.contact.findMany({
-      where: { userId }
+      where: { agentId: userId }
     });
 
     const tasks = await prisma.task.findMany({
-      where: { userId }
+      where: { agentId: userId }
     });
 
     const appointments = await prisma.appointment.findMany({
-      where: { userId }
+      where: { agentId: userId }
     });
 
     const invoices = await prisma.invoice.findMany({
-      where: { userId }
+      where: { agentId: userId }
     });
 
-    const activities = await prisma.activity.findMany({
-      where: { userId }
-    });
-
-    // Données de l'abonnement
-    const subscription = await prisma.subscription.findUnique({
-      where: { userId }
+    const activities = await prisma.activityLog.findMany({
+      where: { agentId: userId }
     });
 
     // Préparer l'export complet
@@ -2047,7 +2042,6 @@ app.get('/api/rgpd/export-data', authenticateToken, async (req, res) => {
       appointments: appointments,
       invoices: invoices,
       activities: activities,
-      subscription: subscription,
       statistics: {
         totalProperties: properties.length,
         totalContacts: contacts.length,
@@ -2078,7 +2072,7 @@ app.delete('/api/rgpd/delete-account', authenticateToken, async (req, res) => {
     const propertyImages = await prisma.propertyImage.findMany({
       where: {
         property: {
-          userId
+          agentId: userId
         }
       }
     });
@@ -2099,65 +2093,42 @@ app.delete('/api/rgpd/delete-account', authenticateToken, async (req, res) => {
     await prisma.propertyImage.deleteMany({
       where: {
         property: {
-          userId
+          agentId: userId
         }
       }
     });
 
     // 2. Supprimer les propriétés
     await prisma.property.deleteMany({
-      where: { userId }
+      where: { agentId: userId }
     });
 
     // 3. Supprimer les contacts
     await prisma.contact.deleteMany({
-      where: { userId }
+      where: { agentId: userId }
     });
 
     // 4. Supprimer les tâches
     await prisma.task.deleteMany({
-      where: { userId }
+      where: { agentId: userId }
     });
 
     // 5. Supprimer les rendez-vous
     await prisma.appointment.deleteMany({
-      where: { userId }
+      where: { agentId: userId }
     });
 
     // 6. Supprimer les factures
     await prisma.invoice.deleteMany({
-      where: { userId }
+      where: { agentId: userId }
     });
 
     // 7. Supprimer les activités
-    await prisma.activity.deleteMany({
-      where: { userId }
+    await prisma.activityLog.deleteMany({
+      where: { agentId: userId }
     });
 
-    // 8. Supprimer l'abonnement Stripe (si existe)
-    const subscription = await prisma.subscription.findUnique({
-      where: { userId }
-    });
-
-    if (subscription?.stripeSubscriptionId) {
-      try {
-        // Annuler l'abonnement Stripe
-        await stripe.subscriptions.cancel(subscription.stripeSubscriptionId);
-      } catch (err) {
-        console.warn('Erreur annulation abonnement Stripe:', err);
-      }
-    }
-
-    await prisma.subscription.deleteMany({
-      where: { userId }
-    });
-
-    // 9. Supprimer les membres de l'équipe
-    await prisma.teamMember.deleteMany({
-      where: { userId }
-    });
-
-    // 10. Enfin, supprimer l'utilisateur
+    // 8. Enfin, supprimer l'utilisateur
     await prisma.user.delete({
       where: { id: userId }
     });
