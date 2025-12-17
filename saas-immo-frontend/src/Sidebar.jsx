@@ -20,7 +20,8 @@ import {
   FiChevronDown,
   FiChevronRight,
   FiShield,
-  FiBarChart2
+  FiBarChart2,
+  FiBell
 } from 'react-icons/fi';
 
 // Navigation organisée par sections (repliables sur mobile)
@@ -50,6 +51,7 @@ const navSections = [
     items: [
       { name: 'Estimer', icon: FiTrendingUp, path: '/estimate' },
       { name: 'Analytics', icon: FiBarChart2, path: '/analytics' },
+      { name: 'Notifications', icon: FiBell, path: '/notifications' },
       { name: 'Abonnement', icon: FiCreditCard, path: '/abonnement' },
       { name: 'RGPD', icon: FiShield, path: '/rgpd' },
     ],

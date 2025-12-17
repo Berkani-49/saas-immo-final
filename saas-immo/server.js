@@ -145,6 +145,329 @@ async function logActivity(agentId, action, description) {
   } catch (e) { console.error("Log erreur:", e); }
 }
 
+// ================================
+// 🔔 SYSTÈME DE NOTIFICATIONS AUTOMATIQUES
+// ================================
+
+/**
+ * Calcule le score de matching entre un bien et les critères d'un acheteur
+ * @param {Object} property - Le bien immobilier
+ * @param {Object} buyer - L'acheteur avec ses critères
+ * @returns {number} Score de 0 à 100
+ */
+function calculateMatchScore(property, buyer) {
+  let score = 0;
+  let criteria = 0;
+
+  // 1. Vérification du budget (critère le plus important - 40 points)
+  if (buyer.budgetMin !== null || buyer.budgetMax !== null) {
+    criteria++;
+    const price = property.price;
+    const minBudget = buyer.budgetMin || 0;
+    const maxBudget = buyer.budgetMax || Infinity;
+
+    if (price >= minBudget && price <= maxBudget) {
+      score += 40; // Prix dans le budget
+    } else if (price < minBudget) {
+      // Prix en dessous du budget min : pénalité proportionnelle
+      const diff = ((minBudget - price) / minBudget) * 100;
+      score += Math.max(0, 40 - diff);
+    } else {
+      // Prix au-dessus du budget max : pénalité forte
+      const diff = ((price - maxBudget) / maxBudget) * 100;
+      score += Math.max(0, 40 - (diff * 2)); // Pénalité double pour dépassement
+    }
+  }
+
+  // 2. Vérification de la ville (30 points)
+  if (buyer.cityPreferences && property.city) {
+    criteria++;
+    const preferredCities = buyer.cityPreferences
+      .split(',')
+      .map(c => c.trim().toLowerCase());
+    const propertyCity = property.city.toLowerCase();
+
+    if (preferredCities.some(city => propertyCity.includes(city) || city.includes(propertyCity))) {
+      score += 30;
+    }
+  }
+
+  // 3. Vérification du nombre de chambres (15 points)
+  if (buyer.minBedrooms !== null && property.bedrooms !== null) {
+    criteria++;
+    if (property.bedrooms >= buyer.minBedrooms) {
+      score += 15;
+    } else {
+      // Pénalité proportionnelle si moins de chambres
+      const ratio = property.bedrooms / buyer.minBedrooms;
+      score += Math.max(0, 15 * ratio);
+    }
+  }
+
+  // 4. Vérification de la surface (15 points)
+  if (buyer.minArea !== null && property.area !== null) {
+    criteria++;
+    if (property.area >= buyer.minArea) {
+      score += 15;
+    } else {
+      // Pénalité proportionnelle si surface insuffisante
+      const ratio = property.area / buyer.minArea;
+      score += Math.max(0, 15 * ratio);
+    }
+  }
+
+  // Si aucun critère n'est défini, score = 0
+  if (criteria === 0) return 0;
+
+  // Normaliser le score sur 100 (au cas où tous les critères ne sont pas remplis)
+  const maxPossibleScore = 40 + 30 + 15 + 15; // 100
+  return Math.round((score / maxPossibleScore) * 100);
+}
+
+/**
+ * Envoie un email de notification à un acheteur
+ * @param {Object} buyer - Contact acheteur
+ * @param {Object} property - Bien immobilier
+ * @param {number} matchScore - Score de matching (0-100)
+ */
+async function sendEmailNotification(buyer, property, matchScore) {
+  try {
+    if (!buyer.email || !buyer.notifyByEmail) {
+      console.log(`⏭️  Email ignoré pour ${buyer.firstName} ${buyer.lastName} (pas d'email ou notifications désactivées)`);
+      return { success: false, reason: 'EMAIL_DISABLED' };
+    }
+
+    const subject = `🏡 Nouveau bien correspondant à vos critères (${matchScore}% de correspondance)`;
+
+    const htmlBody = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #C6A87C 0%, #A38860 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+          .property-card { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+          .property-title { font-size: 20px; font-weight: bold; color: #C6A87C; margin-bottom: 10px; }
+          .property-detail { margin: 8px 0; color: #666; }
+          .match-score { background: #4CAF50; color: white; padding: 10px 20px; border-radius: 20px; display: inline-block; font-weight: bold; margin: 15px 0; }
+          .cta-button { background: #C6A87C; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 20px; }
+          .footer { text-align: center; color: #999; font-size: 12px; margin-top: 30px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🏡 Nouveau Bien Disponible</h1>
+            <p>Un bien immobilier correspond à vos critères de recherche</p>
+          </div>
+          <div class="content">
+            <p>Bonjour <strong>${buyer.firstName} ${buyer.lastName}</strong>,</p>
+
+            <p>Nous avons trouvé un bien qui pourrait vous intéresser :</p>
+
+            <div class="property-card">
+              <div class="property-title">${property.address}</div>
+              <div class="property-detail">📍 <strong>Localisation :</strong> ${property.city || 'Non spécifiée'} ${property.postalCode || ''}</div>
+              <div class="property-detail">💰 <strong>Prix :</strong> ${property.price.toLocaleString('fr-FR')} €</div>
+              <div class="property-detail">📏 <strong>Surface :</strong> ${property.area} m²</div>
+              <div class="property-detail">🛏️ <strong>Chambres :</strong> ${property.bedrooms}</div>
+              <div class="property-detail">🚪 <strong>Pièces :</strong> ${property.rooms}</div>
+              ${property.description ? `<div class="property-detail" style="margin-top: 15px; font-style: italic;">${property.description}</div>` : ''}
+            </div>
+
+            <div style="text-align: center;">
+              <div class="match-score">✨ ${matchScore}% de correspondance avec vos critères</div>
+            </div>
+
+            <p style="margin-top: 20px;">Ce bien correspond à vos critères de recherche :</p>
+            <ul>
+              ${buyer.budgetMin || buyer.budgetMax ? `<li>Budget : ${buyer.budgetMin ? buyer.budgetMin.toLocaleString() + '€' : 'Pas de min'} - ${buyer.budgetMax ? buyer.budgetMax.toLocaleString() + '€' : 'Pas de max'}</li>` : ''}
+              ${buyer.cityPreferences ? `<li>Villes : ${buyer.cityPreferences}</li>` : ''}
+              ${buyer.minBedrooms ? `<li>Min. ${buyer.minBedrooms} chambres</li>` : ''}
+              ${buyer.minArea ? `<li>Min. ${buyer.minArea} m²</li>` : ''}
+            </ul>
+
+            <div style="text-align: center;">
+              <a href="${process.env.FRONTEND_URL || 'https://saas-immo-frontend.vercel.app'}" class="cta-button">
+                Voir le bien en détail
+              </a>
+            </div>
+
+            <p style="margin-top: 30px; font-size: 14px; color: #666;">
+              Vous recevez cet email car vous avez activé les notifications automatiques pour vos recherches immobilières.
+            </p>
+          </div>
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} SaaS Immo - Tous droits réservés</p>
+            <p>Pour gérer vos préférences de notification, connectez-vous à votre espace client.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const textBody = `
+Nouveau bien correspondant à vos critères (${matchScore}% de correspondance)
+
+Bonjour ${buyer.firstName} ${buyer.lastName},
+
+Un nouveau bien immobilier correspond à vos critères :
+
+${property.address}
+📍 ${property.city || ''} ${property.postalCode || ''}
+💰 Prix : ${property.price.toLocaleString('fr-FR')} €
+📏 Surface : ${property.area} m²
+🛏️ Chambres : ${property.bedrooms}
+🚪 Pièces : ${property.rooms}
+
+${property.description ? '\n' + property.description + '\n' : ''}
+
+Vos critères de recherche :
+${buyer.budgetMin || buyer.budgetMax ? `- Budget : ${buyer.budgetMin ? buyer.budgetMin.toLocaleString() + '€' : 'Pas de min'} - ${buyer.budgetMax ? buyer.budgetMax.toLocaleString() + '€' : 'Pas de max'}` : ''}
+${buyer.cityPreferences ? `- Villes : ${buyer.cityPreferences}` : ''}
+${buyer.minBedrooms ? `- Min. ${buyer.minBedrooms} chambres` : ''}
+${buyer.minArea ? `- Min. ${buyer.minArea} m²` : ''}
+
+Visitez ${process.env.FRONTEND_URL || 'https://saas-immo-frontend.vercel.app'} pour voir le bien en détail.
+
+---
+© ${new Date().getFullYear()} SaaS Immo
+    `;
+
+    // Envoyer avec Resend
+    const { data, error } = await resend.emails.send({
+      from: 'SaaS Immo <onboarding@resend.dev>',
+      to: buyer.email,
+      subject: subject,
+      html: htmlBody,
+      text: textBody
+    });
+
+    if (error) {
+      console.error(`❌ Erreur envoi email à ${buyer.email}:`, error);
+      return { success: false, error: error.message };
+    }
+
+    console.log(`✅ Email envoyé à ${buyer.email} (ID: ${data?.id})`);
+    return { success: true, messageId: data?.id };
+
+  } catch (error) {
+    console.error(`❌ Exception envoi email:`, error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Trouve les acheteurs correspondant à un bien et envoie des notifications
+ * @param {Object} property - Le bien immobilier créé
+ * @param {number} agentId - ID de l'agent qui a créé le bien
+ */
+async function notifyMatchingBuyers(property, agentId) {
+  try {
+    console.log(`\n🔍 Recherche d'acheteurs pour le bien : ${property.address}`);
+
+    // Récupérer tous les acheteurs de cet agent (type "BUYER")
+    const buyers = await prisma.contact.findMany({
+      where: {
+        agentId: agentId,
+        type: 'BUYER'
+      }
+    });
+
+    console.log(`📊 ${buyers.length} acheteurs trouvés dans la base`);
+
+    if (buyers.length === 0) {
+      console.log(`ℹ️  Aucun acheteur enregistré pour cet agent`);
+      return { notificationsSent: 0, matches: [] };
+    }
+
+    const matches = [];
+    let notificationsSent = 0;
+
+    // Pour chaque acheteur, calculer le score de matching
+    for (const buyer of buyers) {
+      const matchScore = calculateMatchScore(property, buyer);
+
+      // Seuil minimal de matching : 60%
+      if (matchScore >= 60) {
+        console.log(`✨ Match trouvé : ${buyer.firstName} ${buyer.lastName} (${matchScore}%)`);
+
+        matches.push({
+          buyer: buyer,
+          score: matchScore
+        });
+
+        // Envoyer l'email si activé
+        if (buyer.notifyByEmail && buyer.email) {
+          const emailResult = await sendEmailNotification(buyer, property, matchScore);
+
+          if (emailResult.success) {
+            // Enregistrer la notification dans la base
+            await prisma.notification.create({
+              data: {
+                type: 'NEW_PROPERTY_MATCH',
+                channel: 'EMAIL',
+                recipient: buyer.email,
+                subject: `Nouveau bien correspondant à vos critères (${matchScore}%)`,
+                body: `Bien : ${property.address}, ${property.city}`,
+                status: 'SENT',
+                metadata: JSON.stringify({
+                  propertyId: property.id,
+                  matchScore: matchScore,
+                  propertyAddress: property.address
+                }),
+                contactId: buyer.id
+              }
+            });
+
+            notificationsSent++;
+          } else {
+            // Enregistrer l'échec
+            await prisma.notification.create({
+              data: {
+                type: 'NEW_PROPERTY_MATCH',
+                channel: 'EMAIL',
+                recipient: buyer.email || 'N/A',
+                subject: `Nouveau bien correspondant à vos critères (${matchScore}%)`,
+                body: `Bien : ${property.address}, ${property.city}`,
+                status: 'FAILED',
+                metadata: JSON.stringify({
+                  propertyId: property.id,
+                  matchScore: matchScore,
+                  error: emailResult.error || emailResult.reason
+                }),
+                contactId: buyer.id
+              }
+            });
+          }
+        }
+
+        // TODO: Ajouter support SMS et notifications push ici si activés
+      } else {
+        console.log(`⏭️  ${buyer.firstName} ${buyer.lastName} : score trop faible (${matchScore}%)`);
+      }
+    }
+
+    console.log(`\n📧 Résultat : ${notificationsSent} notification(s) envoyée(s) sur ${matches.length} match(es)\n`);
+
+    return {
+      notificationsSent: notificationsSent,
+      matches: matches.map(m => ({
+        buyerId: m.buyer.id,
+        buyerName: `${m.buyer.firstName} ${m.buyer.lastName}`,
+        score: m.score
+      }))
+    };
+
+  } catch (error) {
+    console.error('❌ Erreur dans notifyMatchingBuyers:', error);
+    return { notificationsSent: 0, matches: [], error: error.message };
+  }
+}
+
 // --- 3. ROUTES PUBLIQUES (Sans mot de passe) ---
 
 app.get('/', (req, res) => res.json({ message: "Serveur en ligne !" }));
@@ -319,17 +642,28 @@ app.post('/api/properties', authenticateToken, async (req, res) => {
             }
         } catch(e) {}
 
-        const newProperty = await prisma.property.create({ 
-            data: { ...req.body, 
-                price: parseInt(req.body.price), 
+        const newProperty = await prisma.property.create({
+            data: { ...req.body,
+                price: parseInt(req.body.price),
                 area: parseInt(req.body.area),
                 rooms: parseInt(req.body.rooms),
                 bedrooms: parseInt(req.body.bedrooms),
                 latitude: lat, longitude: lon,
-                agentId: req.user.id 
-            } 
+                agentId: req.user.id
+            }
         });
         logActivity(req.user.id, "CRÉATION_BIEN", `Ajout du bien : ${req.body.address}`);
+
+        // 🔔 Déclencher les notifications automatiques en arrière-plan
+        // Note: On ne bloque pas la réponse pour éviter les timeouts
+        notifyMatchingBuyers(newProperty, req.user.id)
+            .then(result => {
+                console.log(`✅ Notifications terminées : ${result.notificationsSent} envoyée(s)`);
+            })
+            .catch(error => {
+                console.error('❌ Erreur notifications:', error);
+            });
+
         res.status(201).json(newProperty);
     } catch (e) { res.status(500).json({ error: "Erreur" }); }
 });
@@ -2632,6 +2966,264 @@ app.get('/api/analytics/devices', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Erreur devices analytics:', error);
     res.status(500).json({ error: 'Erreur lors de la récupération des statistiques par appareil' });
+  }
+});
+
+// ================================
+// 🔔 ROUTES NOTIFICATIONS
+// ================================
+
+// GET /api/notifications - Historique des notifications de l'agent
+app.get('/api/notifications', authenticateToken, async (req, res) => {
+  try {
+    const { limit = 50, offset = 0, type, status } = req.query;
+
+    // Récupérer tous les contacts de l'agent
+    const contacts = await prisma.contact.findMany({
+      where: { agentId: req.user.id },
+      select: { id: true }
+    });
+
+    const contactIds = contacts.map(c => c.id);
+
+    // Construire les filtres
+    const filters = {
+      contactId: { in: contactIds }
+    };
+
+    if (type) filters.type = type;
+    if (status) filters.status = status;
+
+    // Récupérer les notifications
+    const notifications = await prisma.notification.findMany({
+      where: filters,
+      include: {
+        contact: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            type: true
+          }
+        }
+      },
+      orderBy: { sentAt: 'desc' },
+      take: parseInt(limit),
+      skip: parseInt(offset)
+    });
+
+    // Compter le total
+    const total = await prisma.notification.count({ where: filters });
+
+    res.json({
+      notifications: notifications,
+      total: total,
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+
+  } catch (error) {
+    console.error('Erreur GET /api/notifications:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des notifications' });
+  }
+});
+
+// GET /api/notifications/stats - Statistiques des notifications
+app.get('/api/notifications/stats', authenticateToken, async (req, res) => {
+  try {
+    // Récupérer tous les contacts de l'agent
+    const contacts = await prisma.contact.findMany({
+      where: { agentId: req.user.id },
+      select: { id: true }
+    });
+
+    const contactIds = contacts.map(c => c.id);
+
+    // Total notifications
+    const total = await prisma.notification.count({
+      where: { contactId: { in: contactIds } }
+    });
+
+    // Par statut
+    const byStatus = await prisma.notification.groupBy({
+      by: ['status'],
+      where: { contactId: { in: contactIds } },
+      _count: { id: true }
+    });
+
+    // Par type
+    const byType = await prisma.notification.groupBy({
+      by: ['type'],
+      where: { contactId: { in: contactIds } },
+      _count: { id: true }
+    });
+
+    // Par canal
+    const byChannel = await prisma.notification.groupBy({
+      by: ['channel'],
+      where: { contactId: { in: contactIds } },
+      _count: { id: true }
+    });
+
+    // Derniers 7 jours
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const recentCount = await prisma.notification.count({
+      where: {
+        contactId: { in: contactIds },
+        sentAt: { gte: sevenDaysAgo }
+      }
+    });
+
+    res.json({
+      total: total,
+      recent: recentCount,
+      byStatus: byStatus.map(s => ({ status: s.status, count: s._count.id })),
+      byType: byType.map(t => ({ type: t.type, count: t._count.id })),
+      byChannel: byChannel.map(c => ({ channel: c.channel, count: c._count.id }))
+    });
+
+  } catch (error) {
+    console.error('Erreur GET /api/notifications/stats:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des statistiques' });
+  }
+});
+
+// POST /api/notifications/test-matching - Tester le matching pour un bien existant
+app.post('/api/notifications/test-matching/:propertyId', authenticateToken, async (req, res) => {
+  try {
+    const propertyId = parseInt(req.params.propertyId);
+
+    // Vérifier que le bien appartient à l'agent
+    const property = await prisma.property.findFirst({
+      where: {
+        id: propertyId,
+        agentId: req.user.id
+      }
+    });
+
+    if (!property) {
+      return res.status(404).json({ error: 'Bien non trouvé ou non autorisé' });
+    }
+
+    // Lancer le matching (sans envoyer d'emails)
+    const buyers = await prisma.contact.findMany({
+      where: {
+        agentId: req.user.id,
+        type: 'BUYER'
+      }
+    });
+
+    const matches = buyers.map(buyer => ({
+      buyer: {
+        id: buyer.id,
+        firstName: buyer.firstName,
+        lastName: buyer.lastName,
+        email: buyer.email
+      },
+      score: calculateMatchScore(property, buyer),
+      criteria: {
+        budgetMin: buyer.budgetMin,
+        budgetMax: buyer.budgetMax,
+        cityPreferences: buyer.cityPreferences,
+        minBedrooms: buyer.minBedrooms,
+        minArea: buyer.minArea
+      }
+    })).filter(m => m.score >= 60).sort((a, b) => b.score - a.score);
+
+    res.json({
+      property: {
+        id: property.id,
+        address: property.address,
+        city: property.city,
+        price: property.price,
+        area: property.area,
+        bedrooms: property.bedrooms
+      },
+      matchesFound: matches.length,
+      matches: matches
+    });
+
+  } catch (error) {
+    console.error('Erreur POST /api/notifications/test-matching:', error);
+    res.status(500).json({ error: 'Erreur lors du test de matching' });
+  }
+});
+
+// POST /api/notifications/send-manual - Envoyer une notification manuelle
+app.post('/api/notifications/send-manual', authenticateToken, async (req, res) => {
+  try {
+    const { propertyId, contactId } = req.body;
+
+    // Vérifier que le bien appartient à l'agent
+    const property = await prisma.property.findFirst({
+      where: {
+        id: parseInt(propertyId),
+        agentId: req.user.id
+      }
+    });
+
+    if (!property) {
+      return res.status(404).json({ error: 'Bien non trouvé ou non autorisé' });
+    }
+
+    // Vérifier que le contact appartient à l'agent
+    const contact = await prisma.contact.findFirst({
+      where: {
+        id: parseInt(contactId),
+        agentId: req.user.id
+      }
+    });
+
+    if (!contact) {
+      return res.status(404).json({ error: 'Contact non trouvé ou non autorisé' });
+    }
+
+    // Calculer le score de matching
+    const matchScore = calculateMatchScore(property, contact);
+
+    // Envoyer l'email
+    const emailResult = await sendEmailNotification(contact, property, matchScore);
+
+    // Enregistrer la notification
+    const notification = await prisma.notification.create({
+      data: {
+        type: 'NEW_PROPERTY_MATCH',
+        channel: 'EMAIL',
+        recipient: contact.email || 'N/A',
+        subject: `Nouveau bien correspondant à vos critères (${matchScore}%)`,
+        body: `Bien : ${property.address}, ${property.city}`,
+        status: emailResult.success ? 'SENT' : 'FAILED',
+        metadata: JSON.stringify({
+          propertyId: property.id,
+          matchScore: matchScore,
+          manual: true
+        }),
+        contactId: contact.id
+      }
+    });
+
+    if (emailResult.success) {
+      res.json({
+        success: true,
+        message: 'Notification envoyée avec succès',
+        notification: notification,
+        matchScore: matchScore
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Erreur lors de l\'envoi de la notification',
+        error: emailResult.error || emailResult.reason,
+        notification: notification
+      });
+    }
+
+  } catch (error) {
+    console.error('Erreur POST /api/notifications/send-manual:', error);
+    res.status(500).json({ error: 'Erreur lors de l\'envoi de la notification' });
   }
 });
 

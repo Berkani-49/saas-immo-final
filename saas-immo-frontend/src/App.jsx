@@ -25,6 +25,7 @@ import AppointmentsPage from './pages/AppointmentsPage.jsx';
 import RGPDPage from './pages/RGPDPage.jsx';
 import CookieConsent from './components/CookieConsent.jsx';
 import AnalyticsPage from './pages/AnalyticsPage.jsx';
+import NotificationsPage from './pages/NotificationsPage.jsx';
 
 export default function App() {
   const [email, setEmail] = useState('');
@@ -84,6 +85,7 @@ export default function App() {
             <Route path="equipe" element={<TeamPage token={token} />} />
             <Route path="estimate" element={<PriceEstimator token={token} />} />
             <Route path="analytics" element={<AnalyticsPage token={token} />} />
+            <Route path="notifications" element={<NotificationsPage token={token} />} />
             <Route path="rgpd" element={<RGPDPage token={token} />} />
             <Route path="property/:propertyId" element={<PropertyDetail token={token} />} />
             <Route path="contact/:contactId" element={<ContactDetail token={token} />} />
