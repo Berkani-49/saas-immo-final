@@ -237,6 +237,14 @@ async function sendEmailNotification(buyer, property, matchScore) {
       return { success: false, reason: 'EMAIL_DISABLED' };
     }
 
+    console.log(`📧 Tentative d'envoi email à ${buyer.email} pour bien ${property.address}`);
+
+    // Vérifier que Resend est configuré
+    if (!resend) {
+      console.error('❌ Resend non configuré - RESEND_API_KEY manquante');
+      return { success: false, error: 'RESEND_NOT_CONFIGURED' };
+    }
+
     const subject = `🏡 Nouveau bien correspondant à vos critères (${matchScore}% de correspondance)`;
 
     const htmlBody = `
@@ -338,6 +346,8 @@ Visitez ${process.env.FRONTEND_URL || 'https://saas-immo-frontend.vercel.app'} p
     `;
 
     // Envoyer avec Resend
+    console.log(`📤 Appel API Resend pour ${buyer.email}...`);
+
     const { data, error } = await resend.emails.send({
       from: 'SaaS Immo <onboarding@resend.dev>',
       to: buyer.email,
@@ -347,15 +357,16 @@ Visitez ${process.env.FRONTEND_URL || 'https://saas-immo-frontend.vercel.app'} p
     });
 
     if (error) {
-      console.error(`❌ Erreur envoi email à ${buyer.email}:`, error);
-      return { success: false, error: error.message };
+      console.error(`❌ Erreur Resend API pour ${buyer.email}:`, JSON.stringify(error, null, 2));
+      return { success: false, error: error.message || JSON.stringify(error) };
     }
 
-    console.log(`✅ Email envoyé à ${buyer.email} (ID: ${data?.id})`);
+    console.log(`✅ Email envoyé avec succès à ${buyer.email} (ID: ${data?.id})`);
     return { success: true, messageId: data?.id };
 
   } catch (error) {
-    console.error(`❌ Exception envoi email:`, error);
+    console.error(`❌ Exception lors de l'envoi email à ${buyer.email}:`, error);
+    console.error('Stack trace:', error.stack);
     return { success: false, error: error.message };
   }
 }
@@ -3149,6 +3160,60 @@ app.post('/api/notifications/test-matching/:propertyId', authenticateToken, asyn
   } catch (error) {
     console.error('Erreur POST /api/notifications/test-matching:', error);
     res.status(500).json({ error: 'Erreur lors du test de matching' });
+  }
+});
+
+// GET /api/notifications/test-email - Tester l'envoi d'email avec Resend
+app.get('/api/notifications/test-email', authenticateToken, async (req, res) => {
+  try {
+    const testEmail = req.query.email || req.user.email || 'test@example.com';
+
+    console.log('🧪 Test envoi email Resend vers:', testEmail);
+
+    // Vérifier que Resend est configuré
+    if (!resend) {
+      return res.status(503).json({
+        error: 'Resend non configuré',
+        message: 'RESEND_API_KEY manquante dans les variables d\'environnement'
+      });
+    }
+
+    console.log('✅ Resend client initialisé');
+
+    // Envoyer un email de test simple
+    const { data, error } = await resend.emails.send({
+      from: 'SaaS Immo <onboarding@resend.dev>',
+      to: testEmail,
+      subject: '🧪 Test email - SaaS Immo',
+      html: '<h1>Test réussi !</h1><p>Ce message confirme que Resend fonctionne correctement.</p>',
+      text: 'Test réussi ! Ce message confirme que Resend fonctionne correctement.'
+    });
+
+    if (error) {
+      console.error('❌ Erreur Resend:', error);
+      return res.status(500).json({
+        success: false,
+        error: error.message || 'Erreur inconnue',
+        details: error
+      });
+    }
+
+    console.log('✅ Email de test envoyé, ID:', data?.id);
+
+    res.json({
+      success: true,
+      message: `Email de test envoyé à ${testEmail}`,
+      emailId: data?.id,
+      resendConfigured: true
+    });
+
+  } catch (error) {
+    console.error('❌ Exception test email:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
