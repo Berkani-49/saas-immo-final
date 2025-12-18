@@ -35,8 +35,22 @@ if (!process.env.OPENAI_API_KEY) {
   console.warn('⚠️  ATTENTION : OPENAI_API_KEY manquant - La génération IA sera désactivée');
 }
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Vérification et initialisation de Resend
+if (!process.env.RESEND_API_KEY) {
+  console.error('❌ ERREUR : RESEND_API_KEY manquant dans les variables d\'environnement');
+  console.error('📝 Les notifications par email seront désactivées');
+  console.error('📝 Ajoutez RESEND_API_KEY sur Render pour activer les emails');
+}
+
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
+
+// Log au démarrage
+if (resend) {
+  console.log('✅ Resend configuré - Notifications email activées');
+} else {
+  console.warn('⚠️  Resend NON configuré - Notifications email désactivées');
+}
 
 // Vérification des variables Supabase
 if (!process.env.SUPABASE_URL) {
@@ -245,6 +259,17 @@ async function sendEmailNotification(buyer, property, matchScore) {
       return { success: false, error: 'RESEND_NOT_CONFIGURED' };
     }
 
+    // MODE TEST RESEND : En mode test, remplacer l'email du destinataire par l'email vérifié
+    // Pour activer le mode production : vérifier un domaine sur https://resend.com/domains
+    const RESEND_TEST_MODE = !process.env.RESEND_DOMAIN_VERIFIED;
+    const VERIFIED_EMAIL = process.env.RESEND_VERIFIED_EMAIL || 'amirelattaoui49@gmail.com';
+
+    const recipientEmail = RESEND_TEST_MODE ? VERIFIED_EMAIL : buyer.email;
+
+    if (RESEND_TEST_MODE && buyer.email !== VERIFIED_EMAIL) {
+      console.warn(`⚠️  MODE TEST : Email redirigé de ${buyer.email} vers ${VERIFIED_EMAIL}`);
+    }
+
     const subject = `🏡 Nouveau bien correspondant à vos critères (${matchScore}% de correspondance)`;
 
     const htmlBody = `
@@ -272,6 +297,12 @@ async function sendEmailNotification(buyer, property, matchScore) {
             <p>Un bien immobilier correspond à vos critères de recherche</p>
           </div>
           <div class="content">
+            ${RESEND_TEST_MODE && buyer.email !== VERIFIED_EMAIL ? `
+            <div style="background: #fff3cd; border: 1px solid #ffc107; padding: 10px; border-radius: 5px; margin-bottom: 20px;">
+              <strong>⚠️ MODE TEST :</strong> Cet email était destiné à <strong>${buyer.email}</strong>
+            </div>
+            ` : ''}
+
             <p>Bonjour <strong>${buyer.firstName} ${buyer.lastName}</strong>,</p>
 
             <p>Nous avons trouvé un bien qui pourrait vous intéresser :</p>
@@ -346,11 +377,11 @@ Visitez ${process.env.FRONTEND_URL || 'https://saas-immo-frontend.vercel.app'} p
     `;
 
     // Envoyer avec Resend
-    console.log(`📤 Appel API Resend pour ${buyer.email}...`);
+    console.log(`📤 Appel API Resend pour ${recipientEmail}...`);
 
     const { data, error } = await resend.emails.send({
       from: 'SaaS Immo <onboarding@resend.dev>',
-      to: buyer.email,
+      to: recipientEmail,
       subject: subject,
       html: htmlBody,
       text: textBody
@@ -3298,6 +3329,13 @@ app.listen(PORT, () => {
   console.log(`✅ CORS Manuel activé - Version Dec 11 2025`);
   console.log(`✅ Middleware OPTIONS configuré`);
   console.log(`✅ Replicate API: ${process.env.REPLICATE_API_TOKEN ? 'Configurée ✓' : 'NON configurée ✗'}`);
+  console.log(`✅ Resend Email: ${resend ? 'Configuré ✓' : 'NON configuré ✗'}`);
   console.log(`✅ Routes RGPD activées (Export + Suppression)`);
   console.log(`✅ Routes Analytics activées (Tableau de bord avancé)`);
+  console.log(`✅ Routes Notifications activées (Matching automatique)`);
+
+  if (resend && !process.env.RESEND_DOMAIN_VERIFIED) {
+    console.warn('⚠️  MODE TEST RESEND : Emails envoyés uniquement à votre adresse vérifiée');
+    console.warn('📝 Pour envoyer à tous les contacts : https://resend.com/domains');
+  }
 });
