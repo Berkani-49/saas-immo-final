@@ -5,7 +5,7 @@ import {
   Box, VStack, HStack, Button, Grid, Text, Heading, FormControl, FormLabel, Input, Textarea,
   useToast, Badge, Spinner, Center, Icon
 } from '@chakra-ui/react';
-import { FiCalendar, FiClock, FiCheck } from 'react-icons/fi';
+import { FiCalendar, FiClock, FiCheck, FiDownload } from 'react-icons/fi';
 
 export default function AppointmentCalendar({ agentId }) {
   const [selectedDate, setSelectedDate] = useState('');
@@ -20,6 +20,7 @@ export default function AppointmentCalendar({ agentId }) {
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [appointmentCreated, setAppointmentCreated] = useState(false);
+  const [calendarUrl, setCalendarUrl] = useState('');
 
   const toast = useToast();
 
@@ -82,7 +83,7 @@ export default function AppointmentCalendar({ agentId }) {
 
     setIsSubmitting(true);
     try {
-      await axios.post(
+      const response = await axios.post(
         `https://saas-immo.onrender.com/api/public/agents/${agentId}/appointments`,
         {
           clientName,
@@ -93,6 +94,11 @@ export default function AppointmentCalendar({ agentId }) {
           notes
         }
       );
+
+      // Récupérer l'URL du calendrier depuis la réponse
+      if (response.data.calendarUrl) {
+        setCalendarUrl(response.data.calendarUrl);
+      }
 
       setAppointmentCreated(true);
       toast({
@@ -125,8 +131,43 @@ export default function AppointmentCalendar({ agentId }) {
         <Text fontSize="lg" color="gray.700" mb={4}>
           Votre rendez-vous a été réservé pour le <strong>{new Date(selectedDate).toLocaleDateString('fr-FR')}</strong> à <strong>{selectedSlot}</strong>.
         </Text>
-        <Text color="gray.600">Vous recevrez un email de confirmation à {clientEmail}.</Text>
-        <Button mt={6} colorScheme="green" onClick={() => setAppointmentCreated(false)}>
+        <Text color="gray.600" mb={6}>Vous recevrez un email de confirmation à {clientEmail}.</Text>
+
+        {/* Bouton pour ajouter au calendrier */}
+        {calendarUrl && (
+          <VStack spacing={3} mb={6}>
+            <Text fontWeight="semibold" color="purple.700" fontSize="md">
+              📅 Ajoutez ce rendez-vous à votre calendrier
+            </Text>
+            <HStack spacing={3}>
+              <Button
+                as="a"
+                href={calendarUrl}
+                download
+                colorScheme="purple"
+                leftIcon={<FiDownload />}
+                size="lg"
+              >
+                Télécharger (.ics)
+              </Button>
+              <Button
+                as="a"
+                href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('Rendez-vous immobilier')}&dates=${selectedDate.replace(/-/g, '')}T${selectedSlot.replace(':', '')}00/${selectedDate.replace(/-/g, '')}T${(parseInt(selectedSlot.split(':')[0]) + 1).toString().padStart(2, '0')}${selectedSlot.split(':')[1]}00&details=${encodeURIComponent('Rendez-vous confirmé via ImmoPro')}`}
+                target="_blank"
+                colorScheme="blue"
+                leftIcon={<FiCalendar />}
+                size="lg"
+              >
+                Google Calendar
+              </Button>
+            </HStack>
+            <Text fontSize="xs" color="gray.500">
+              Compatible avec Google Calendar, Outlook, Apple Calendar, et tous les calendriers
+            </Text>
+          </VStack>
+        )}
+
+        <Button mt={4} colorScheme="green" variant="outline" onClick={() => setAppointmentCreated(false)}>
           Prendre un autre rendez-vous
         </Button>
       </Box>

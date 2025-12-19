@@ -163,6 +163,116 @@ async function logActivity(agentId, action, description) {
 // 🔔 SYSTÈME DE NOTIFICATIONS AUTOMATIQUES
 // ================================
 
+// Mapping de proximité géographique pour les villes belges
+const CITY_PROXIMITY = {
+  'charleroi': {
+    exact: ['charleroi', 'marcinelle', 'gilly', 'montignies-sur-sambre', 'jumet'],
+    close: ['mons', 'la louvière', 'manage', 'morlanwelz', 'fleurus', 'châtelet'],
+    region: ['namur', 'binche', 'soignies', 'nivelles', 'thuin']
+  },
+  'mons': {
+    exact: ['mons', 'jemappes', 'cuesmes', 'quaregnon'],
+    close: ['charleroi', 'la louvière', 'soignies', 'boussu', 'frameries'],
+    region: ['tournai', 'binche', 'enghien', 'ath', 'péruwelz']
+  },
+  'bruxelles': {
+    exact: ['bruxelles', 'brussels', 'brussel', 'ixelles', 'schaerbeek', 'anderlecht', 'molenbeek', 'etterbeek', 'forest', 'uccle', 'woluwé', 'jette', 'koekelberg', 'evere', 'auderghem', 'watermael-boitsfort', 'saint-gilles', 'saint-josse'],
+    close: ['zaventem', 'vilvoorde', 'grimbergen', 'waterloo', 'braine-l\'alleud', 'rhode-saint-genèse', 'tervuren', 'kraainem', 'wezembeek-oppem'],
+    region: ['nivelles', 'wavre', 'hal', 'tubize', 'asse', 'machelen', 'dilbeek']
+  },
+  'liège': {
+    exact: ['liège', 'luik', 'herstal', 'seraing', 'ans', 'grâce-hollogne'],
+    close: ['verviers', 'huy', 'waremme', 'flémalle', 'saint-nicolas'],
+    region: ['spa', 'eupen', 'malmedy', 'visé', 'chaudfontaine']
+  },
+  'namur': {
+    exact: ['namur', 'namen', 'jambes'],
+    close: ['charleroi', 'gembloux', 'andenne', 'profondeville'],
+    region: ['dinant', 'ciney', 'philippeville', 'florennes']
+  },
+  'gand': {
+    exact: ['gand', 'gent', 'gentbrugge', 'ledeberg', 'mariakerke'],
+    close: ['aalst', 'lokeren', 'eeklo', 'deinze', 'zelzate'],
+    region: ['bruges', 'sint-niklaas', 'dendermonde', 'wetteren']
+  },
+  'anvers': {
+    exact: ['anvers', 'antwerpen', 'borgerhout', 'deurne', 'berchem', 'merksem', 'wilrijk'],
+    close: ['malines', 'mechelen', 'boom', 'kontich', 'schoten', 'brasschaat', 'kapellen'],
+    region: ['turnhout', 'mol', 'geel', 'lier', 'heist-op-den-berg']
+  },
+  'bruges': {
+    exact: ['bruges', 'brugge', 'sint-andries', 'sint-michiels'],
+    close: ['oostende', 'knokke-heist', 'blankenberge', 'damme'],
+    region: ['gand', 'kortrijk', 'roeselare', 'torhout']
+  },
+  'louvain': {
+    exact: ['louvain', 'leuven', 'heverlee', 'kessel-lo'],
+    close: ['bruxelles', 'tienen', 'aarschot', 'diest', 'haacht'],
+    region: ['wavre', 'malines', 'hasselt', 'landen']
+  }
+};
+
+/**
+ * Calcule le score de proximité entre deux villes
+ * @param {string} propertyCity - Ville du bien
+ * @param {string[]} preferredCities - Liste des villes préférées de l'acheteur
+ * @returns {number} Score de 0 à 30 points
+ */
+function calculateCityProximityScore(propertyCity, preferredCities) {
+  const normalizedPropertyCity = propertyCity.toLowerCase().trim();
+  const normalizedPreferred = preferredCities.map(c => c.toLowerCase().trim());
+
+  let maxScore = 0;
+
+  for (const preferred of normalizedPreferred) {
+    // 1. Correspondance exacte (30 points)
+    if (normalizedPropertyCity.includes(preferred) || preferred.includes(normalizedPropertyCity)) {
+      return 30;
+    }
+
+    // 2. Vérifier dans le mapping de proximité
+    for (const [mainCity, proximity] of Object.entries(CITY_PROXIMITY)) {
+      // Si la ville préférée correspond à une ville principale ou ses variantes
+      const isPreferredInMain = proximity.exact.some(city =>
+        preferred.includes(city) || city.includes(preferred)
+      );
+
+      if (isPreferredInMain) {
+        // Vérifier si le bien est dans une ville exacte (30 points)
+        if (proximity.exact.some(city => normalizedPropertyCity.includes(city) || city.includes(normalizedPropertyCity))) {
+          return 30;
+        }
+        // Vérifier si le bien est dans une ville proche (22 points)
+        if (proximity.close.some(city => normalizedPropertyCity.includes(city) || city.includes(normalizedPropertyCity))) {
+          maxScore = Math.max(maxScore, 22);
+        }
+        // Vérifier si le bien est dans la même région (12 points)
+        if (proximity.region.some(city => normalizedPropertyCity.includes(city) || city.includes(normalizedPropertyCity))) {
+          maxScore = Math.max(maxScore, 12);
+        }
+      }
+
+      // Vérifier inversement si le bien est dans une ville principale
+      const isPropertyInMain = proximity.exact.some(city =>
+        normalizedPropertyCity.includes(city) || city.includes(normalizedPropertyCity)
+      );
+
+      if (isPropertyInMain) {
+        // Vérifier si la préférence est dans une ville proche
+        if (proximity.close.some(city => preferred.includes(city) || city.includes(preferred))) {
+          maxScore = Math.max(maxScore, 22);
+        }
+        // Vérifier si la préférence est dans la même région
+        if (proximity.region.some(city => preferred.includes(city) || city.includes(preferred))) {
+          maxScore = Math.max(maxScore, 12);
+        }
+      }
+    }
+  }
+
+  return maxScore;
+}
+
 /**
  * Calcule le score de matching entre un bien et les critères d'un acheteur
  * @param {Object} property - Le bien immobilier
@@ -193,17 +303,15 @@ function calculateMatchScore(property, buyer) {
     }
   }
 
-  // 2. Vérification de la ville (30 points)
+  // 2. Vérification de la ville avec proximité géographique (30 points)
   if (buyer.cityPreferences && property.city) {
     criteria++;
     const preferredCities = buyer.cityPreferences
       .split(',')
-      .map(c => c.trim().toLowerCase());
-    const propertyCity = property.city.toLowerCase();
+      .map(c => c.trim());
 
-    if (preferredCities.some(city => propertyCity.includes(city) || city.includes(propertyCity))) {
-      score += 30;
-    }
+    const cityScore = calculateCityProximityScore(property.city, preferredCities);
+    score += cityScore;
   }
 
   // 3. Vérification du nombre de chambres (15 points)
@@ -1850,7 +1958,14 @@ app.post('/api/public/agents/:agentId/appointments', async (req, res) => {
     // Log d'activité
     logActivity(agentId, "RDV_PUBLIC", `Nouveau RDV depuis la page publique: ${clientName} le ${appointmentDate.toLocaleString('fr-FR')}`);
 
-    res.status(201).json(appointment);
+    // Générer le token pour le téléchargement du .ics
+    const calendarToken = Buffer.from(`${appointment.clientEmail}-${appointment.id}`).toString('base64');
+    const calendarUrl = `${process.env.API_URL || 'https://saas-immo.onrender.com'}/api/appointments/${appointment.id}/calendar.ics?token=${calendarToken}`;
+
+    res.status(201).json({
+      ...appointment,
+      calendarUrl
+    });
 
   } catch (error) {
     console.error("Erreur création rendez-vous:", error);
@@ -1893,6 +2008,104 @@ app.patch('/api/appointments/:id', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error("Erreur mise à jour rendez-vous:", error);
     res.status(500).json({ error: "Erreur lors de la mise à jour du rendez-vous" });
+  }
+});
+
+// ================================
+// 📅 GÉNÉRATION DE FICHIERS .ICS (iCalendar)
+// ================================
+
+/**
+ * Fonction helper pour formater une date au format iCalendar (yyyyMMddTHHmmss)
+ * @param {Date} date - Date à formater
+ * @returns {string} Date formatée
+ */
+function formatICalDate(date) {
+  const pad = (num) => String(num).padStart(2, '0');
+  const d = new Date(date);
+
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+}
+
+/**
+ * Génère un fichier .ics pour un rendez-vous
+ * @param {Object} appointment - Objet rendez-vous
+ * @param {Object} agent - Informations de l'agent
+ * @returns {string} Contenu du fichier .ics
+ */
+function generateICS(appointment, agent) {
+  const startDate = new Date(appointment.appointmentDate);
+  const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // 1 heure plus tard
+
+  const ics = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//ImmoPro SaaS//Appointment Calendar//FR',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:appointment-${appointment.id}@immo-saas.com`,
+    `DTSTAMP:${formatICalDate(new Date())}`,
+    `DTSTART:${formatICalDate(startDate)}`,
+    `DTEND:${formatICalDate(endDate)}`,
+    `SUMMARY:Rendez-vous immobilier - ${agent.firstName} ${agent.lastName}`,
+    `DESCRIPTION:Rendez-vous avec ${agent.firstName} ${agent.lastName}${appointment.notes ? '\\n\\nNotes: ' + appointment.notes.replace(/\n/g, '\\n') : ''}\\n\\nEmail: ${agent.email}${agent.phoneNumber ? '\\nTéléphone: ' + agent.phoneNumber : ''}`,
+    `ORGANIZER;CN=${agent.firstName} ${agent.lastName}:mailto:${agent.email}`,
+    `ATTENDEE;CN=${appointment.clientName};RSVP=TRUE:mailto:${appointment.clientEmail}`,
+    `LOCATION:À confirmer`,
+    'STATUS:CONFIRMED',
+    'SEQUENCE:0',
+    'BEGIN:VALARM',
+    'TRIGGER:-PT15M',
+    'ACTION:DISPLAY',
+    'DESCRIPTION:Rappel: Rendez-vous dans 15 minutes',
+    'END:VALARM',
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].join('\r\n');
+
+  return ics;
+}
+
+// Route pour télécharger le fichier .ics d'un rendez-vous (PUBLIC - avec token dans l'URL)
+app.get('/api/appointments/:id/calendar.ics', async (req, res) => {
+  try {
+    const appointmentId = parseInt(req.params.id);
+    const token = req.query.token;
+
+    if (!token) {
+      return res.status(401).json({ error: "Token manquant" });
+    }
+
+    // Récupérer le rendez-vous avec l'agent
+    const appointment = await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: { agent: true }
+    });
+
+    if (!appointment) {
+      return res.status(404).json({ error: "Rendez-vous introuvable" });
+    }
+
+    // Vérifier que le token correspond (simple vérification basée sur l'email du client)
+    // En production, utilisez un vrai système de token signé
+    const expectedToken = Buffer.from(`${appointment.clientEmail}-${appointmentId}`).toString('base64');
+
+    if (token !== expectedToken) {
+      return res.status(403).json({ error: "Token invalide" });
+    }
+
+    // Générer le fichier .ics
+    const icsContent = generateICS(appointment, appointment.agent);
+
+    // Envoyer le fichier
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename=rendez-vous-${appointmentId}.ics`);
+    res.send(icsContent);
+
+  } catch (error) {
+    console.error("Erreur génération .ics:", error);
+    res.status(500).json({ error: "Erreur lors de la génération du fichier calendrier" });
   }
 });
 
