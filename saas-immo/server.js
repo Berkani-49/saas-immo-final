@@ -1958,6 +1958,19 @@ app.post('/api/public/agents/:agentId/appointments', async (req, res) => {
     // Log d'activité
     logActivity(agentId, "RDV_PUBLIC", `Nouveau RDV depuis la page publique: ${clientName} le ${appointmentDate.toLocaleString('fr-FR')}`);
 
+    // Envoyer une notification push à l'agent
+    try {
+      const agent = await prisma.user.findUnique({ where: { id: agentId } });
+      if (agent) {
+        const notificationPayload = pushNotificationService.createAppointmentNotification(appointment, agent);
+        await pushNotificationService.sendPushNotificationToUser(agentId, notificationPayload);
+        console.log(`✅ Notification push envoyée à l'agent ${agentId} pour le RDV`);
+      }
+    } catch (notifError) {
+      console.error('❌ Erreur envoi notification push:', notifError);
+      // Ne pas bloquer la création du RDV si la notification échoue
+    }
+
     // Générer le token pour le téléchargement du .ics
     const calendarToken = Buffer.from(`${appointment.clientEmail}-${appointment.id}`).toString('base64');
     const calendarUrl = `${process.env.API_URL || 'https://saas-immo.onrender.com'}/api/appointments/${appointment.id}/calendar.ics?token=${calendarToken}`;
@@ -3533,6 +3546,87 @@ app.post('/api/notifications/send-manual', authenticateToken, async (req, res) =
   } catch (error) {
     console.error('Erreur POST /api/notifications/send-manual:', error);
     res.status(500).json({ error: 'Erreur lors de l\'envoi de la notification' });
+  }
+});
+
+// ================================
+// 🔔 NOTIFICATIONS PUSH (PWA)
+// ================================
+
+const pushNotificationService = require('./services/pushNotificationService');
+
+// Obtenir la clé publique VAPID (nécessaire pour le frontend)
+app.get('/api/push/vapid-public-key', (req, res) => {
+  res.json({ publicKey: pushNotificationService.VAPID_PUBLIC_KEY });
+});
+
+// S'abonner aux notifications push
+app.post('/api/push/subscribe', authenticateToken, async (req, res) => {
+  try {
+    const { subscription } = req.body;
+
+    if (!subscription || !subscription.endpoint) {
+      return res.status(400).json({ error: 'Subscription invalide' });
+    }
+
+    await pushNotificationService.savePushSubscription(req.user.id, subscription);
+
+    res.json({
+      success: true,
+      message: 'Abonnement push enregistré avec succès'
+    });
+  } catch (error) {
+    console.error('Erreur abonnement push:', error);
+    res.status(500).json({ error: 'Erreur lors de l\'abonnement push' });
+  }
+});
+
+// Se désabonner des notifications push
+app.post('/api/push/unsubscribe', authenticateToken, async (req, res) => {
+  try {
+    const { endpoint } = req.body;
+
+    if (!endpoint) {
+      return res.status(400).json({ error: 'Endpoint manquant' });
+    }
+
+    await pushNotificationService.removePushSubscription(req.user.id, endpoint);
+
+    res.json({
+      success: true,
+      message: 'Désabonnement réussi'
+    });
+  } catch (error) {
+    console.error('Erreur désabonnement push:', error);
+    res.status(500).json({ error: 'Erreur lors du désabonnement' });
+  }
+});
+
+// Envoyer une notification de test
+app.post('/api/push/test', authenticateToken, async (req, res) => {
+  try {
+    const payload = {
+      title: '🔔 Notification de test',
+      body: 'Si vous voyez ceci, les notifications fonctionnent parfaitement !',
+      icon: '/logo.png',
+      badge: '/logo.png',
+      tag: 'test-notification',
+      data: {
+        url: '/',
+        timestamp: Date.now()
+      }
+    };
+
+    const result = await pushNotificationService.sendPushNotificationToUser(req.user.id, payload);
+
+    res.json({
+      success: true,
+      message: 'Notification de test envoyée',
+      result
+    });
+  } catch (error) {
+    console.error('Erreur envoi notification test:', error);
+    res.status(500).json({ error: 'Erreur lors de l\'envoi de la notification de test' });
   }
 });
 

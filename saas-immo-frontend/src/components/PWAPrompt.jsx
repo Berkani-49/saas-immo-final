@@ -10,10 +10,10 @@ import {
   getNotificationPermission,
   requestNotificationPermission,
   isAppInstalled,
-  showLocalNotification
+  subscribeToPushNotifications
 } from '../utils/notifications';
 
-export default function PWAPrompt() {
+export default function PWAPrompt({ token }) {
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -71,28 +71,31 @@ export default function PWAPrompt() {
 
   const handleNotificationClick = async () => {
     try {
+      // 1. Demander la permission
       const granted = await requestNotificationPermission();
 
-      if (granted) {
-        toast({
-          title: 'Notifications activées !',
-          description: 'Vous recevrez maintenant les notifications en temps réel.',
-          status: 'success',
-          duration: 5000
-        });
-
-        // Afficher une notification de test
-        showLocalNotification('Bienvenue sur ImmoPro !', {
-          body: 'Vous recevrez maintenant toutes les notifications importantes.',
-          tag: 'welcome'
-        });
+      if (!granted) {
+        throw new Error('Permission refusée');
       }
+
+      // 2. S'abonner aux notifications push via le serveur
+      if (token) {
+        await subscribeToPushNotifications(token);
+      }
+
+      toast({
+        title: 'Notifications activées !',
+        description: 'Vous recevrez maintenant les notifications en temps réel.',
+        status: 'success',
+        duration: 5000
+      });
 
       setShowNotificationPrompt(false);
     } catch (error) {
+      console.error('Erreur activation notifications:', error);
       toast({
         title: 'Erreur',
-        description: error.message,
+        description: error.message || 'Impossible d\'activer les notifications',
         status: 'error',
         duration: 5000
       });

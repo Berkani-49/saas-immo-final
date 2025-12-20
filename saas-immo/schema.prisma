@@ -28,6 +28,7 @@ model User {
   activities ActivityLog[]
   invoices   Invoice[]
   appointments Appointment[]
+  pushSubscriptions PushSubscription[]
 }
 
 // --- MODÈLE PROPERTY ---
@@ -253,4 +254,20 @@ model PropertyView {
   @@index([propertyId])
   @@index([viewedAt])
   @@index([converted])
+}
+
+// --- MODÈLE ABONNEMENTS PUSH (Notifications PWA) ---
+model PushSubscription {
+  id          Int      @id @default(autoincrement())
+  endpoint    String   // URL unique de l'abonnement
+  p256dh      String   // Clé publique du client
+  auth        String   // Clé d'authentification
+  createdAt   DateTime @default(now())
+
+  // Lien avec l'agent
+  agent       User     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agentId     Int
+
+  @@unique([agentId, endpoint])
+  @@index([agentId])
 }

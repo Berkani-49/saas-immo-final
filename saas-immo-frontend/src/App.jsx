@@ -70,7 +70,7 @@ export default function App() {
       <CookieConsent />
 
       {/* Prompt PWA pour installer l'app et activer les notifications */}
-      {token && <PWAPrompt />}
+      {token && <PWAPrompt token={token} />}
 
       <Routes>
         <Route path="/share/:id" element={<PublicPropertyPage />} />
