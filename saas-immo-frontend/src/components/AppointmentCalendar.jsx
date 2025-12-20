@@ -21,6 +21,9 @@ export default function AppointmentCalendar({ agentId }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [appointmentCreated, setAppointmentCreated] = useState(false);
   const [calendarUrl, setCalendarUrl] = useState('');
+  const [savedEmail, setSavedEmail] = useState('');
+  const [savedDate, setSavedDate] = useState('');
+  const [savedSlot, setSavedSlot] = useState('');
 
   const toast = useToast();
 
@@ -100,6 +103,11 @@ export default function AppointmentCalendar({ agentId }) {
         setCalendarUrl(response.data.calendarUrl);
       }
 
+      // Sauvegarder les infos avant de les reset
+      setSavedEmail(clientEmail);
+      setSavedDate(selectedDate);
+      setSavedSlot(selectedSlot);
+
       setAppointmentCreated(true);
       toast({
         title: "Rendez-vous confirmé !",
@@ -129,9 +137,9 @@ export default function AppointmentCalendar({ agentId }) {
         <Icon as={FiCheck} w={16} h={16} color="green.500" mb={4} />
         <Heading size="lg" color="green.700" mb={2}>Rendez-vous confirmé !</Heading>
         <Text fontSize="lg" color="gray.700" mb={4}>
-          Votre rendez-vous a été réservé pour le <strong>{new Date(selectedDate).toLocaleDateString('fr-FR')}</strong> à <strong>{selectedSlot}</strong>.
+          Votre rendez-vous a été réservé pour le <strong>{new Date(savedDate).toLocaleDateString('fr-FR')}</strong> à <strong>{savedSlot}</strong>.
         </Text>
-        <Text color="gray.600" mb={6}>Vous recevrez un email de confirmation à {clientEmail}.</Text>
+        <Text color="gray.600" mb={6}>Vous recevrez un email de confirmation à {savedEmail}.</Text>
 
         {/* Bouton pour ajouter au calendrier */}
         {calendarUrl && (
@@ -139,28 +147,15 @@ export default function AppointmentCalendar({ agentId }) {
             <Text fontWeight="semibold" color="purple.700" fontSize="md">
               📅 Ajoutez ce rendez-vous à votre calendrier
             </Text>
-            <HStack spacing={3}>
-              <Button
-                as="a"
-                href={calendarUrl}
-                download
-                colorScheme="purple"
-                leftIcon={<FiDownload />}
-                size="lg"
-              >
-                Télécharger (.ics)
-              </Button>
-              <Button
-                as="a"
-                href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('Rendez-vous immobilier')}&dates=${selectedDate.replace(/-/g, '')}T${selectedSlot.replace(':', '')}00/${selectedDate.replace(/-/g, '')}T${(parseInt(selectedSlot.split(':')[0]) + 1).toString().padStart(2, '0')}${selectedSlot.split(':')[1]}00&details=${encodeURIComponent('Rendez-vous confirmé via ImmoPro')}`}
-                target="_blank"
-                colorScheme="blue"
-                leftIcon={<FiCalendar />}
-                size="lg"
-              >
-                Google Calendar
-              </Button>
-            </HStack>
+            <Button
+              as="a"
+              href={calendarUrl}
+              colorScheme="purple"
+              leftIcon={<FiDownload />}
+              size="lg"
+            >
+              Ajouter à mon calendrier
+            </Button>
             <Text fontSize="xs" color="gray.500">
               Compatible avec Google Calendar, Outlook, Apple Calendar, et tous les calendriers
             </Text>
