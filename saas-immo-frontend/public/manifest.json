@@ -1,20 +1,45 @@
 {
-  "name": "Berkane Agence immo",
-  "short_name": "BAI",
+  "name": "ImmoPro - Gestion Immobilière",
+  "short_name": "ImmoPro",
+  "description": "Application de gestion immobilière avec notifications en temps réel",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#ffffff",
-  "theme_color": "#3182ce",
+  "theme_color": "#805AD5",
+  "categories": ["business", "productivity"],
+  "lang": "fr-FR",
+  "dir": "ltr",
   "icons": [
     {
       "src": "/logo.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/logo.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "Biens",
+      "short_name": "Biens",
+      "description": "Voir tous les biens",
+      "url": "/properties",
+      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Contacts",
+      "short_name": "Contacts",
+      "description": "Gérer les contacts",
+      "url": "/contacts",
+      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": []
 }

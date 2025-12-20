@@ -26,6 +26,7 @@ import RGPDPage from './pages/RGPDPage.jsx';
 import CookieConsent from './components/CookieConsent.jsx';
 import AnalyticsPage from './pages/AnalyticsPage.jsx';
 import NotificationsPage from './pages/NotificationsPage.jsx';
+import PWAPrompt from './components/PWAPrompt.jsx';
 
 export default function App() {
   const [email, setEmail] = useState('');
@@ -67,6 +68,9 @@ export default function App() {
     <Box w="100%" minH="100vh">
       {/* Bannière de consentement des cookies (RGPD) */}
       <CookieConsent />
+
+      {/* Prompt PWA pour installer l'app et activer les notifications */}
+      {token && <PWAPrompt />}
 
       <Routes>
         <Route path="/share/:id" element={<PublicPropertyPage />} />
