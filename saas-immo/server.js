@@ -15,13 +15,57 @@ const https = require('https');
 const http = require('http');
 const multer = require('multer');
 const { createClient } = require('@supabase/supabase-js');
+const cron = require('node-cron');
+const pushNotificationService = require('./services/pushNotificationService');
+const helmet = require('helmet');
+
+// Nouveaux imports pour monitoring et error handling
+const logger = require('./utils/logger');
+const { initSentry, sentryRequestHandler, sentryTracingHandler, sentryErrorHandler } = require('./utils/sentry');
+const { errorHandler, notFoundHandler, asyncHandler } = require('./middleware/errorHandler');
+const healthRouter = require('./routes/health');
 
 const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3000;
 
+// Initialiser Sentry pour le tracking d'erreurs
+initSentry(app);
+
 // Trust proxy (nécessaire pour Render/Heroku/Vercel pour que rate-limit fonctionne correctement)
 app.set('trust proxy', true);
+
+// ========================================
+// SÉCURITÉ - Security Headers & HTTPS
+// ========================================
+
+// Helmet - Protection contre les vulnérabilités web communes
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+  hsts: {
+    maxAge: 31536000, // 1 an
+    includeSubDomains: true,
+    preload: true
+  }
+}));
+
+// Force HTTPS en production
+if (process.env.NODE_ENV === 'production') {
+  app.use((req, res, next) => {
+    if (req.header('x-forwarded-proto') !== 'https') {
+      logger.warn('HTTP request redirected to HTTPS', { url: req.url, ip: req.ip });
+      return res.redirect(301, `https://${req.header('host')}${req.url}`);
+    }
+    next();
+  });
+}
 
 // Force JWT_SECRET (ne pas utiliser de valeur par défaut en production)
 if (!process.env.JWT_SECRET) {
@@ -116,7 +160,22 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json());
+// Limite de taille des requêtes (protection DoS)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// --- Middlewares Sentry et Logger (AVANT toutes les routes) ---
+app.use(sentryRequestHandler());
+app.use(sentryTracingHandler());
+
+// Logger middleware - Log toutes les requêtes
+app.use((req, res, next) => {
+  logger.info(`${req.method} ${req.path}`, {
+    ip: req.ip,
+    userAgent: req.get('user-agent')
+  });
+  next();
+});
 
 // --- 2. RATE LIMITING (Protection contre brute-force) ---
 // Limiter les tentatives de connexion
@@ -144,10 +203,20 @@ const generalLimiter = rateLimit({
 
 app.use('/api/', generalLimiter);
 
+// --- HEALTH CHECK ENDPOINT ---
+app.use('/', healthRouter);
+
 // --- FONCTION DE VALIDATION EMAIL ---
 function isValidEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
+}
+
+// --- FONCTION DE VALIDATION MOT DE PASSE FORT ---
+function isStrongPassword(password) {
+  // Minimum 12 caractères, au moins une majuscule, une minuscule, un chiffre et un caractère spécial
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$/;
+  return passwordRegex.test(password);
 }
 
 // --- FONCTION LOG ---
@@ -595,7 +664,16 @@ async function notifyMatchingBuyers(property, agentId) {
           }
         }
 
-        // TODO: Ajouter support SMS et notifications push ici si activés
+        // Envoyer notification push à l'agent propriétaire
+        try {
+          const pushPayload = pushNotificationService.createPropertyMatchNotification(property, matchScore);
+          await pushNotificationService.sendPushNotificationToUser(agentId, pushPayload);
+          console.log(`✅ Notification push envoyée à l'agent pour le match avec ${buyer.firstName} ${buyer.lastName}`);
+        } catch (pushError) {
+          console.error('❌ Erreur notification push:', pushError);
+        }
+
+        // TODO: Ajouter support SMS si activé
       } else {
         console.log(`⏭️  ${buyer.firstName} ${buyer.lastName} : score trop faible (${matchScore}%)`);
       }
@@ -618,6 +696,99 @@ async function notifyMatchingBuyers(property, agentId) {
   }
 }
 
+/**
+ * Fonction pour envoyer des rappels de RDV 24h avant
+ */
+async function sendAppointmentReminders() {
+  try {
+    console.log('\n⏰ Vérification des rendez-vous à rappeler...');
+
+    // Calculer la période de 24h (entre maintenant + 23h et maintenant + 25h pour une fenêtre de 2h)
+    const now = new Date();
+    const in23Hours = new Date(now.getTime() + 23 * 60 * 60 * 1000);
+    const in25Hours = new Date(now.getTime() + 25 * 60 * 60 * 1000);
+
+    // Récupérer les rendez-vous dans les prochaines 24h qui n'ont pas encore été rappelés
+    const upcomingAppointments = await prisma.appointment.findMany({
+      where: {
+        appointmentDate: {
+          gte: in23Hours,
+          lte: in25Hours
+        },
+        status: {
+          not: 'CANCELLED'
+        }
+      },
+      include: {
+        agent: true
+      }
+    });
+
+    console.log(`📅 ${upcomingAppointments.length} rendez-vous trouvés dans les prochaines 24h`);
+
+    let remindersSent = 0;
+
+    for (const appointment of upcomingAppointments) {
+      try {
+        // Vérifier si un rappel a déjà été envoyé pour ce RDV
+        const existingReminder = await prisma.notification.findFirst({
+          where: {
+            type: 'APPOINTMENT_REMINDER',
+            metadata: {
+              contains: `"appointmentId":${appointment.id}`
+            },
+            status: 'SENT'
+          }
+        });
+
+        if (existingReminder) {
+          console.log(`⏭️  Rappel déjà envoyé pour le RDV #${appointment.id}`);
+          continue;
+        }
+
+        // Envoyer notification push à l'agent
+        const pushPayload = pushNotificationService.createAppointmentReminderNotification(appointment);
+        await pushNotificationService.sendPushNotificationToUser(appointment.agentId, pushPayload);
+
+        // Enregistrer la notification dans la base
+        await prisma.notification.create({
+          data: {
+            type: 'APPOINTMENT_REMINDER',
+            channel: 'PUSH',
+            recipient: appointment.agent.email,
+            subject: `Rappel de rendez-vous`,
+            body: `Rendez-vous avec ${appointment.clientName} demain`,
+            status: 'SENT',
+            metadata: JSON.stringify({
+              appointmentId: appointment.id,
+              appointmentDate: appointment.appointmentDate,
+              clientName: appointment.clientName
+            })
+          }
+        });
+
+        remindersSent++;
+        console.log(`✅ Rappel envoyé pour RDV #${appointment.id} avec ${appointment.clientName}`);
+
+      } catch (error) {
+        console.error(`❌ Erreur envoi rappel pour RDV #${appointment.id}:`, error);
+      }
+    }
+
+    console.log(`\n⏰ Résultat : ${remindersSent} rappel(s) envoyé(s)\n`);
+
+    return {
+      success: true,
+      remindersSent,
+      totalAppointments: upcomingAppointments.length
+    };
+
+  } catch (error) {
+    console.error('❌ Erreur dans sendAppointmentReminders:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 // --- 3. ROUTES PUBLIQUES (Sans mot de passe) ---
 
 app.get('/', (req, res) => res.json({ message: "Serveur en ligne !" }));
@@ -634,6 +805,13 @@ app.post('/api/auth/register', registerLimiter, async (req, res) => {
     // Validation de l'email
     if (!isValidEmail(email)) {
       return res.status(400).json({ error: 'Format d\'email invalide.' });
+    }
+
+    // Validation de la force du mot de passe
+    if (!isStrongPassword(password)) {
+      return res.status(400).json({
+        error: 'Le mot de passe doit contenir au moins 12 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial (@$!%*?&).'
+      });
     }
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -726,6 +904,19 @@ app.post('/api/public/leads', async (req, res) => {
           html: `<p>Nouveau client : ${firstName} ${lastName} (${phone})</p>`
         });
     } catch (e) {}
+
+    // 5. Envoyer notification push à l'agent
+    try {
+        console.log(`🔔 Tentative d'envoi notification push pour lead: ${firstName} ${lastName} (Agent ID: ${property.agentId})`);
+        const pushPayload = pushNotificationService.createNewLeadNotification(contact, property);
+        console.log(`📦 Payload créé:`, JSON.stringify(pushPayload));
+        const result = await pushNotificationService.sendPushNotificationToUser(property.agentId, pushPayload);
+        console.log(`✅ Notification push envoyée à l'agent pour nouveau lead: ${firstName} ${lastName} sur ${property.address}`);
+        console.log(`📊 Résultat:`, JSON.stringify(result));
+    } catch (pushError) {
+        console.error('❌ Erreur notification push nouveau lead:', pushError);
+        console.error('Stack:', pushError.stack);
+    }
 
     res.json({ message: "OK" });
   } catch (e) {
@@ -1141,6 +1332,18 @@ app.post('/api/contacts', authenticateToken, async (req, res) => {
     try {
         const newContact = await prisma.contact.create({ data: { ...req.body, agentId: req.user.id } });
         logActivity(req.user.id, "CRÉATION_CONTACT", `Nouveau contact : ${req.body.firstName}`);
+
+        // Envoyer notification push pour nouveau lead/contact
+        if (newContact.type === 'BUYER') {
+          try {
+            const pushPayload = pushNotificationService.createNewLeadNotification(newContact, null);
+            await pushNotificationService.sendPushNotificationToUser(req.user.id, pushPayload);
+            console.log(`✅ Notification push envoyée pour nouveau lead: ${newContact.firstName} ${newContact.lastName}`);
+          } catch (pushError) {
+            console.error('❌ Erreur notification push nouveau lead:', pushError);
+          }
+        }
+
         res.json(newContact);
     } catch (e) { res.status(500).json({ error: "Erreur" }); }
 });
@@ -3553,8 +3756,6 @@ app.post('/api/notifications/send-manual', authenticateToken, async (req, res) =
 // 🔔 NOTIFICATIONS PUSH (PWA)
 // ================================
 
-const pushNotificationService = require('./services/pushNotificationService');
-
 // Obtenir la clé publique VAPID (nécessaire pour le frontend)
 app.get('/api/push/vapid-public-key', (req, res) => {
   res.json({ publicKey: pushNotificationService.VAPID_PUBLIC_KEY });
@@ -3630,9 +3831,59 @@ app.post('/api/push/test', authenticateToken, async (req, res) => {
   }
 });
 
+// ========================================
+// CRON JOBS - RAPPELS AUTOMATIQUES
+// ========================================
+
+// Vérifier les rappels de RDV toutes les heures
+cron.schedule('0 * * * *', async () => {
+  console.log('\n⏰ [CRON] Exécution du job de rappels de RDV...');
+  try {
+    const result = await sendAppointmentReminders();
+    console.log(`⏰ [CRON] Terminé: ${result.remindersSent} rappel(s) envoyé(s)`);
+  } catch (error) {
+    console.error('❌ [CRON] Erreur lors de l\'exécution des rappels:', error);
+  }
+});
+
+console.log('✅ Cron job configuré : Rappels de RDV toutes les heures');
+
+// Route manuelle pour tester le cron (accessible uniquement en dev)
+app.get('/api/cron/test-reminders', authenticateToken, async (req, res) => {
+  try {
+    console.log('🧪 Test manuel des rappels de RDV...');
+    const result = await sendAppointmentReminders();
+    res.json({
+      success: true,
+      message: 'Test des rappels terminé',
+      ...result
+    });
+  } catch (error) {
+    console.error('❌ Erreur test rappels:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ========================================
+// ERROR HANDLING (À LA FIN, AVANT app.listen)
+// ========================================
+
+// Sentry Error Handler (AVANT votre error handler custom)
+app.use(sentryErrorHandler());
+
+// 404 Handler - Route non trouvée
+app.use(notFoundHandler);
+
+// Error Handler Global (EN DERNIER)
+app.use(errorHandler);
+
 // DÉMARRAGE
 app.listen(PORT, () => {
   console.log(`✅ Serveur OK sur port ${PORT}`);
+  logger.info(`Server started successfully on port ${PORT}`, {
+    environment: process.env.NODE_ENV || 'development',
+    port: PORT
+  });
   console.log(`✅ CORS Manuel activé - Version Dec 11 2025`);
   console.log(`✅ Middleware OPTIONS configuré`);
   console.log(`✅ Replicate API: ${process.env.REPLICATE_API_TOKEN ? 'Configurée ✓' : 'NON configurée ✗'}`);
@@ -3640,6 +3891,8 @@ app.listen(PORT, () => {
   console.log(`✅ Routes RGPD activées (Export + Suppression)`);
   console.log(`✅ Routes Analytics activées (Tableau de bord avancé)`);
   console.log(`✅ Routes Notifications activées (Matching automatique)`);
+  console.log(`✅ Notifications Push Web activées (VAPID configuré)`);
+  console.log(`✅ Cron Jobs activés (Rappels automatiques toutes les heures)`);
 
   if (resend && !process.env.RESEND_DOMAIN_VERIFIED) {
     console.warn('⚠️  MODE TEST RESEND : Emails envoyés uniquement à votre adresse vérifiée');

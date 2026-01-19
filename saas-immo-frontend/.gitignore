@@ -23,7 +23,14 @@ dist-ssr
 *.sln
 *.sw?
 
-# En Fichiers
-# ...
+# Env Files
 .env
 .env.*
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Vitest
+*.test.jsx.snap
+*.test.js.snap

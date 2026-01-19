@@ -1,2 +1,14 @@
 node_modules
 .env
+.env.test
+
+# Logs
+logs/
+*.log
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Tests
+*.test.js.snap
