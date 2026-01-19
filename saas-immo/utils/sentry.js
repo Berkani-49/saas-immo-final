@@ -56,6 +56,10 @@ function initSentry(app) {
  * À placer AVANT toutes les routes
  */
 const sentryRequestHandler = () => {
+  // Si Sentry n'est pas initialisé, retourner un middleware vide
+  if (process.env.NODE_ENV !== 'production' || !process.env.SENTRY_DSN) {
+    return (req, res, next) => next();
+  }
   return Sentry.Handlers.requestHandler();
 };
 
@@ -64,6 +68,10 @@ const sentryRequestHandler = () => {
  * À placer AVANT toutes les routes
  */
 const sentryTracingHandler = () => {
+  // Si Sentry n'est pas initialisé, retourner un middleware vide
+  if (process.env.NODE_ENV !== 'production' || !process.env.SENTRY_DSN) {
+    return (req, res, next) => next();
+  }
   return Sentry.Handlers.tracingHandler();
 };
 
@@ -72,6 +80,10 @@ const sentryTracingHandler = () => {
  * À placer APRÈS toutes les routes mais AVANT votre error handler custom
  */
 const sentryErrorHandler = () => {
+  // Si Sentry n'est pas initialisé, retourner un middleware vide
+  if (process.env.NODE_ENV !== 'production' || !process.env.SENTRY_DSN) {
+    return (err, req, res, next) => next(err);
+  }
   return Sentry.Handlers.errorHandler();
 };
 
