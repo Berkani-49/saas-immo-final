@@ -25,6 +25,11 @@ const { initSentry, sentryRequestHandler, sentryTracingHandler, sentryErrorHandl
 const { errorHandler, notFoundHandler, asyncHandler } = require('./middleware/errorHandler');
 const healthRouter = require('./routes/health');
 
+// Imports pour la gestion des abonnements Stripe
+const stripeWebhookRouter = require('./routes/stripe-webhook');
+const billingRouter = require('./routes/billing');
+const { requireSubscription, enrichWithSubscription } = require('./middleware/requireSubscription');
+
 const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3000;
@@ -205,6 +210,10 @@ app.use('/api/', generalLimiter);
 
 // --- HEALTH CHECK ENDPOINT ---
 app.use('/', healthRouter);
+
+// --- STRIPE WEBHOOK (DOIT être AVANT express.json() car il utilise express.raw()) ---
+// Note: Cette route ne nécessite PAS d'authentification car c'est Stripe qui l'appelle
+app.use('/api/stripe', stripeWebhookRouter);
 
 // --- FONCTION DE VALIDATION EMAIL ---
 function isValidEmail(email) {
@@ -945,6 +954,8 @@ const authenticateToken = async (req, res, next) => {
 
 app.get('/api/me', authenticateToken, (req, res) => res.json(req.user));
 
+// --- BILLING & SUBSCRIPTION ROUTES (APRÈS authentification) ---
+app.use('/api/billing', authenticateToken, billingRouter);
 
 // --- 5. ROUTES PROTÉGÉES (Biens, Contacts, Tâches, Factures) ---
 
@@ -1991,35 +2002,27 @@ app.get('/api/contacts/:contactId/properties', authenticateToken, async (req, re
     }
 });
 
-// --- ROUTE PAIEMENT (STRIPE) ---
+// --- ROUTE PAIEMENT (STRIPE) - DEPRECATED ---
+// Note: Cette route est conservée pour la rétrocompatibilité
+// Utilisez maintenant /api/billing/create-checkout-session
 app.post('/api/create-checkout-session', authenticateToken, async (req, res) => {
   try {
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      mode: 'subscription', // C'est un abonnement récurrent
-      line_items: [
-        {
-          price_data: {
-            currency: 'eur',
-            product_data: {
-              name: 'Abonnement ImmoPro Premium',
-            },
-            unit_amount: 2900, // 29.00€ (en centimes)
-            recurring: {
-              interval: 'month', // Facturé tous les mois
-            },
-          },
-          quantity: 1,
-        },
-      ],
-      // Redirection après paiement (Change l'URL par la tienne plus tard)
-      success_url: 'https://saas-immo-final.vercel.app/?success=true',
-      cancel_url: 'https://saas-immo-final.vercel.app/?canceled=true',
-    });
+    // Prix par défaut pour le plan Premium (à remplacer par votre vrai price_id Stripe)
+    const priceId = req.body.priceId || process.env.STRIPE_PRICE_ID_PREMIUM || 'price_1234567890';
+
+    const stripeService = require('./services/stripeService');
+    const baseUrl = process.env.FRONTEND_URL || 'https://saas-immo-final.vercel.app';
+
+    const session = await stripeService.createCheckoutSession(
+      req.user,
+      priceId,
+      `${baseUrl}/?success=true`,
+      `${baseUrl}/?canceled=true`
+    );
 
     res.json({ url: session.url });
   } catch (error) {
-    console.error("Erreur Stripe:", error);
+    logger.error("Erreur création checkout:", error);
     res.status(500).json({ error: "Erreur création paiement" });
   }
 });

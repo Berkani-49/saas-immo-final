@@ -21,6 +21,12 @@ model User {
   role        String   @default("EMPLOYEE") // "OWNER" (patron) ou "EMPLOYEE" (employé)
   createdAt   DateTime @default(now())
 
+  // Stripe & Subscription
+  stripeCustomerId     String?   @unique // ID client Stripe
+  subscriptionStatus   String?   @default("inactive") // inactive, active, past_due, canceled, trialing
+  subscriptionPlan     String?   // starter, pro, premium
+  subscriptionEndDate  DateTime? // Date de fin de l'abonnement
+
   // Relations
   properties Property[]
   contacts   Contact[]
@@ -29,6 +35,7 @@ model User {
   invoices   Invoice[]
   appointments Appointment[]
   pushSubscriptions PushSubscription[]
+  subscription Subscription?
 }
 
 // --- MODÈLE PROPERTY ---
@@ -270,4 +277,85 @@ model PushSubscription {
 
   @@unique([agentId, endpoint])
   @@index([agentId])
+}
+
+// --- MODÈLE SUBSCRIPTION (Abonnements Stripe) ---
+model Subscription {
+  id                    Int      @id @default(autoincrement())
+  stripeSubscriptionId  String   @unique // ID de l'abonnement Stripe
+  stripePriceId         String   // ID du prix Stripe
+  stripeCustomerId      String   // ID du client Stripe
+
+  status                String   // active, past_due, canceled, trialing, incomplete, incomplete_expired
+  planName              String   // starter, pro, premium
+  amount                Int      // Montant en centimes
+  currency              String   @default("eur")
+  interval              String   // month, year
+
+  currentPeriodStart    DateTime // Début de la période actuelle
+  currentPeriodEnd      DateTime // Fin de la période actuelle
+  cancelAtPeriodEnd     Boolean  @default(false) // Si l'abonnement sera annulé à la fin
+  canceledAt            DateTime? // Date d'annulation
+  trialEnd              DateTime? // Fin de la période d'essai
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Lien avec l'utilisateur
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                Int      @unique
+
+  @@index([userId])
+  @@index([status])
+  @@index([stripeCustomerId])
+}
+
+// --- MODÈLE SUBSCRIPTION PLANS ---
+model SubscriptionPlan {
+  id                Int      @id @default(autoincrement())
+  stripePriceId     String   @unique // ID du prix Stripe
+  stripeProductId   String   // ID du produit Stripe
+
+  name              String   // "Starter", "Pro", "Premium"
+  slug              String   @unique // "starter", "pro", "premium"
+  description       String?  // Description du plan
+
+  amount            Int      // Montant en centimes
+  currency          String   @default("eur")
+  interval          String   // "month" ou "year"
+
+  features          Json?    // Liste des fonctionnalités (JSON)
+
+  maxProperties     Int?     // Nombre max de biens
+  maxContacts       Int?     // Nombre max de contacts
+  maxEmployees      Int?     // Nombre max d'employés
+
+  isActive          Boolean  @default(true) // Si le plan est disponible
+  isFeatured        Boolean  @default(false) // Plan mis en avant
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([slug])
+  @@index([isActive])
+}
+
+// --- MODÈLE WEBHOOK EVENTS (Log des événements Stripe) ---
+model StripeWebhookEvent {
+  id                String   @id @default(cuid())
+  stripeEventId     String   @unique // ID de l'événement Stripe
+  type              String   // Type d'événement (checkout.session.completed, etc.)
+
+  data              Json     // Données de l'événement (JSON)
+
+  processed         Boolean  @default(false) // Si l'événement a été traité
+  processedAt       DateTime? // Quand l'événement a été traité
+  error             String?  // Erreur si le traitement a échoué
+
+  createdAt         DateTime @default(now())
+
+  @@index([stripeEventId])
+  @@index([type])
+  @@index([processed])
+  @@index([createdAt])
 }
