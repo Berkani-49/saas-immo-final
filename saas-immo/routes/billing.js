@@ -4,6 +4,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const logger = require('../utils/logger');
 const stripeService = require('../services/stripeService');
+const notificationService = require('../services/subscriptionNotificationService');
 
 /**
  * GET /api/billing/subscription
@@ -53,7 +54,7 @@ router.get('/subscription', async (req, res) => {
 router.post('/create-checkout-session', async (req, res) => {
   try {
     const userId = req.user.id;
-    const { priceId, planName } = req.body;
+    const { priceId, planName, trialDays, coupon } = req.body;
 
     if (!priceId) {
       return res.status(400).json({ error: 'priceId est requis' });
@@ -64,15 +65,31 @@ router.post('/create-checkout-session', async (req, res) => {
     const successUrl = `${baseUrl}/dashboard?subscription=success`;
     const cancelUrl = `${baseUrl}/pricing?subscription=canceled`;
 
+    // Options pour la session de checkout
+    const options = {};
+
+    // Ajouter la période d'essai si demandée (par défaut 14 jours)
+    if (trialDays !== undefined) {
+      options.trialDays = parseInt(trialDays);
+    } else if (process.env.STRIPE_TRIAL_DAYS) {
+      options.trialDays = parseInt(process.env.STRIPE_TRIAL_DAYS);
+    }
+
+    // Ajouter le coupon si fourni
+    if (coupon) {
+      options.coupon = coupon;
+    }
+
     // Créer la session de checkout
     const session = await stripeService.createCheckoutSession(
       req.user,
       priceId,
       successUrl,
-      cancelUrl
+      cancelUrl,
+      options
     );
 
-    res.json({ url: session.url });
+    res.json({ url: session.url, hasTrialPeriod: !!options.trialDays });
   } catch (error) {
     logger.error('Error creating checkout session', { error: error.message, userId: req.user.id });
     res.status(500).json({ error: 'Erreur lors de la création de la session de paiement' });
@@ -243,6 +260,276 @@ router.get('/plans', async (req, res) => {
   } catch (error) {
     logger.error('Error fetching plans', { error: error.message });
     res.status(500).json({ error: 'Erreur lors de la récupération des plans' });
+  }
+});
+
+/**
+ * POST /api/billing/change-plan
+ * Changer de plan (upgrade ou downgrade)
+ */
+router.post('/change-plan', async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { newPriceId, newPlanName } = req.body;
+
+    if (!newPriceId || !newPlanName) {
+      return res.status(400).json({ error: 'newPriceId et newPlanName sont requis' });
+    }
+
+    // Récupérer l'abonnement actuel
+    const subscription = await prisma.subscription.findUnique({
+      where: { userId: userId },
+    });
+
+    if (!subscription) {
+      return res.status(404).json({ error: 'Aucun abonnement trouvé' });
+    }
+
+    if (subscription.status !== 'active') {
+      return res.status(400).json({ error: 'L\'abonnement doit être actif pour changer de plan' });
+    }
+
+    // Récupérer l'abonnement Stripe
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    const stripeSubscription = await stripe.subscriptions.retrieve(subscription.stripeSubscriptionId);
+
+    // Mettre à jour l'abonnement sur Stripe avec proration
+    const updatedSubscription = await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+      items: [
+        {
+          id: stripeSubscription.items.data[0].id,
+          price: newPriceId,
+        },
+      ],
+      proration_behavior: 'create_prorations', // Créer une proration automatique
+    });
+
+    // Mettre à jour dans la base de données
+    const price = updatedSubscription.items.data[0].price;
+    await prisma.subscription.update({
+      where: { id: subscription.id },
+      data: {
+        stripePriceId: newPriceId,
+        planName: newPlanName,
+        amount: price.unit_amount,
+        currentPeriodEnd: new Date(updatedSubscription.current_period_end * 1000),
+      },
+    });
+
+    // Mettre à jour l'utilisateur
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        subscriptionPlan: newPlanName,
+      },
+    });
+
+    logger.info('Plan changed successfully', { userId, oldPlan: subscription.planName, newPlan: newPlanName });
+
+    // Envoyer l'email de notification de changement de plan
+    const updatedSubscriptionData = await prisma.subscription.findUnique({ where: { userId } });
+    if (updatedSubscriptionData) {
+      await notificationService.sendPlanChangedEmail(req.user, subscription.planName, newPlanName, updatedSubscriptionData);
+    }
+
+    res.json({
+      message: 'Plan changé avec succès',
+      subscription: {
+        planName: newPlanName,
+        amount: price.unit_amount,
+      },
+    });
+  } catch (error) {
+    logger.error('Error changing plan', { error: error.message, userId: req.user.id });
+    res.status(500).json({ error: 'Erreur lors du changement de plan' });
+  }
+});
+
+/**
+ * POST /api/billing/apply-coupon
+ * Appliquer un code promo
+ */
+router.post('/apply-coupon', async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { couponCode } = req.body;
+
+    if (!couponCode) {
+      return res.status(400).json({ error: 'Code promo requis' });
+    }
+
+    const subscription = await prisma.subscription.findUnique({
+      where: { userId: userId },
+    });
+
+    if (!subscription) {
+      return res.status(404).json({ error: 'Aucun abonnement trouvé' });
+    }
+
+    // Appliquer le coupon sur Stripe
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+    try {
+      const updatedSubscription = await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+        coupon: couponCode,
+      });
+
+      logger.info('Coupon applied', { userId, couponCode });
+
+      res.json({
+        message: 'Code promo appliqué avec succès',
+        discount: updatedSubscription.discount,
+      });
+    } catch (stripeError) {
+      if (stripeError.code === 'resource_missing') {
+        return res.status(404).json({ error: 'Code promo invalide ou expiré' });
+      }
+      throw stripeError;
+    }
+  } catch (error) {
+    logger.error('Error applying coupon', { error: error.message, userId: req.user.id });
+    res.status(500).json({ error: 'Erreur lors de l\'application du code promo' });
+  }
+});
+
+/**
+ * GET /api/billing/usage
+ * Récupérer l'utilisation actuelle (limites du plan)
+ */
+router.get('/usage', async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Récupérer le plan actuel
+    const subscription = await prisma.subscription.findUnique({
+      where: { userId: userId },
+    });
+
+    if (!subscription) {
+      return res.json({
+        hasSubscription: false,
+        usage: {
+          properties: 0,
+          contacts: 0,
+          employees: 0,
+        },
+        limits: {
+          properties: 0,
+          contacts: 0,
+          employees: 0,
+        },
+      });
+    }
+
+    // Récupérer le plan
+    const plan = await prisma.subscriptionPlan.findUnique({
+      where: { stripePriceId: subscription.stripePriceId },
+    });
+
+    // Compter l'utilisation actuelle
+    const [propertiesCount, contactsCount, employeesCount] = await Promise.all([
+      prisma.property.count({ where: { agentId: userId } }),
+      prisma.contact.count({ where: { agentId: userId } }),
+      prisma.user.count({ where: { role: 'EMPLOYEE' } }), // À adapter selon votre logique
+    ]);
+
+    res.json({
+      hasSubscription: true,
+      planName: subscription.planName,
+      usage: {
+        properties: propertiesCount,
+        contacts: contactsCount,
+        employees: employeesCount,
+      },
+      limits: {
+        properties: plan?.maxProperties || null,
+        contacts: plan?.maxContacts || null,
+        employees: plan?.maxEmployees || null,
+      },
+      isLimitReached: {
+        properties: plan?.maxProperties ? propertiesCount >= plan.maxProperties : false,
+        contacts: plan?.maxContacts ? contactsCount >= plan.maxContacts : false,
+        employees: plan?.maxEmployees ? employeesCount >= plan.maxEmployees : false,
+      },
+    });
+  } catch (error) {
+    logger.error('Error fetching usage', { error: error.message, userId: req.user.id });
+    res.status(500).json({ error: 'Erreur lors de la récupération de l\'utilisation' });
+  }
+});
+
+/**
+ * POST /api/billing/retry-payment
+ * Réessayer un paiement échoué
+ */
+router.post('/retry-payment', async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const subscription = await prisma.subscription.findUnique({
+      where: { userId: userId },
+    });
+
+    if (!subscription) {
+      return res.status(404).json({ error: 'Aucun abonnement trouvé' });
+    }
+
+    if (subscription.status !== 'past_due') {
+      return res.status(400).json({ error: 'L\'abonnement n\'a pas de paiement en attente' });
+    }
+
+    // Récupérer la dernière facture non payée
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    const invoices = await stripe.invoices.list({
+      customer: subscription.stripeCustomerId,
+      status: 'open',
+      limit: 1,
+    });
+
+    if (invoices.data.length === 0) {
+      return res.status(404).json({ error: 'Aucune facture impayée trouvée' });
+    }
+
+    const invoice = invoices.data[0];
+
+    // Réessayer le paiement
+    try {
+      const paidInvoice = await stripe.invoices.pay(invoice.id);
+
+      if (paidInvoice.status === 'paid') {
+        // Mettre à jour le statut de l'abonnement
+        await prisma.subscription.update({
+          where: { id: subscription.id },
+          data: { status: 'active' },
+        });
+
+        await prisma.user.update({
+          where: { id: userId },
+          data: { subscriptionStatus: 'active' },
+        });
+
+        logger.info('Payment retried successfully', { userId, invoiceId: invoice.id });
+
+        res.json({
+          message: 'Paiement réussi',
+          status: 'active',
+        });
+      } else {
+        res.json({
+          message: 'Le paiement n\'a pas pu être traité',
+          status: paidInvoice.status,
+        });
+      }
+    } catch (paymentError) {
+      logger.error('Payment retry failed', { error: paymentError.message, userId });
+      res.status(400).json({
+        error: 'Le paiement a échoué',
+        message: paymentError.message,
+      });
+    }
+  } catch (error) {
+    logger.error('Error retrying payment', { error: error.message, userId: req.user.id });
+    res.status(500).json({ error: 'Erreur lors de la tentative de paiement' });
   }
 });
 

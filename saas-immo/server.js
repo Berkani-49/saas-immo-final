@@ -28,7 +28,9 @@ const healthRouter = require('./routes/health');
 // Imports pour la gestion des abonnements Stripe
 const stripeWebhookRouter = require('./routes/stripe-webhook');
 const billingRouter = require('./routes/billing');
+const adminSubscriptionsRouter = require('./routes/admin/subscriptions');
 const { requireSubscription, enrichWithSubscription } = require('./middleware/requireSubscription');
+const requireAdmin = require('./middleware/requireAdmin');
 
 const app = express();
 const prisma = new PrismaClient();
@@ -956,6 +958,7 @@ app.get('/api/me', authenticateToken, (req, res) => res.json(req.user));
 
 // --- BILLING & SUBSCRIPTION ROUTES (APRÈS authentification) ---
 app.use('/api/billing', authenticateToken, billingRouter);
+app.use('/api/admin/subscriptions', authenticateToken, requireAdmin, adminSubscriptionsRouter);
 
 // --- 5. ROUTES PROTÉGÉES (Biens, Contacts, Tâches, Factures) ---
 

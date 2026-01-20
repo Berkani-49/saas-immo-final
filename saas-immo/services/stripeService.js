@@ -46,11 +46,11 @@ async function getOrCreateStripeCustomer(user) {
 /**
  * Créer une session de checkout Stripe
  */
-async function createCheckoutSession(user, priceId, successUrl, cancelUrl) {
+async function createCheckoutSession(user, priceId, successUrl, cancelUrl, options = {}) {
   try {
     const customer = await getOrCreateStripeCustomer(user);
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionConfig = {
       customer: customer.id,
       mode: 'subscription',
       payment_method_types: ['card'],
@@ -70,7 +70,21 @@ async function createCheckoutSession(user, priceId, successUrl, cancelUrl) {
           userId: user.id.toString(),
         },
       },
-    });
+    };
+
+    // Ajouter la période d'essai si demandée
+    if (options.trialDays && options.trialDays > 0) {
+      sessionConfig.subscription_data.trial_period_days = options.trialDays;
+      logger.info('Trial period added to checkout', { userId: user.id, trialDays: options.trialDays });
+    }
+
+    // Ajouter un coupon si fourni
+    if (options.coupon) {
+      sessionConfig.discounts = [{ coupon: options.coupon }];
+      logger.info('Coupon added to checkout', { userId: user.id, coupon: options.coupon });
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
     logger.info('Checkout session created', { userId: user.id, sessionId: session.id });
 

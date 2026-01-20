@@ -4,6 +4,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const logger = require('../utils/logger');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const notificationService = require('../services/subscriptionNotificationService');
 
 // Webhook endpoint - DOIT être avant express.json()
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
@@ -158,7 +159,7 @@ async function handleCheckoutSessionCompleted(session) {
   });
 
   // Mettre à jour le statut de l'utilisateur
-  await prisma.user.update({
+  const user = await prisma.user.update({
     where: { id: userId },
     data: {
       stripeCustomerId: customerId,
@@ -169,6 +170,12 @@ async function handleCheckoutSessionCompleted(session) {
   });
 
   logger.info('Subscription created from checkout', { userId, subscriptionId });
+
+  // Envoyer l'email de bienvenue
+  const subscriptionData = await prisma.subscription.findUnique({ where: { userId } });
+  if (subscriptionData) {
+    await notificationService.sendSubscriptionWelcomeEmail(user, subscriptionData);
+  }
 }
 
 /**
@@ -294,13 +301,16 @@ async function handleSubscriptionDeleted(subscription) {
   });
 
   if (sub) {
-    await prisma.user.update({
+    const user = await prisma.user.update({
       where: { id: sub.userId },
       data: {
         subscriptionStatus: 'inactive',
         subscriptionPlan: null,
       },
     });
+
+    // Envoyer l'email de confirmation d'annulation
+    await notificationService.sendSubscriptionCanceledEmail(user, sub);
   }
 
   logger.info('Subscription deleted', { subscriptionId: subscription.id });
@@ -313,7 +323,22 @@ async function handleInvoicePaymentSucceeded(invoice) {
   logger.info('Invoice payment succeeded', { invoiceId: invoice.id });
 
   // Si c'est le premier paiement, l'abonnement est déjà créé par checkout.session.completed
-  // Ici on peut juste logger ou envoyer une notification
+  // Pour les renouvellements, envoyer un email
+  if (invoice.billing_reason === 'subscription_cycle') {
+    const user = await prisma.user.findUnique({
+      where: { stripeCustomerId: invoice.customer },
+    });
+
+    if (user) {
+      const subscription = await prisma.subscription.findUnique({
+        where: { userId: user.id },
+      });
+
+      if (subscription) {
+        await notificationService.sendSubscriptionRenewalEmail(user, subscription, invoice);
+      }
+    }
+  }
 }
 
 /**
@@ -336,7 +361,15 @@ async function handleInvoicePaymentFailed(invoice) {
       },
     });
 
-    // TODO: Envoyer un email à l'utilisateur pour l'informer
+    // Envoyer un email à l'utilisateur
+    const subscription = await prisma.subscription.findUnique({
+      where: { userId: user.id },
+    });
+
+    if (subscription) {
+      await notificationService.sendPaymentFailedEmail(user, subscription, invoice);
+    }
+
     logger.warn('User subscription is past due', { userId: user.id, email: user.email });
   }
 }
