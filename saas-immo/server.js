@@ -29,6 +29,7 @@ const healthRouter = require('./routes/health');
 const stripeWebhookRouter = require('./routes/stripe-webhook');
 const billingRouter = require('./routes/billing');
 const adminSubscriptionsRouter = require('./routes/admin/subscriptions');
+const employeesRouter = require('./routes/employees');
 const { requireSubscription, enrichWithSubscription } = require('./middleware/requireSubscription');
 const requireAdmin = require('./middleware/requireAdmin');
 
@@ -959,6 +960,9 @@ app.get('/api/me', authenticateToken, (req, res) => res.json(req.user));
 // --- BILLING & SUBSCRIPTION ROUTES (APRÈS authentification) ---
 app.use('/api/billing', authenticateToken, billingRouter);
 app.use('/api/admin/subscriptions', authenticateToken, requireAdmin, adminSubscriptionsRouter);
+
+// --- EMPLOYEE MANAGEMENT ROUTES ---
+app.use('/api/employees', authenticateToken, employeesRouter);
 
 // --- 5. ROUTES PROTÉGÉES (Biens, Contacts, Tâches, Factures) ---
 
