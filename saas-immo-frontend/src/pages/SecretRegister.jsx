@@ -8,7 +8,6 @@ export default function SecretRegister({ token }) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -18,17 +17,15 @@ export default function SecretRegister({ token }) {
     setMessage('');
     setIsLoading(true);
     try {
-      // 👇 C'EST ICI QUE J'AI CORRIGÉ L'ADRESSE : "saas-immo-final"
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      await axios.post('https://saas-immo.onrender.com/api/auth/register', {
+      await axios.post('https://saas-immo.onrender.com/api/employees', {
         firstName,
         lastName,
-        email,
-        password
+        email
       }, config);
-      
-      setMessage('Agent créé avec succès !');
-      setTimeout(() => navigate('/equipe'), 1500);
+
+      setMessage('Employé ajouté avec succès ! Un email avec les identifiants a été envoyé.');
+      setTimeout(() => navigate('/equipe'), 2000);
 
     } catch (error) {
       console.error('Échec inscription:', error);
@@ -57,8 +54,12 @@ export default function SecretRegister({ token }) {
             <FormControl isRequired><FormLabel>Nom</FormLabel><Input value={lastName} onChange={(e) => setLastName(e.target.value)} focusBorderColor="brand.500" /></FormControl>
           </HStack>
           <FormControl isRequired><FormLabel>Email Pro</FormLabel><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} focusBorderColor="brand.500" /></FormControl>
-          <FormControl isRequired><FormLabel>Mot de passe initial</FormLabel><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Ex: Agence2025!" focusBorderColor="brand.500" /></FormControl>
-          
+
+          <Alert status="info" fontSize="sm" borderRadius="md">
+            <AlertIcon />
+            Un mot de passe sécurisé sera généré automatiquement et envoyé par email.
+          </Alert>
+
           <Button type="submit" colorScheme="brand" width="full" size="lg" isLoading={isLoading}>
             Créer le compte
           </Button>
