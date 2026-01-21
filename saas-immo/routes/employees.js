@@ -69,8 +69,29 @@ router.post('/', async (req, res) => {
       where: { id: ownerId },
     });
 
-    if (!owner || owner.role !== 'OWNER') {
-      return res.status(403).json({ error: 'Seul le propriétaire peut ajouter des employés' });
+    // Logs de debug
+    logger.info('Tentative d\'ajout d\'employé', {
+      ownerId,
+      ownerFound: !!owner,
+      ownerRole: owner?.role,
+      ownerEmail: owner?.email
+    });
+
+    if (!owner) {
+      logger.error('Utilisateur non trouvé dans la base de données', { ownerId });
+      return res.status(403).json({ error: 'Utilisateur non trouvé' });
+    }
+
+    if (owner.role !== 'OWNER') {
+      logger.error('Utilisateur n\'a pas le rôle OWNER', {
+        userId: ownerId,
+        userRole: owner.role,
+        userEmail: owner.email
+      });
+      return res.status(403).json({
+        error: 'Seul le propriétaire peut ajouter des employés',
+        debug: { yourRole: owner.role, requiredRole: 'OWNER' }
+      });
     }
 
     // Générer un mot de passe fort
