@@ -74,7 +74,7 @@ export default function App() {
 
       <Routes>
         <Route path="/share/:id" element={<PublicPropertyPage />} />
-        <Route path="/nouveau-membre-agence" element={<SecretRegister />} />
+        <Route path="/nouveau-membre-agence" element={<SecretRegister token={token} />} />
 
         {token ? (
           <Route path="/" element={<Layout onLogout={handleLogout} />}>
