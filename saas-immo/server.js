@@ -947,12 +947,18 @@ app.get('/api/public/properties/:id', async (req, res) => {
 // --- 4. MIDDLEWARE D'AUTHENTIFICATION ---
 const authenticateToken = async (req, res, next) => {
   const token = req.headers['authorization']?.split(' ')[1];
-  if (!token) return res.sendStatus(401);
+  if (!token) return res.status(401).json({ error: 'Token manquant' });
   try {
     const payload = jwt.verify(token, JWT_SECRET);
     req.user = { id: payload.id };
     next();
-  } catch (e) { res.sendStatus(403); }
+  } catch (e) {
+    // Token invalide ou expiré
+    if (e.name === 'TokenExpiredError') {
+      return res.status(403).json({ error: 'Token expiré. Veuillez vous reconnecter.' });
+    }
+    return res.status(403).json({ error: 'Token invalide' });
+  }
 };
 
 app.get('/api/me', authenticateToken, (req, res) => res.json(req.user));
