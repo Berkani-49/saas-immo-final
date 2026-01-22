@@ -52,7 +52,6 @@ Notez l'email du compte avec lequel vous êtes connecté actuellement sur le fro
 ```bash
 node scripts/set-user-as-owner.js VOTRE_EMAIL@example.com
 ```
-
 **Exemple** :
 ```bash
 node scripts/set-user-as-owner.js pierre.dupont@agence.com
