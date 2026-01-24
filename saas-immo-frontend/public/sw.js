@@ -1,5 +1,5 @@
 // Service Worker pour PWA avec notifications push
-const CACHE_NAME = 'immopro-v1';
+const CACHE_NAME = 'immoflow-v1';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -66,7 +66,7 @@ self.addEventListener('push', (event) => {
     data = event.data.json();
   }
 
-  const title = data.title || 'ImmoPro';
+  const title = data.title || 'ImmoFlow';
   const options = {
     body: data.body || 'Nouvelle notification',
     icon: '/logo.png',

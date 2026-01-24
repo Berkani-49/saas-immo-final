@@ -272,7 +272,7 @@ export default function RGPDPage({ token }) {
                 d'effacement, de limitation du traitement, de portabilité et d'opposition concernant vos données personnelles.
               </Text>
               <Text fontSize="sm" color="gray.600">
-                Pour toute question concernant vos données personnelles, contactez-nous à : <strong>rgpd@immopro.fr</strong>
+                Pour toute question concernant vos données personnelles, contactez-nous à : <strong>rgpd@immoflow.fr</strong>
               </Text>
             </VStack>
           </CardBody>

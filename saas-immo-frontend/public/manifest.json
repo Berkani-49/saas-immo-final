@@ -1,6 +1,6 @@
 {
-  "name": "ImmoPro - Gestion Immobilière",
-  "short_name": "ImmoPro",
+  "name": "ImmoFlow - Gestion Immobilière",
+  "short_name": "ImmoFlow",
   "description": "Application de gestion immobilière avec notifications en temps réel",
   "start_url": "/",
   "scope": "/",

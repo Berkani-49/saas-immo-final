@@ -151,7 +151,7 @@ export default function Sidebar({ onLogout, onClose }) {
       <Box flex="1" overflowY="auto" pb={32}>
         <Flex h="20" alignItems="center" mx="8" justifyContent="space-between">
           <Heading fontSize="xl" fontWeight="bold" letterSpacing="tight">
-            IMMO<Text as="span" color="brand.500">PRO</Text>
+            IMMO<Text as="span" color="brand.500">FLOW</Text>
           </Heading>
           {onClose && <CloseButton display={{ base: 'flex', md: 'none' }} onClick={onClose} />}
         </Flex>

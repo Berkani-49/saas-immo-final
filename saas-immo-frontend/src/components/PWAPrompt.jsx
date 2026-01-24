@@ -59,7 +59,7 @@ export default function PWAPrompt({ token }) {
       console.log('✅ App installée');
       toast({
         title: 'Application installée !',
-        description: 'ImmoPro est maintenant accessible depuis votre écran d\'accueil.',
+        description: 'ImmoFlow est maintenant accessible depuis votre écran d\'accueil.',
         status: 'success',
         duration: 5000
       });
@@ -125,7 +125,7 @@ export default function PWAPrompt({ token }) {
             </HStack>
 
             <AlertDescription fontSize="sm" mb={3}>
-              Installez ImmoPro pour un accès rapide et une meilleure expérience !
+              Installez ImmoFlow pour un accès rapide et une meilleure expérience !
             </AlertDescription>
 
             <HStack w="full" spacing={2}>
