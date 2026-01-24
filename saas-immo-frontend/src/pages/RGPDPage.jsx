@@ -120,17 +120,6 @@ export default function RGPDPage({ token }) {
     }
   };
 
-  // Réinitialiser les préférences de cookies
-  const handleResetCookies = () => {
-    localStorage.removeItem('cookieConsent');
-    toast({
-      title: 'Préférences réinitialisées',
-      description: 'Rechargez la page pour voir à nouveau la bannière de cookies',
-      status: 'info',
-      duration: 5000,
-    });
-  };
-
   return (
     <Box>
       <VStack align="stretch" spacing={6}>
@@ -184,30 +173,6 @@ export default function RGPDPage({ token }) {
                 size="lg"
               >
                 Télécharger mes données
-              </Button>
-            </VStack>
-          </CardBody>
-        </Card>
-
-        {/* Gestion des cookies */}
-        <Card>
-          <CardHeader>
-            <HStack>
-              <Text fontSize="xl">🍪</Text>
-              <Heading size="md">Préférences des cookies</Heading>
-            </HStack>
-          </CardHeader>
-          <CardBody>
-            <VStack align="stretch" spacing={4}>
-              <Text color="gray.600">
-                Modifiez vos préférences de consentement pour les cookies analytiques, marketing et de préférences.
-              </Text>
-              <Button
-                variant="outline"
-                onClick={handleResetCookies}
-                size="lg"
-              >
-                Réinitialiser mes préférences
               </Button>
             </VStack>
           </CardBody>
