@@ -50,6 +50,28 @@ model Property {
   bedrooms    Int
   description String?
 
+  // 🏠 TYPE DE BIEN
+  propertyType String?  // "APARTMENT", "HOUSE", "STUDIO", "LOFT", "LAND", "COMMERCIAL", "PARKING"
+
+  // 🏢 ÉTAGE
+  floor       Int?      // Numéro d'étage (0 = RDC)
+  totalFloors Int?      // Nombre total d'étages dans l'immeuble
+
+  // 🚗 ÉQUIPEMENTS EXTÉRIEURS
+  parking     Int?      @default(0) // Nombre de places de parking
+  hasGarage   Boolean?  @default(false) // Présence d'un garage
+  hasBalcony  Boolean?  @default(false) // Présence d'un balcon
+  balconyArea Float?    // Surface du balcon/terrasse en m²
+  hasTerrace  Boolean?  @default(false) // Présence d'une terrasse
+  terraceArea Float?    // Surface de la terrasse en m²
+  hasGarden   Boolean?  @default(false) // Présence d'un jardin
+  gardenArea  Float?    // Surface du jardin en m²
+  hasPool     Boolean?  @default(false) // Présence d'une piscine
+
+  // 🏠 ÉQUIPEMENTS INTÉRIEURS
+  hasCellar   Boolean?  @default(false) // Présence d'une cave/cellier
+  hasElevator Boolean?  @default(false) // Présence d'un ascenseur
+
   // Nos ajouts précédents (Photos et Carte)
   imageUrl    String?
   imageUrlEnhanced String? // 📸 Photo améliorée par IA

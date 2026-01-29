@@ -241,10 +241,30 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
             </Text>
         </Link>
 
-        <HStack spacing={4} color="gray.600" fontSize="sm" mb={4}>
+        <HStack spacing={4} color="gray.600" fontSize="sm" mb={2}>
             <Flex align="center"><FaRulerCombined /><Text ml={1}>{property.area} m²</Text></Flex>
             <Flex align="center"><FaBed /><Text ml={1}>{property.bedrooms} ch.</Text></Flex>
             <Flex align="center"><FaBath /><Text ml={1}>{property.rooms} p.</Text></Flex>
+            {property.floor !== null && property.floor !== undefined && (
+              <Text>Ét. {property.floor === 0 ? 'RDC' : property.floor}</Text>
+            )}
+        </HStack>
+
+        {/* ÉQUIPEMENTS */}
+        <HStack spacing={1} flexWrap="wrap" mb={3}>
+            {property.propertyType && (
+              <Badge colorScheme="blue" fontSize="xs">{
+                { APARTMENT: 'Appart.', HOUSE: 'Maison', STUDIO: 'Studio', LOFT: 'Loft', LAND: 'Terrain', COMMERCIAL: 'Local', PARKING: 'Parking' }[property.propertyType] || property.propertyType
+              }</Badge>
+            )}
+            {property.hasGarage && <Badge colorScheme="gray" fontSize="xs">🚗 Garage</Badge>}
+            {property.parking > 0 && <Badge colorScheme="gray" fontSize="xs">🅿️ {property.parking} place(s)</Badge>}
+            {property.hasBalcony && <Badge colorScheme="teal" fontSize="xs">🌇 Balcon</Badge>}
+            {property.hasTerrace && <Badge colorScheme="orange" fontSize="xs">☀️ Terrasse</Badge>}
+            {property.hasGarden && <Badge colorScheme="green" fontSize="xs">🌳 Jardin</Badge>}
+            {property.hasPool && <Badge colorScheme="cyan" fontSize="xs">🏊 Piscine</Badge>}
+            {property.hasCellar && <Badge colorScheme="purple" fontSize="xs">🍷 Cave</Badge>}
+            {property.hasElevator && <Badge colorScheme="pink" fontSize="xs">🛗 Ascenseur</Badge>}
         </HStack>
 
         {/* CONTACTS LIÉS */}

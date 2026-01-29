@@ -2,10 +2,21 @@
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Box, Button, FormControl, FormLabel, Input, Textarea, HStack, VStack, Heading, useToast, Text, Select, Badge, Wrap, IconButton, useDisclosure, Divider } from '@chakra-ui/react';
+import { Box, Button, FormControl, FormLabel, Input, Textarea, HStack, VStack, Heading, useToast, Text, Select, Badge, Wrap, IconButton, useDisclosure, Divider, Checkbox, SimpleGrid } from '@chakra-ui/react';
 import { CloseIcon } from '@chakra-ui/icons';
 import MatchingModal from './components/MatchingModal';
 import PropertyImageGallery from './components/PropertyImageGallery';
+
+// Types de biens disponibles
+const PROPERTY_TYPES = [
+  { value: 'APARTMENT', label: 'Appartement' },
+  { value: 'HOUSE', label: 'Maison' },
+  { value: 'STUDIO', label: 'Studio' },
+  { value: 'LOFT', label: 'Loft' },
+  { value: 'LAND', label: 'Terrain' },
+  { value: 'COMMERCIAL', label: 'Local commercial' },
+  { value: 'PARKING', label: 'Parking / Box' },
+];
 
 export default function AddPropertyForm({ token, onPropertyAdded }) {
   // État pour le modal de matching
@@ -23,6 +34,22 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
   const [imageFile, setImageFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Nouveaux états pour les caractéristiques
+  const [propertyType, setPropertyType] = useState('');
+  const [floor, setFloor] = useState('');
+  const [totalFloors, setTotalFloors] = useState('');
+  const [parking, setParking] = useState('0');
+  const [hasGarage, setHasGarage] = useState(false);
+  const [hasBalcony, setHasBalcony] = useState(false);
+  const [balconyArea, setBalconyArea] = useState('');
+  const [hasTerrace, setHasTerrace] = useState(false);
+  const [terraceArea, setTerraceArea] = useState('');
+  const [hasGarden, setHasGarden] = useState(false);
+  const [gardenArea, setGardenArea] = useState('');
+  const [hasPool, setHasPool] = useState(false);
+  const [hasCellar, setHasCellar] = useState(false);
+  const [hasElevator, setHasElevator] = useState(false);
 
   // Nouveaux états pour les propriétaires
   const [contacts, setContacts] = useState([]);
@@ -135,11 +162,26 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
       // 2. Envoi des données au serveur (avec l'URL)
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
       const payload = {
-        address, city, postalCode, 
-        price: parseInt(price), area: parseInt(area), 
-        rooms: parseInt(rooms) || 0, bedrooms: parseInt(bedrooms) || 0, 
+        address, city, postalCode,
+        price: parseInt(price), area: parseInt(area),
+        rooms: parseInt(rooms) || 0, bedrooms: parseInt(bedrooms) || 0,
         description,
-        imageUrl: finalImageUrl
+        imageUrl: finalImageUrl,
+        // Nouvelles caractéristiques
+        propertyType: propertyType || null,
+        floor: floor ? parseInt(floor) : null,
+        totalFloors: totalFloors ? parseInt(totalFloors) : null,
+        parking: parseInt(parking) || 0,
+        hasGarage,
+        hasBalcony,
+        balconyArea: balconyArea ? parseFloat(balconyArea) : null,
+        hasTerrace,
+        terraceArea: terraceArea ? parseFloat(terraceArea) : null,
+        hasGarden,
+        gardenArea: gardenArea ? parseFloat(gardenArea) : null,
+        hasPool,
+        hasCellar,
+        hasElevator
       };
 
       const response = await axios.post('https://saas-immo.onrender.com/api/properties', payload, config);
@@ -171,6 +213,12 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
       setImageFile(null);
       setSelectedOwners([]);
       setSelectedContactId('');
+      // Reset des nouvelles caractéristiques
+      setPropertyType(''); setFloor(''); setTotalFloors('');
+      setParking('0'); setHasGarage(false); setHasBalcony(false);
+      setBalconyArea(''); setHasTerrace(false); setTerraceArea('');
+      setHasGarden(false); setGardenArea(''); setHasPool(false);
+      setHasCellar(false); setHasElevator(false);
       toast({
         title: "Bien ajouté avec succès !",
         description: "Vous pouvez maintenant ajouter des photos",
@@ -217,6 +265,84 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
               <FormControl><FormLabel>Pièces</FormLabel><Input type="number" value={rooms} onChange={(e) => setRooms(e.target.value)} /></FormControl>
               <FormControl><FormLabel>Chambres</FormLabel><Input type="number" value={bedrooms} onChange={(e) => setBedrooms(e.target.value)} /></FormControl>
             </HStack>
+
+            {/* TYPE DE BIEN */}
+            <FormControl>
+              <FormLabel>Type de bien</FormLabel>
+              <Select placeholder="Sélectionner le type" value={propertyType} onChange={(e) => setPropertyType(e.target.value)}>
+                {PROPERTY_TYPES.map(type => (
+                  <option key={type.value} value={type.value}>{type.label}</option>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* ÉTAGE */}
+            <HStack width="full">
+              <FormControl>
+                <FormLabel>Étage</FormLabel>
+                <Input type="number" placeholder="0 = RDC" value={floor} onChange={(e) => setFloor(e.target.value)} />
+              </FormControl>
+              <FormControl>
+                <FormLabel>Nb d'étages total</FormLabel>
+                <Input type="number" value={totalFloors} onChange={(e) => setTotalFloors(e.target.value)} />
+              </FormControl>
+            </HStack>
+
+            {/* ÉQUIPEMENTS */}
+            <Box width="full" p={4} borderWidth="1px" borderRadius="md" bg="gray.50">
+              <Text fontWeight="bold" mb={3}>Équipements</Text>
+
+              <SimpleGrid columns={{ base: 2, md: 3 }} spacing={3} mb={4}>
+                <Checkbox isChecked={hasGarage} onChange={(e) => setHasGarage(e.target.checked)}>
+                  🚗 Garage
+                </Checkbox>
+                <Checkbox isChecked={hasBalcony} onChange={(e) => setHasBalcony(e.target.checked)}>
+                  🌇 Balcon
+                </Checkbox>
+                <Checkbox isChecked={hasTerrace} onChange={(e) => setHasTerrace(e.target.checked)}>
+                  ☀️ Terrasse
+                </Checkbox>
+                <Checkbox isChecked={hasGarden} onChange={(e) => setHasGarden(e.target.checked)}>
+                  🌳 Jardin
+                </Checkbox>
+                <Checkbox isChecked={hasPool} onChange={(e) => setHasPool(e.target.checked)}>
+                  🏊 Piscine
+                </Checkbox>
+                <Checkbox isChecked={hasCellar} onChange={(e) => setHasCellar(e.target.checked)}>
+                  🍷 Cave
+                </Checkbox>
+                <Checkbox isChecked={hasElevator} onChange={(e) => setHasElevator(e.target.checked)}>
+                  🛗 Ascenseur
+                </Checkbox>
+              </SimpleGrid>
+
+              {/* Surfaces conditionnelles */}
+              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
+                <FormControl>
+                  <FormLabel fontSize="sm">Places de parking</FormLabel>
+                  <Input type="number" size="sm" value={parking} onChange={(e) => setParking(e.target.value)} />
+                </FormControl>
+                {hasBalcony && (
+                  <FormControl>
+                    <FormLabel fontSize="sm">Surface balcon (m²)</FormLabel>
+                    <Input type="number" size="sm" value={balconyArea} onChange={(e) => setBalconyArea(e.target.value)} />
+                  </FormControl>
+                )}
+                {hasTerrace && (
+                  <FormControl>
+                    <FormLabel fontSize="sm">Surface terrasse (m²)</FormLabel>
+                    <Input type="number" size="sm" value={terraceArea} onChange={(e) => setTerraceArea(e.target.value)} />
+                  </FormControl>
+                )}
+                {hasGarden && (
+                  <FormControl>
+                    <FormLabel fontSize="sm">Surface jardin (m²)</FormLabel>
+                    <Input type="number" size="sm" value={gardenArea} onChange={(e) => setGardenArea(e.target.value)} />
+                  </FormControl>
+                )}
+              </SimpleGrid>
+            </Box>
+
             <FormControl>
               <FormLabel>Photo du bien (optionnel - vous pourrez en ajouter plusieurs après)</FormLabel>
               <Input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files[0])} p={1} />

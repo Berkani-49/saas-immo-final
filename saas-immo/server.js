@@ -1042,7 +1042,12 @@ app.put('/api/properties/:id', authenticateToken, async (req, res) => {
         if (!property) return res.status(404).json({ error: "Bien non trouvé ou non autorisé" });
 
         // Extraire uniquement les champs autorisés (éviter les champs de relation)
-        const { address, city, postalCode, price, area, rooms, bedrooms, description, imageUrl } = req.body;
+        const {
+            address, city, postalCode, price, area, rooms, bedrooms, description, imageUrl,
+            // Nouvelles caractéristiques
+            propertyType, floor, totalFloors, parking, hasGarage, hasBalcony, balconyArea,
+            hasTerrace, terraceArea, hasGarden, gardenArea, hasPool, hasCellar, hasElevator
+        } = req.body;
 
         const updated = await prisma.property.update({
             where: { id: parseInt(req.params.id) },
@@ -1055,7 +1060,22 @@ app.put('/api/properties/:id', authenticateToken, async (req, res) => {
                 rooms: rooms ? parseInt(rooms) : property.rooms,
                 bedrooms: bedrooms ? parseInt(bedrooms) : property.bedrooms,
                 description,
-                imageUrl
+                imageUrl,
+                // Nouvelles caractéristiques
+                propertyType,
+                floor: floor !== undefined ? (floor ? parseInt(floor) : null) : property.floor,
+                totalFloors: totalFloors !== undefined ? (totalFloors ? parseInt(totalFloors) : null) : property.totalFloors,
+                parking: parking !== undefined ? parseInt(parking) || 0 : property.parking,
+                hasGarage: hasGarage !== undefined ? hasGarage : property.hasGarage,
+                hasBalcony: hasBalcony !== undefined ? hasBalcony : property.hasBalcony,
+                balconyArea: balconyArea !== undefined ? (balconyArea ? parseFloat(balconyArea) : null) : property.balconyArea,
+                hasTerrace: hasTerrace !== undefined ? hasTerrace : property.hasTerrace,
+                terraceArea: terraceArea !== undefined ? (terraceArea ? parseFloat(terraceArea) : null) : property.terraceArea,
+                hasGarden: hasGarden !== undefined ? hasGarden : property.hasGarden,
+                gardenArea: gardenArea !== undefined ? (gardenArea ? parseFloat(gardenArea) : null) : property.gardenArea,
+                hasPool: hasPool !== undefined ? hasPool : property.hasPool,
+                hasCellar: hasCellar !== undefined ? hasCellar : property.hasCellar,
+                hasElevator: hasElevator !== undefined ? hasElevator : property.hasElevator
             },
             include: { images: { orderBy: { order: 'asc' } } } // Inclure les images dans la réponse
         });
