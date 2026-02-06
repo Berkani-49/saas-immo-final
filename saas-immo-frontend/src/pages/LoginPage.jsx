@@ -25,6 +25,7 @@ export default function LoginPage({
       bg="gray.900"
       zIndex="9999"
       direction={{ base: 'column', lg: 'row' }}
+      overflow="auto"
     >
       {/* Section gauche - Branding & Message */}
       <Flex
@@ -32,19 +33,21 @@ export default function LoginPage({
         direction="column"
         justify="center"
         align={{ base: 'center', lg: 'flex-start' }}
-        p={{ base: 8, md: 12, lg: 16 }}
+        p={{ base: 6, md: 12, lg: 16 }}
         bg="linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)"
-        minH={{ base: '40vh', lg: '100vh' }}
+        minH={{ base: 'auto', lg: '100vh' }}
+        py={{ base: 8, lg: 16 }}
       >
         {/* Logo */}
-        <HStack spacing={2} mb={{ base: 6, lg: 10 }}>
+        <HStack spacing={2} mb={{ base: 4, lg: 10 }}>
           <Box
-            w="10px" h="10px"
+            w={{ base: '8px', md: '10px' }}
+            h={{ base: '8px', md: '10px' }}
             borderRadius="full"
             bg="brand.400"
           />
           <Text
-            fontSize={{ base: 'lg', md: 'xl' }}
+            fontSize={{ base: 'md', md: 'xl' }}
             fontWeight="bold"
             color="white"
             letterSpacing="tight"
@@ -56,11 +59,11 @@ export default function LoginPage({
         {/* Titre principal */}
         <Heading
           as="h1"
-          fontSize={{ base: '2xl', md: '4xl', lg: '5xl', xl: '6xl' }}
+          fontSize={{ base: 'xl', md: '3xl', lg: '5xl', xl: '6xl' }}
           fontWeight="bold"
           color="white"
-          lineHeight="1.1"
-          mb={6}
+          lineHeight="1.2"
+          mb={{ base: 3, lg: 6 }}
           textAlign={{ base: 'center', lg: 'left' }}
         >
           Gérez vos biens,
@@ -73,18 +76,32 @@ export default function LoginPage({
 
         {/* Sous-titre */}
         <Text
-          fontSize={{ base: 'md', md: 'lg' }}
+          fontSize={{ base: 'sm', md: 'lg' }}
           color="gray.300"
           maxW="500px"
-          mb={8}
+          mb={{ base: 4, lg: 8 }}
           textAlign={{ base: 'center', lg: 'left' }}
         >
           La plateforme tout-en-un pour les professionnels de l'immobilier.
-          Simple, rapide, efficace.
         </Text>
 
-        {/* Features highlights - Desktop only */}
-        {!isMobile && (
+        {/* Features highlights - Mobile version compacte */}
+        {isMobile ? (
+          <HStack spacing={4} justify="center" flexWrap="wrap">
+            <HStack spacing={2}>
+              <Icon as={FiHome} color="brand.400" boxSize={4} />
+              <Text color="gray.400" fontSize="xs">Biens</Text>
+            </HStack>
+            <HStack spacing={2}>
+              <Icon as={FiUsers} color="brand.400" boxSize={4} />
+              <Text color="gray.400" fontSize="xs">Clients</Text>
+            </HStack>
+            <HStack spacing={2}>
+              <Icon as={FiTrendingUp} color="brand.400" boxSize={4} />
+              <Text color="gray.400" fontSize="xs">Analytics</Text>
+            </HStack>
+          </HStack>
+        ) : (
           <VStack align="flex-start" spacing={4} mt={4}>
             <HStack spacing={3}>
               <Flex
@@ -128,66 +145,75 @@ export default function LoginPage({
 
       {/* Section droite - Formulaire */}
       <Flex
-        flex="1"
+        flex={{ base: '1', lg: '1' }}
         direction="column"
-        justify="center"
+        justify={{ base: 'flex-start', lg: 'center' }}
         align="center"
         p={{ base: 6, md: 12 }}
+        py={{ base: 8, lg: 12 }}
         bg="gray.900"
       >
-        <Box w="100%" maxW="400px">
+        <Box
+          w="100%"
+          maxW="400px"
+          bg={{ base: 'gray.800', lg: 'transparent' }}
+          p={{ base: 6, lg: 0 }}
+          borderRadius={{ base: '2xl', lg: 'none' }}
+          borderWidth={{ base: '1px', lg: '0' }}
+          borderColor="gray.700"
+        >
           {/* Titre du formulaire */}
           <Heading
             as="h2"
-            fontSize={{ base: 'xl', md: '2xl' }}
+            fontSize={{ base: 'lg', md: '2xl' }}
             fontWeight="semibold"
             color="white"
-            mb={2}
+            mb={1}
           >
             Connexion
           </Heading>
-          <Text color="gray.400" mb={8}>
+          <Text color="gray.400" mb={6} fontSize={{ base: 'sm', md: 'md' }}>
             Accédez à votre espace agence
           </Text>
 
           {/* Indicateur de statut du backend */}
-          <HStack mb={6} fontSize="sm">
+          <HStack mb={5} fontSize="sm" justify={{ base: 'center', lg: 'flex-start' }}>
             {backendStatus === 'checking' && (
               <>
                 <Spinner size="xs" color="orange.400" />
-                <Text color="orange.400">Connexion au serveur...</Text>
+                <Text color="orange.400" fontSize="xs">Connexion au serveur...</Text>
               </>
             )}
             {backendStatus === 'waking' && (
               <>
                 <Spinner size="xs" color="orange.400" />
-                <Text color="orange.400">Réveil du serveur...</Text>
+                <Text color="orange.400" fontSize="xs">Réveil du serveur...</Text>
               </>
             )}
             {backendStatus === 'ready' && (
               <>
-                <CheckCircleIcon color="green.400" />
-                <Text color="green.400">Serveur prêt</Text>
+                <CheckCircleIcon color="green.400" boxSize={3} />
+                <Text color="green.400" fontSize="xs">Serveur prêt</Text>
               </>
             )}
           </HStack>
 
           {/* Formulaire */}
           <form onSubmit={handleLogin}>
-            <VStack spacing={5}>
+            <VStack spacing={4}>
               <FormControl id="email-login" isRequired>
                 <Input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email"
-                  size="lg"
-                  bg="gray.800"
+                  size={{ base: 'md', md: 'lg' }}
+                  bg={{ base: 'gray.700', lg: 'gray.800' }}
                   border="1px solid"
-                  borderColor="gray.700"
+                  borderColor="gray.600"
                   color="white"
                   _placeholder={{ color: 'gray.400' }}
-                  _hover={{ borderColor: 'gray.600' }}
+                  _hover={{ borderColor: 'gray.500' }}
                   _focus={{
                     borderColor: 'brand.500',
                     boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)'
@@ -202,13 +228,13 @@ export default function LoginPage({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Mot de passe"
-                  size="lg"
-                  bg="gray.800"
+                  size={{ base: 'md', md: 'lg' }}
+                  bg={{ base: 'gray.700', lg: 'gray.800' }}
                   border="1px solid"
-                  borderColor="gray.700"
+                  borderColor="gray.600"
                   color="white"
                   _placeholder={{ color: 'gray.400' }}
-                  _hover={{ borderColor: 'gray.600' }}
+                  _hover={{ borderColor: 'gray.500' }}
                   _focus={{
                     borderColor: 'brand.500',
                     boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)'
@@ -218,15 +244,15 @@ export default function LoginPage({
               </FormControl>
 
               {message && (
-                <Alert status="error" borderRadius="xl" bg="red.900" color="white">
-                  <AlertIcon color="red.300" />
+                <Alert status="error" borderRadius="xl" bg="red.900" color="white" py={2} fontSize="sm">
+                  <AlertIcon color="red.300" boxSize={4} />
                   {message}
                 </Alert>
               )}
 
               <Button
                 type="submit"
-                size="lg"
+                size={{ base: 'md', md: 'lg' }}
                 width="full"
                 bg="brand.500"
                 color="white"
@@ -239,6 +265,7 @@ export default function LoginPage({
                 fontWeight="semibold"
                 transition="all 0.2s"
                 boxShadow="0 4px 14px 0 rgba(99, 102, 241, 0.39)"
+                mt={2}
               >
                 Se connecter
               </Button>
@@ -246,7 +273,7 @@ export default function LoginPage({
           </form>
 
           {/* Footer */}
-          <Text color="gray.500" fontSize="xs" textAlign="center" mt={10}>
+          <Text color="gray.500" fontSize="xs" textAlign="center" mt={6}>
             © 2025 ImmoFlow. Tous droits réservés.
           </Text>
         </Box>
