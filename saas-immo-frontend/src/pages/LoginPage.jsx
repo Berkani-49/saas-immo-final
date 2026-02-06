@@ -22,9 +22,10 @@ export default function LoginPage({
       position="fixed"
       top="0" left="0"
       w="100vw" h="100vh"
-      bg="gray.900"
+      bg={{ base: '#0a0a0f', lg: 'gray.900' }}
       zIndex="9999"
       direction={{ base: 'column', lg: 'row' }}
+      overflow="auto"
     >
       {/* Section gauche - Branding & Message */}
       <Flex
@@ -32,19 +33,21 @@ export default function LoginPage({
         direction="column"
         justify="center"
         align={{ base: 'center', lg: 'flex-start' }}
-        p={{ base: 8, md: 12, lg: 16 }}
+        p={{ base: 6, md: 12, lg: 16 }}
         bg="linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)"
-        minH={{ base: '40vh', lg: '100vh' }}
+        minH={{ base: 'auto', lg: '100vh' }}
+        py={{ base: 6, lg: 16 }}
       >
         {/* Logo */}
-        <HStack spacing={2} mb={{ base: 6, lg: 10 }}>
+        <HStack spacing={2} mb={{ base: 4, lg: 10 }}>
           <Box
-            w="10px" h="10px"
+            w={{ base: '8px', md: '10px' }}
+            h={{ base: '8px', md: '10px' }}
             borderRadius="full"
             bg="brand.400"
           />
           <Text
-            fontSize={{ base: 'lg', md: 'xl' }}
+            fontSize={{ base: 'md', md: 'xl' }}
             fontWeight="bold"
             color="white"
             letterSpacing="tight"
@@ -56,11 +59,11 @@ export default function LoginPage({
         {/* Titre principal */}
         <Heading
           as="h1"
-          fontSize={{ base: '2xl', md: '4xl', lg: '5xl', xl: '6xl' }}
+          fontSize={{ base: 'xl', md: '3xl', lg: '5xl', xl: '6xl' }}
           fontWeight="bold"
           color="white"
-          lineHeight="1.1"
-          mb={6}
+          lineHeight="1.2"
+          mb={{ base: 3, lg: 6 }}
           textAlign={{ base: 'center', lg: 'left' }}
         >
           Gérez vos biens,
@@ -73,18 +76,32 @@ export default function LoginPage({
 
         {/* Sous-titre */}
         <Text
-          fontSize={{ base: 'md', md: 'lg' }}
+          fontSize={{ base: 'sm', md: 'lg' }}
           color="gray.300"
           maxW="500px"
-          mb={8}
+          mb={{ base: 4, lg: 8 }}
           textAlign={{ base: 'center', lg: 'left' }}
         >
           La plateforme tout-en-un pour les professionnels de l'immobilier.
-          Simple, rapide, efficace.
         </Text>
 
-        {/* Features highlights - Desktop only */}
-        {!isMobile && (
+        {/* Features highlights */}
+        {isMobile ? (
+          <HStack spacing={5} justify="center" flexWrap="wrap" mt={2}>
+            <HStack spacing={2}>
+              <Icon as={FiHome} color="brand.400" boxSize={4} />
+              <Text color="gray.300" fontSize="xs" fontWeight="medium">Biens</Text>
+            </HStack>
+            <HStack spacing={2}>
+              <Icon as={FiUsers} color="brand.400" boxSize={4} />
+              <Text color="gray.300" fontSize="xs" fontWeight="medium">Clients</Text>
+            </HStack>
+            <HStack spacing={2}>
+              <Icon as={FiTrendingUp} color="brand.400" boxSize={4} />
+              <Text color="gray.300" fontSize="xs" fontWeight="medium">Analytics</Text>
+            </HStack>
+          </HStack>
+        ) : (
           <VStack align="flex-start" spacing={4} mt={4}>
             <HStack spacing={3}>
               <Flex
@@ -132,10 +149,18 @@ export default function LoginPage({
         direction="column"
         justify="center"
         align="center"
-        p={{ base: 6, md: 12 }}
-        bg="gray.900"
+        p={{ base: 5, md: 12 }}
+        bg={{ base: '#0a0a0f', lg: 'gray.900' }}
       >
-        <Box w="100%" maxW="400px">
+        <Box
+          w="100%"
+          maxW="400px"
+          bg={{ base: '#13131a', lg: 'transparent' }}
+          p={{ base: 5, lg: 0 }}
+          borderRadius={{ base: '2xl', lg: 'none' }}
+          borderWidth={{ base: '1px', lg: '0' }}
+          borderColor="gray.700"
+        >
           {/* Titre du formulaire */}
           <Heading
             as="h2"
@@ -146,7 +171,7 @@ export default function LoginPage({
           >
             Connexion
           </Heading>
-          <Text color="gray.400" mb={8}>
+          <Text color="gray.400" mb={8} fontSize={{ base: 'sm', md: 'md' }}>
             Accédez à votre espace agence
           </Text>
 
@@ -182,7 +207,7 @@ export default function LoginPage({
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email"
                   size="lg"
-                  bg="gray.800"
+                  bg={{ base: '#1a1a24', lg: 'gray.800' }}
                   border="1px solid"
                   borderColor="gray.700"
                   color="white"
@@ -203,7 +228,7 @@ export default function LoginPage({
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Mot de passe"
                   size="lg"
-                  bg="gray.800"
+                  bg={{ base: '#1a1a24', lg: 'gray.800' }}
                   border="1px solid"
                   borderColor="gray.700"
                   color="white"
@@ -218,8 +243,8 @@ export default function LoginPage({
               </FormControl>
 
               {message && (
-                <Alert status="error" borderRadius="xl" bg="red.900" color="white">
-                  <AlertIcon color="red.300" />
+                <Alert status="error" borderRadius="xl" bg="red.900" color="white" py={2} fontSize="sm">
+                  <AlertIcon color="red.300" boxSize={4} />
                   {message}
                 </Alert>
               )}
