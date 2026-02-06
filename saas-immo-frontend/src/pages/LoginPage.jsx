@@ -22,7 +22,7 @@ export default function LoginPage({
       position="fixed"
       top="0" left="0"
       w="100vw" h="100vh"
-      bg="gray.900"
+      bg="#0a0a0f"
       zIndex="9999"
       direction={{ base: 'column', lg: 'row' }}
       overflow="auto"
@@ -34,9 +34,9 @@ export default function LoginPage({
         justify="center"
         align={{ base: 'center', lg: 'flex-start' }}
         p={{ base: 6, md: 12, lg: 16 }}
-        bg="linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)"
+        bg={{ base: '#0d0d14', lg: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%)' }}
         minH={{ base: 'auto', lg: '100vh' }}
-        py={{ base: 8, lg: 16 }}
+        py={{ base: 6, lg: 16 }}
       >
         {/* Logo */}
         <HStack spacing={2} mb={{ base: 4, lg: 10 }}>
@@ -87,18 +87,18 @@ export default function LoginPage({
 
         {/* Features highlights - Mobile version compacte */}
         {isMobile ? (
-          <HStack spacing={4} justify="center" flexWrap="wrap">
+          <HStack spacing={5} justify="center" flexWrap="wrap" mt={2}>
             <HStack spacing={2}>
               <Icon as={FiHome} color="brand.400" boxSize={4} />
-              <Text color="gray.400" fontSize="xs">Biens</Text>
+              <Text color="gray.300" fontSize="xs" fontWeight="medium">Biens</Text>
             </HStack>
             <HStack spacing={2}>
               <Icon as={FiUsers} color="brand.400" boxSize={4} />
-              <Text color="gray.400" fontSize="xs">Clients</Text>
+              <Text color="gray.300" fontSize="xs" fontWeight="medium">Clients</Text>
             </HStack>
             <HStack spacing={2}>
               <Icon as={FiTrendingUp} color="brand.400" boxSize={4} />
-              <Text color="gray.400" fontSize="xs">Analytics</Text>
+              <Text color="gray.300" fontSize="xs" fontWeight="medium">Analytics</Text>
             </HStack>
           </HStack>
         ) : (
@@ -149,30 +149,30 @@ export default function LoginPage({
         direction="column"
         justify={{ base: 'flex-start', lg: 'center' }}
         align="center"
-        p={{ base: 6, md: 12 }}
-        py={{ base: 8, lg: 12 }}
-        bg="gray.900"
+        p={{ base: 5, md: 12 }}
+        py={{ base: 6, lg: 12 }}
+        bg={{ base: '#0a0a0f', lg: 'gray.900' }}
       >
         <Box
           w="100%"
           maxW="400px"
-          bg={{ base: 'gray.800', lg: 'transparent' }}
-          p={{ base: 6, lg: 0 }}
+          bg={{ base: '#13131a', lg: 'transparent' }}
+          p={{ base: 5, lg: 0 }}
           borderRadius={{ base: '2xl', lg: 'none' }}
           borderWidth={{ base: '1px', lg: '0' }}
-          borderColor="gray.700"
+          borderColor={{ base: 'gray.700', lg: 'transparent' }}
         >
           {/* Titre du formulaire */}
           <Heading
             as="h2"
-            fontSize={{ base: 'lg', md: '2xl' }}
-            fontWeight="semibold"
+            fontSize={{ base: 'xl', md: '2xl' }}
+            fontWeight="bold"
             color="white"
-            mb={1}
+            mb={2}
           >
             Connexion
           </Heading>
-          <Text color="gray.400" mb={6} fontSize={{ base: 'sm', md: 'md' }}>
+          <Text color="gray.300" mb={6} fontSize={{ base: 'sm', md: 'md' }}>
             Accédez à votre espace agence
           </Text>
 
@@ -207,13 +207,13 @@ export default function LoginPage({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email"
-                  size={{ base: 'md', md: 'lg' }}
-                  bg={{ base: 'gray.700', lg: 'gray.800' }}
+                  size={{ base: 'lg', md: 'lg' }}
+                  bg={{ base: '#1a1a24', lg: 'gray.800' }}
                   border="1px solid"
-                  borderColor="gray.600"
+                  borderColor={{ base: 'gray.600', lg: 'gray.700' }}
                   color="white"
                   _placeholder={{ color: 'gray.400' }}
-                  _hover={{ borderColor: 'gray.500' }}
+                  _hover={{ borderColor: 'brand.400' }}
                   _focus={{
                     borderColor: 'brand.500',
                     boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)'
@@ -228,13 +228,13 @@ export default function LoginPage({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Mot de passe"
-                  size={{ base: 'md', md: 'lg' }}
-                  bg={{ base: 'gray.700', lg: 'gray.800' }}
+                  size={{ base: 'lg', md: 'lg' }}
+                  bg={{ base: '#1a1a24', lg: 'gray.800' }}
                   border="1px solid"
-                  borderColor="gray.600"
+                  borderColor={{ base: 'gray.600', lg: 'gray.700' }}
                   color="white"
                   _placeholder={{ color: 'gray.400' }}
-                  _hover={{ borderColor: 'gray.500' }}
+                  _hover={{ borderColor: 'brand.400' }}
                   _focus={{
                     borderColor: 'brand.500',
                     boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)'
@@ -252,7 +252,7 @@ export default function LoginPage({
 
               <Button
                 type="submit"
-                size={{ base: 'md', md: 'lg' }}
+                size="lg"
                 width="full"
                 bg="brand.500"
                 color="white"
@@ -262,10 +262,12 @@ export default function LoginPage({
                 isDisabled={backendStatus !== 'ready'}
                 loadingText="Connexion..."
                 borderRadius="xl"
-                fontWeight="semibold"
+                fontWeight="bold"
+                fontSize={{ base: 'md', md: 'lg' }}
                 transition="all 0.2s"
-                boxShadow="0 4px 14px 0 rgba(99, 102, 241, 0.39)"
-                mt={2}
+                boxShadow="0 4px 14px 0 rgba(99, 102, 241, 0.5)"
+                mt={3}
+                py={6}
               >
                 Se connecter
               </Button>
