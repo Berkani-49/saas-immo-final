@@ -10,6 +10,7 @@ import Layout from './Layout.jsx';
 import CookieConsent from './components/CookieConsent.jsx';
 import PWAPrompt from './components/PWAPrompt.jsx';
 import PageLoader from './components/PageLoader.jsx';
+import LoginPage from './pages/LoginPage.jsx';
 
 // Lazy loading des pages (chargées à la demande)
 const HomePage = lazy(() => import('./pages/HomePage.jsx'));
@@ -29,7 +30,6 @@ const AppointmentsPage = lazy(() => import('./pages/AppointmentsPage.jsx'));
 const RGPDPage = lazy(() => import('./pages/RGPDPage.jsx'));
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage.jsx'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage.jsx'));
-const LoginPage = lazy(() => import('./pages/LoginPage.jsx'));
 
 const API_URL = 'https://saas-immo.onrender.com';
 
@@ -49,10 +49,12 @@ export default function App() {
     setIsLoadingToken(false);
   }, []);
 
-  // Préchauffer le backend dès que la page de login s'affiche
+  // Préchauffer le backend + précharger la HomePage dès que la page de login s'affiche
   useEffect(() => {
     if (!token) {
       warmupBackend();
+      // Précharger la HomePage pour éviter le spinner après le login
+      import('./pages/HomePage.jsx');
     }
   }, [token]);
 
