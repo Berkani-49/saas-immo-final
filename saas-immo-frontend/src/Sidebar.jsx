@@ -87,9 +87,9 @@ export default function Sidebar({ onLogout, onClose }) {
           role="group"
           cursor="pointer"
           bg={isActive ? 'brand.500' : 'transparent'}
-          color={isActive ? 'white' : 'gray.200'}
+          color={isActive ? 'white' : 'gray.300'}
           _hover={{
-            bg: isActive ? 'brand.600' : 'whiteAlpha.200',
+            bg: isActive ? 'brand.600' : 'whiteAlpha.100',
             color: 'white',
           }}
           transition="all 0.2s"
@@ -100,7 +100,7 @@ export default function Sidebar({ onLogout, onClose }) {
               mr="3"
               fontSize="16"
               as={icon}
-              color={isActive ? 'white' : 'gray.300'}
+              color={isActive ? 'white' : 'gray.400'}
               _groupHover={{ color: 'white' }}
             />
           )}
@@ -118,17 +118,17 @@ export default function Sidebar({ onLogout, onClose }) {
       py="2"
       cursor="pointer"
       onClick={onToggle}
-      _hover={{ bg: 'whiteAlpha.200' }}
+      _hover={{ bg: 'whiteAlpha.100' }}
       borderRadius="md"
       mx="2"
       mt="2"
     >
-      <Text fontSize="xs" fontWeight="bold" color="gray.400" textTransform="uppercase" letterSpacing="wider">
+      <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase" letterSpacing="wider">
         {title}
       </Text>
       <Icon
         as={isOpen ? FiChevronDown : FiChevronRight}
-        color="gray.400"
+        color="gray.500"
         w={3}
         h={3}
       />
@@ -137,8 +137,8 @@ export default function Sidebar({ onLogout, onClose }) {
 
   return (
     <Box
-      bg="brand.900"
-      color="white"
+      bg="gray.800"
+      color="gray.100"
       h="100vh"
       w="100%"
       pos="relative"
@@ -150,10 +150,10 @@ export default function Sidebar({ onLogout, onClose }) {
       {/* Partie scrollable */}
       <Box flex="1" overflowY="auto" pb={32}>
         <Flex h="20" alignItems="center" mx="8" justifyContent="space-between">
-          <Heading fontSize="xl" fontWeight="bold" letterSpacing="tight">
-            IMMO<Text as="span" color="brand.500">FLOW</Text>
+          <Heading fontSize="xl" fontWeight="bold" letterSpacing="tight" color="white">
+            IMMO<Text as="span" color="brand.400">FLOW</Text>
           </Heading>
-          {onClose && <CloseButton display={{ base: 'flex', md: 'none' }} onClick={onClose} />}
+          {onClose && <CloseButton display={{ base: 'flex', md: 'none' }} onClick={onClose} color="gray.400" />}
         </Flex>
 
         <Divider borderColor="gray.700" mb={2} />
@@ -185,9 +185,9 @@ export default function Sidebar({ onLogout, onClose }) {
         position="sticky"
         bottom="0"
         p={6}
-        bg="brand.900"
+        bg="gray.800"
         borderTop="1px"
-        borderTopColor="gray.800"
+        borderTopColor="gray.700"
       >
         <Button
           onClick={onLogout}

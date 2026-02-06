@@ -51,46 +51,46 @@ export default function Dashboard({ token }) {
   );
 
   return (
-    <Box w="100%" maxW="100%" overflowX="hidden"> {/* <--- LA PROTECTION EST ICI */}
-      
-      <Heading mb={6}>Gestion des Biens</Heading>
-      
+    <Box w="100%" maxW="100%" overflowX="hidden">
+
+      <Heading mb={6} color="white">Gestion des Biens</Heading>
+
       <AddPropertyForm token={token} onPropertyAdded={handlePropertyAdded} />
-      
-      <Heading as="h3" size="md" mt={10} mb={4} pt={4} borderTopWidth={1}>
+
+      <Heading as="h3" size="md" mt={10} mb={4} pt={4} borderTopWidth={1} borderColor="gray.700" color="white">
         Rechercher un bien
       </Heading>
 
       {/* BARRE DE FILTRES */}
-      <Box bg="white" p={4} borderRadius="lg" shadow="sm" mb={6} borderWidth="1px">
+      <Box bg="gray.800" p={4} borderRadius="lg" shadow="lg" mb={6} borderWidth="1px" borderColor="gray.700">
         <SimpleGrid columns={{ base: 1, md: 2, lg: 5 }} spacing={4} alignItems="end">
             <Box>
-                <Text fontSize="sm" mb={1} color="gray.600">Ville</Text>
+                <Text fontSize="sm" mb={1} color="gray.400">Ville</Text>
                 <InputGroup>
-                    <InputLeftElement pointerEvents="none"><SearchIcon color="gray.300" /></InputLeftElement>
-                    <Input placeholder="Paris, Lyon..." value={cityFilter} onChange={(e) => setCityFilter(e.target.value)} />
+                    <InputLeftElement pointerEvents="none"><SearchIcon color="gray.500" /></InputLeftElement>
+                    <Input placeholder="Paris, Lyon..." value={cityFilter} onChange={(e) => setCityFilter(e.target.value)} bg="gray.700" borderColor="gray.600" color="white" _placeholder={{ color: 'gray.500' }} />
                 </InputGroup>
             </Box>
             <Box>
-                <Text fontSize="sm" mb={1} color="gray.600">Prix Min (€)</Text>
-                <Input type="number" placeholder="0" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} />
+                <Text fontSize="sm" mb={1} color="gray.400">Prix Min (€)</Text>
+                <Input type="number" placeholder="0" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} bg="gray.700" borderColor="gray.600" color="white" _placeholder={{ color: 'gray.500' }} />
             </Box>
             <Box>
-                <Text fontSize="sm" mb={1} color="gray.600">Prix Max (€)</Text>
-                <Input type="number" placeholder="Budget max" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} />
+                <Text fontSize="sm" mb={1} color="gray.400">Prix Max (€)</Text>
+                <Input type="number" placeholder="Budget max" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} bg="gray.700" borderColor="gray.600" color="white" _placeholder={{ color: 'gray.500' }} />
             </Box>
             <Box>
-                <Text fontSize="sm" mb={1} color="gray.600">Pièces Min.</Text>
-                <Input type="number" placeholder="2" value={minRooms} onChange={(e) => setMinRooms(e.target.value)} />
+                <Text fontSize="sm" mb={1} color="gray.400">Pièces Min.</Text>
+                <Input type="number" placeholder="2" value={minRooms} onChange={(e) => setMinRooms(e.target.value)} bg="gray.700" borderColor="gray.600" color="white" _placeholder={{ color: 'gray.500' }} />
             </Box>
             <HStack>
                 <Button colorScheme="blue" width="full" onClick={fetchProperties}>Filtrer</Button>
-                <IconButton icon={<RepeatIcon />} onClick={resetFilters} aria-label="Reset" />
+                <IconButton icon={<RepeatIcon />} onClick={resetFilters} aria-label="Reset" bg="gray.700" color="white" _hover={{ bg: 'gray.600' }} />
             </HStack>
         </SimpleGrid>
       </Box>
 
-      <Heading as="h4" size="sm" mb={4} color="gray.500">Résultats : {properties.length} bien(s)</Heading>
+      <Heading as="h4" size="sm" mb={4} color="gray.400">Résultats : {properties.length} bien(s)</Heading>
 
       {isLoading ? (
         <Flex justify="center"><Spinner size="xl" color="blue.500" /></Flex>

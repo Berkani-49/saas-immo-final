@@ -138,10 +138,10 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
   // --- MODE ÉDITION ---
   if (isEditing) {
     return (
-      <Box p={4} borderWidth={1} borderRadius="lg" bg="white" shadow="md">
+      <Box p={4} borderWidth={1} borderColor="gray.700" borderRadius="lg" bg="gray.800" shadow="md">
         <form onSubmit={handleSave}>
           <VStack spacing={3} align="stretch">
-            <Text fontWeight="bold" color="blue.600">Modifier le bien</Text>
+            <Text fontWeight="bold" color="brand.400">Modifier le bien</Text>
             <FormControl><FormLabel fontSize="sm">Nouvelle photo (ancienne méthode)</FormLabel><Input type="file" accept="image/*" p={1} onChange={(e) => setNewImageFile(e.target.files[0])} /></FormControl>
             <Input name="address" value={editData.address} onChange={handleChange} placeholder="Adresse" />
             <HStack>
@@ -160,7 +160,7 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
             <Divider my={4} />
 
             {/* 📸 GALERIE DE PHOTOS MULTIPLES */}
-            <Text fontWeight="bold" color="blue.600" mb={2}>Photos du bien</Text>
+            <Text fontWeight="bold" color="brand.400" mb={2}>Photos du bien</Text>
             <PropertyImageGallery
               propertyId={property.id}
               token={token}
@@ -176,8 +176,8 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
 
   // --- MODE VUE (CARTE) ---
   return (
-    <Box 
-      borderWidth="1px" borderRadius="2xl" overflow="hidden" bg="white" 
+    <Box
+      borderWidth="1px" borderColor="gray.700" borderRadius="2xl" overflow="hidden" bg="gray.800"
       transition="all 0.3s" _hover={{ transform: 'translateY(-5px)', shadow: 'xl' }}
       position="relative"
     >
@@ -228,7 +228,7 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
       </Box>
 
       <Box p={5}>
-        <Flex alignItems="center" color="gray.500" fontSize="sm" mb={2}>
+        <Flex alignItems="center" color="gray.400" fontSize="sm" mb={2}>
             <FaMapMarkerAlt style={{ marginRight: '5px' }} />
             <Text textTransform="uppercase" fontWeight="bold" letterSpacing="wide">
                 {property.city}
@@ -236,12 +236,12 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
         </Flex>
 
         <Link to={`/property/${property.id}`}>
-            <Text fontWeight="bold" fontSize="xl" lineHeight="tight" noOfLines={1} mb={2} _hover={{ color: 'blue.500' }}>
+            <Text fontWeight="bold" fontSize="xl" lineHeight="tight" noOfLines={1} mb={2} color="white" _hover={{ color: 'brand.400' }}>
                 {property.address}
             </Text>
         </Link>
 
-        <HStack spacing={4} color="gray.600" fontSize="sm" mb={2}>
+        <HStack spacing={4} color="gray.400" fontSize="sm" mb={2}>
             <Flex align="center"><FaRulerCombined /><Text ml={1}>{property.area} m²</Text></Flex>
             <Flex align="center"><FaBed /><Text ml={1}>{property.bedrooms} ch.</Text></Flex>
             <Flex align="center"><FaBath /><Text ml={1}>{property.rooms} p.</Text></Flex>
@@ -285,7 +285,7 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
             </Box>
         )}
 
-        <Flex pt={3} borderTopWidth={1} borderColor="gray.100" justify="space-between" align="center">
+        <Flex pt={3} borderTopWidth={1} borderColor="gray.700" justify="space-between" align="center">
             {property.agent ? (
                 <Text fontSize="xs" color="gray.400">Agent: {property.agent.firstName}</Text>
             ) : <Spacer />}

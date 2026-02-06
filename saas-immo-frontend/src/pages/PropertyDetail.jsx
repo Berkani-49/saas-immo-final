@@ -87,7 +87,7 @@ export default function PropertyDetail({ token }) {
                         h="80px"
                         cursor="pointer"
                         border={selectedImageUrl === img.url ? "3px solid" : "1px solid"}
-                        borderColor={selectedImageUrl === img.url ? "blue.500" : "gray.200"}
+                        borderColor={selectedImageUrl === img.url ? "brand.500" : "gray.600"}
                         _hover={{ opacity: 0.8, transform: 'scale(1.05)' }}
                         transition="all 0.2s"
                         onClick={() => setSelectedImageUrl(img.url)}
@@ -115,20 +115,20 @@ export default function PropertyDetail({ token }) {
                 {property.price.toLocaleString()} €
             </Badge>
             
-            <Heading mb={2}>{property.address}</Heading>
-            
-            <Flex align="center" color="gray.500" mb={6}>
+            <Heading mb={2} color="white">{property.address}</Heading>
+
+            <Flex align="center" color="gray.400" mb={6}>
                 <Icon as={FaMapMarkerAlt} mr={2} />
                 <Text fontSize="lg">{property.postalCode} {property.city}</Text>
             </Flex>
 
-            <SimpleGrid columns={3} spacing={4} mb={6} p={4} bg="white" borderRadius="lg" shadow="sm" borderWidth="1px">
-                <VStack><Icon as={FaRulerCombined} color="blue.500" boxSize={5}/><Text fontWeight="bold">{property.area} m²</Text></VStack>
-                <VStack><Icon as={FaBed} color="blue.500" boxSize={5}/><Text fontWeight="bold">{property.bedrooms} ch.</Text></VStack>
-                <VStack><Icon as={FaBath} color="blue.500" boxSize={5}/><Text fontWeight="bold">{property.rooms} p.</Text></VStack>
+            <SimpleGrid columns={3} spacing={4} mb={6} p={4} bg="gray.800" borderRadius="lg" shadow="sm" borderWidth="1px" borderColor="gray.700">
+                <VStack><Icon as={FaRulerCombined} color="brand.400" boxSize={5}/><Text fontWeight="bold" color="white">{property.area} m²</Text></VStack>
+                <VStack><Icon as={FaBed} color="brand.400" boxSize={5}/><Text fontWeight="bold" color="white">{property.bedrooms} ch.</Text></VStack>
+                <VStack><Icon as={FaBath} color="brand.400" boxSize={5}/><Text fontWeight="bold" color="white">{property.rooms} p.</Text></VStack>
             </SimpleGrid>
 
-            <Text color="gray.700" lineHeight="tall" mb={8}>
+            <Text color="gray.300" lineHeight="tall" mb={8}>
                 {property.description || "Pas de description."}
             </Text>
 
@@ -152,7 +152,7 @@ export default function PropertyDetail({ token }) {
             </PDFDownloadLink>
 
             {/* GESTION DES PROPRIÉTAIRES */}
-            <Box p={4} bg="gray.50" borderRadius="lg" borderWidth="1px">
+            <Box p={4} bg="gray.800" borderRadius="lg" borderWidth="1px" borderColor="gray.700">
                 <PropertyOwners propertyId={property.id} token={token} />
             </Box>
 

@@ -118,7 +118,7 @@ export default function AppointmentsPage({ token }) {
 
         {/* Header */}
         <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
-          <Heading size="lg" color="gray.800">
+          <Heading size="lg" color="white">
             <Icon as={FiCalendar} mr={2} />
             Mes Rendez-vous
           </Heading>
@@ -126,35 +126,35 @@ export default function AppointmentsPage({ token }) {
 
         {/* Statistiques */}
         <Grid templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }} gap={4}>
-          <Card bg="blue.50" borderWidth="1px" borderColor="blue.200">
+          <Card bg="gray.800" borderWidth="1px" borderColor="gray.700">
             <CardBody textAlign="center">
-              <Text fontSize="3xl" fontWeight="bold" color="blue.600">{stats.total}</Text>
-              <Text fontSize="sm" color="gray.600">Total</Text>
+              <Text fontSize="3xl" fontWeight="bold" color="blue.400">{stats.total}</Text>
+              <Text fontSize="sm" color="gray.400">Total</Text>
             </CardBody>
           </Card>
-          <Card bg="orange.50" borderWidth="1px" borderColor="orange.200">
+          <Card bg="gray.800" borderWidth="1px" borderColor="gray.700">
             <CardBody textAlign="center">
-              <Text fontSize="3xl" fontWeight="bold" color="orange.600">{stats.pending}</Text>
-              <Text fontSize="sm" color="gray.600">En attente</Text>
+              <Text fontSize="3xl" fontWeight="bold" color="orange.400">{stats.pending}</Text>
+              <Text fontSize="sm" color="gray.400">En attente</Text>
             </CardBody>
           </Card>
-          <Card bg="green.50" borderWidth="1px" borderColor="green.200">
+          <Card bg="gray.800" borderWidth="1px" borderColor="gray.700">
             <CardBody textAlign="center">
-              <Text fontSize="3xl" fontWeight="bold" color="green.600">{stats.confirmed}</Text>
-              <Text fontSize="sm" color="gray.600">Confirmés</Text>
+              <Text fontSize="3xl" fontWeight="bold" color="green.400">{stats.confirmed}</Text>
+              <Text fontSize="sm" color="gray.400">Confirmés</Text>
             </CardBody>
           </Card>
-          <Card bg="red.50" borderWidth="1px" borderColor="red.200">
+          <Card bg="gray.800" borderWidth="1px" borderColor="gray.700">
             <CardBody textAlign="center">
-              <Text fontSize="3xl" fontWeight="bold" color="red.600">{stats.cancelled}</Text>
-              <Text fontSize="sm" color="gray.600">Annulés</Text>
+              <Text fontSize="3xl" fontWeight="bold" color="red.400">{stats.cancelled}</Text>
+              <Text fontSize="sm" color="gray.400">Annulés</Text>
             </CardBody>
           </Card>
         </Grid>
 
         {/* Filtre */}
         <HStack spacing={4}>
-          <Text fontWeight="semibold" color="gray.600">Filtrer :</Text>
+          <Text fontWeight="semibold" color="gray.300">Filtrer :</Text>
           <Select value={filter} onChange={(e) => setFilter(e.target.value)} maxW="200px" size="sm">
             <option value="ALL">Tous</option>
             <option value="PENDING">En attente</option>
@@ -166,7 +166,7 @@ export default function AppointmentsPage({ token }) {
         {/* Rendez-vous à venir */}
         {upcomingAppointments.length > 0 && (
           <Box>
-            <Heading size="md" mb={4} color="purple.700">
+            <Heading size="md" mb={4} color="brand.400">
               📅 À venir ({upcomingAppointments.length})
             </Heading>
             <VStack spacing={4} align="stretch">
@@ -188,7 +188,7 @@ export default function AppointmentsPage({ token }) {
         {pastAppointments.length > 0 && (
           <Box>
             <Divider my={6} />
-            <Heading size="md" mb={4} color="gray.600">
+            <Heading size="md" mb={4} color="gray.400">
               📋 Passés ({pastAppointments.length})
             </Heading>
             <VStack spacing={4} align="stretch">
@@ -209,12 +209,12 @@ export default function AppointmentsPage({ token }) {
 
         {/* Aucun rendez-vous */}
         {filteredAppointments.length === 0 && (
-          <Card>
+          <Card bg="gray.800" borderColor="gray.700">
             <CardBody>
               <Center py={10}>
                 <VStack spacing={4}>
-                  <Icon as={FiCalendar} w={16} h={16} color="gray.400" />
-                  <Text fontSize="lg" color="gray.600">Aucun rendez-vous trouvé</Text>
+                  <Icon as={FiCalendar} w={16} h={16} color="gray.500" />
+                  <Text fontSize="lg" color="gray.300">Aucun rendez-vous trouvé</Text>
                   <Text fontSize="sm" color="gray.500">
                     Les clients pourront prendre rendez-vous depuis la page publique de vos biens.
                   </Text>
@@ -238,8 +238,8 @@ function AppointmentCard({ appointment, onUpdateStatus, getStatusColor, getStatu
     <Card
       shadow="md"
       borderWidth="1px"
-      borderColor={`${getStatusColor(appointment.status)}.200`}
-      bg={isPast ? "gray.50" : "white"}
+      borderColor="gray.700"
+      bg={isPast ? "gray.900" : "gray.800"}
       opacity={isPast ? 0.8 : 1}
     >
       <CardBody>
@@ -252,12 +252,12 @@ function AppointmentCard({ appointment, onUpdateStatus, getStatusColor, getStatu
             <HStack spacing={4}>
               <Icon as={FiCalendar} color="purple.500" w={5} h={5} />
               <VStack align="start" spacing={0}>
-                <Text fontWeight="bold" fontSize="lg">
+                <Text fontWeight="bold" fontSize="lg" color="white">
                   {date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                 </Text>
                 <HStack>
-                  <Icon as={FiClock} color="gray.500" w={4} h={4} />
-                  <Text color="gray.600" fontSize="md">
+                  <Icon as={FiClock} color="gray.400" w={4} h={4} />
+                  <Text color="gray.400" fontSize="md">
                     {date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                   </Text>
                 </HStack>
@@ -269,26 +269,26 @@ function AppointmentCard({ appointment, onUpdateStatus, getStatusColor, getStatu
             {/* Informations client */}
             <VStack align="stretch" spacing={2}>
               <HStack>
-                <Icon as={FiUser} color="blue.500" w={4} h={4} />
-                <Text fontWeight="semibold">{appointment.clientName}</Text>
+                <Icon as={FiUser} color="blue.400" w={4} h={4} />
+                <Text fontWeight="semibold" color="white">{appointment.clientName}</Text>
               </HStack>
               <HStack>
-                <Icon as={FiMail} color="gray.500" w={4} h={4} />
-                <Text fontSize="sm" color="gray.600">{appointment.clientEmail}</Text>
+                <Icon as={FiMail} color="gray.400" w={4} h={4} />
+                <Text fontSize="sm" color="gray.400">{appointment.clientEmail}</Text>
               </HStack>
               {appointment.clientPhone && (
                 <HStack>
-                  <Icon as={FiPhone} color="gray.500" w={4} h={4} />
-                  <Text fontSize="sm" color="gray.600">{appointment.clientPhone}</Text>
+                  <Icon as={FiPhone} color="gray.400" w={4} h={4} />
+                  <Text fontSize="sm" color="gray.400">{appointment.clientPhone}</Text>
                 </HStack>
               )}
             </VStack>
 
             {/* Notes */}
             {appointment.notes && (
-              <Box bg="blue.50" p={3} borderRadius="md" borderWidth="1px" borderColor="blue.100">
-                <Text fontSize="sm" fontWeight="semibold" color="blue.700" mb={1}>Message :</Text>
-                <Text fontSize="sm" color="gray.700">{appointment.notes}</Text>
+              <Box bg="gray.700" p={3} borderRadius="md" borderWidth="1px" borderColor="gray.600">
+                <Text fontSize="sm" fontWeight="semibold" color="blue.300" mb={1}>Message :</Text>
+                <Text fontSize="sm" color="gray.300">{appointment.notes}</Text>
               </Box>
             )}
           </VStack>

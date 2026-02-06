@@ -48,15 +48,15 @@ export default function TaskItem({ task, token, onTaskUpdated, onTaskDeleted }) 
   const dateStr = task.dueDate ? new Date(task.dueDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : null;
 
   return (
-    <Box 
-      p={4} mb={3} 
-      borderWidth="1px" borderRadius="lg" 
-      bg={isDone ? "gray.50" : "white"}
-      borderColor={isDone ? "gray.200" : "gray.200"}
-      opacity={isDone ? 0.6 : 1}
+    <Box
+      p={4} mb={3}
+      borderWidth="1px" borderRadius="lg"
+      bg={isDone ? "gray.900" : "gray.800"}
+      borderColor="gray.700"
+      opacity={isDone ? 0.7 : 1}
       shadow="sm"
       transition="all 0.2s"
-      _hover={{ shadow: "md", borderColor: "blue.200" }}
+      _hover={{ shadow: "md", borderColor: "brand.500" }}
     >
       <Flex alignItems="flex-start"> {/* Alignement en HAUT pour gérer les textes longs */}
         
@@ -74,10 +74,10 @@ export default function TaskItem({ task, token, onTaskUpdated, onTaskDeleted }) 
         <VStack align="start" flex="1" spacing={2}>
           
           {/* Titre de la tâche */}
-          <Text 
-            as={isDone ? "s" : "b"} 
-            fontSize="md" 
-            color={isDone ? "gray.500" : "gray.800"}
+          <Text
+            as={isDone ? "s" : "b"}
+            fontSize="md"
+            color={isDone ? "gray.500" : "white"}
             lineHeight="short"
           >
             {task.title}
@@ -95,23 +95,23 @@ export default function TaskItem({ task, token, onTaskUpdated, onTaskDeleted }) 
             
             {/* Contact + Bouton Appel */}
             {task.contact && (
-              <HStack spacing={0} borderWidth="1px" borderRadius="full" overflow="hidden">
+              <HStack spacing={0} borderWidth="1px" borderColor="gray.600" borderRadius="full" overflow="hidden">
                 <Link to={`/contact/${task.contact.id}`}>
-                  <Box px={3} py={1} bg="blue.50" _hover={{ bg: "blue.100" }} cursor="pointer">
-                    <Text fontSize="xs" fontWeight="bold" color="blue.700">
+                  <Box px={3} py={1} bg="blue.900" _hover={{ bg: "blue.800" }} cursor="pointer">
+                    <Text fontSize="xs" fontWeight="bold" color="blue.200">
                       👤 {task.contact.firstName} {task.contact.lastName}
                     </Text>
                   </Box>
                 </Link>
-                
+
                 {/* Bouton Appel collé au badge */}
                 {task.contact.phoneNumber && (
                   <Tooltip label={task.contact.phoneNumber}>
-                    <Box 
+                    <Box
                       as="a" href={`tel:${task.contact.phoneNumber}`}
-                      px={2} py={1} bg="green.100" color="green.700" 
-                      _hover={{ bg: "green.200" }} display="flex" alignItems="center"
-                      borderLeftWidth="1px" borderColor="white"
+                      px={2} py={1} bg="green.900" color="green.300"
+                      _hover={{ bg: "green.800" }} display="flex" alignItems="center"
+                      borderLeftWidth="1px" borderColor="gray.700"
                     >
                       <PhoneIcon w={3} h={3} />
                     </Box>
@@ -123,7 +123,7 @@ export default function TaskItem({ task, token, onTaskUpdated, onTaskDeleted }) 
             {/* Bien Immobilier */}
             {task.property && (
                <Link to={`/property/${task.property.id}`}>
-                <Badge colorScheme="orange" variant="outline" px={2} py={1} borderRadius="full" cursor="pointer" _hover={{ bg: "orange.50" }}>
+                <Badge colorScheme="orange" variant="outline" px={2} py={1} borderRadius="full" cursor="pointer" _hover={{ bg: "orange.900" }}>
                   🏠 {task.property.address}
                 </Badge>
                </Link>
@@ -137,7 +137,7 @@ export default function TaskItem({ task, token, onTaskUpdated, onTaskDeleted }) 
           size="sm" 
           variant="ghost" 
           colorScheme="red" 
-          _hover={{ color: "red.500", bg: "red.50" }}
+          _hover={{ color: "red.400", bg: "red.900" }}
           onClick={handleDelete}
           isLoading={isLoading}
           aria-label="Supprimer"

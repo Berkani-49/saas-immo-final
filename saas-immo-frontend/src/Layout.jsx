@@ -20,14 +20,16 @@ export default function Layout({ onLogout }) {
   const location = useLocation();
 
   return (
-    <Flex minH="100vh" w="100vw" bg="gray.50" overflowX="hidden" direction="column">
+    <Flex minH="100vh" w="100vw" bg="gray.900" overflowX="hidden" direction="column">
 
       {/* --- SIDEBAR ORDI --- */}
       <Box
         display={{ base: 'none', md: 'block' }}
         w="250px" minW="250px" h="100vh"
         position="fixed" left="0" top="0" zIndex="100"
-        bg="brand.900"
+        bg="gray.800"
+        borderRight="1px"
+        borderRightColor="gray.700"
       >
         <Sidebar onLogout={onLogout} />
       </Box>
@@ -36,13 +38,13 @@ export default function Layout({ onLogout }) {
       <Flex
         display={{ base: 'flex', md: 'none' }}
         h="60px" alignItems="center" justifyContent="space-between"
-        bg="white"
+        bg="gray.800"
         borderBottomWidth="1px"
-        borderBottomColor="gray.200"
+        borderBottomColor="gray.700"
         px={4} position="sticky" top="0" zIndex="90"
       >
         <Box w="40px"></Box>
-        <Text fontSize="lg" fontWeight="bold" color="brand.600">IMMO PRO</Text>
+        <Text fontSize="lg" fontWeight="bold" color="white">IMMO<Text as="span" color="brand.400">FLOW</Text></Text>
         <IconButton
           icon={<Icon as={FiLogOut} />}
           size="sm"
@@ -69,11 +71,11 @@ export default function Layout({ onLogout }) {
       <Box
         display={{ base: 'block', md: 'none' }}
         position="fixed" bottom="0" left="0" w="100%"
-        bg="white"
+        bg="gray.800"
         borderTopWidth="1px"
-        borderTopColor="gray.200"
+        borderTopColor="gray.700"
         zIndex="999" pb="env(safe-area-inset-bottom)"
-        boxShadow="0px -2px 10px rgba(0,0,0,0.05)"
+        boxShadow="0px -2px 10px rgba(0,0,0,0.3)"
       >
         <SimpleGrid columns={5} h="70px">
           {MobileNavItems.map((item) => {
@@ -82,9 +84,9 @@ export default function Layout({ onLogout }) {
               <RouterNavLink key={item.name} to={item.path} style={{ textDecoration: 'none' }}>
                 <Flex
                   direction="column" align="center" justify="center" h="100%"
-                  color={isActive ? 'brand.500' : 'gray.500'}
+                  color={isActive ? 'brand.400' : 'gray.400'}
                   transition="all 0.2s"
-                  _active={{ bg: 'gray.100' }}
+                  _active={{ bg: 'gray.700' }}
                 >
                   <Icon as={item.icon} w={6} h={6} mb={1} />
                   <Text fontSize="10px" fontWeight={isActive ? 'semibold' : 'normal'}>

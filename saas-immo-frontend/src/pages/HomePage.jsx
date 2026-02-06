@@ -38,7 +38,7 @@ export default function HomePage({ token }) {
   return (
     <Container maxW="container.xl" p={0}> {/* Container pour centrer sur grand écran */}
       
-      <Heading mb={8} fontSize={{ base: "2xl", md: "3xl" }} color="gray.700">
+      <Heading mb={8} fontSize={{ base: "2xl", md: "3xl" }} color="white">
         Tableau de Bord
       </Heading>
       
@@ -69,39 +69,39 @@ export default function HomePage({ token }) {
       </SimpleGrid>
 
       {/* GRILLE SECONDAIRE : Détails */}
-      <Heading size="md" mb={5} color="gray.600">Détails de l'activité</Heading>
-      
+      <Heading size="md" mb={5} color="gray.300">Détails de l'activité</Heading>
+
       <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-         
+
          {/* Bloc Contacts */}
-         <Box p={6} shadow="md" borderWidth="1px" borderRadius="2xl" bg="white">
+         <Box p={6} shadow="lg" borderWidth="1px" borderColor="gray.700" borderRadius="2xl" bg="gray.800">
             <Flex align="center" mb={4}>
-                <Icon as={MdPerson} color="green.500" mr={2} w={6} h={6} />
-                <Heading size="md">Répartition Contacts</Heading>
+                <Icon as={MdPerson} color="green.400" mr={2} w={6} h={6} />
+                <Heading size="md" color="white">Répartition Contacts</Heading>
             </Flex>
-            <Flex justify="space-between" align="center" borderBottomWidth={1} py={2}>
-                <Text color="gray.600">Acheteurs</Text>
-                <Text fontWeight="bold" fontSize="lg">{stats.contacts.buyers}</Text>
+            <Flex justify="space-between" align="center" borderBottomWidth={1} borderColor="gray.700" py={2}>
+                <Text color="gray.400">Acheteurs</Text>
+                <Text fontWeight="bold" fontSize="lg" color="white">{stats.contacts.buyers}</Text>
             </Flex>
             <Flex justify="space-between" align="center" py={2}>
-                <Text color="gray.600">Vendeurs</Text>
-                <Text fontWeight="bold" fontSize="lg">{stats.contacts.sellers}</Text>
+                <Text color="gray.400">Vendeurs</Text>
+                <Text fontWeight="bold" fontSize="lg" color="white">{stats.contacts.sellers}</Text>
             </Flex>
          </Box>
 
          {/* Bloc Tâches */}
-         <Box p={6} shadow="md" borderWidth="1px" borderRadius="2xl" bg="white">
+         <Box p={6} shadow="lg" borderWidth="1px" borderColor="gray.700" borderRadius="2xl" bg="gray.800">
             <Flex align="center" mb={4}>
-                <Icon as={MdCheckCircle} color="purple.500" mr={2} w={6} h={6} />
-                <Heading size="md">Suivi des Tâches</Heading>
+                <Icon as={MdCheckCircle} color="purple.400" mr={2} w={6} h={6} />
+                <Heading size="md" color="white">Suivi des Tâches</Heading>
             </Flex>
-            <Flex justify="space-between" align="center" borderBottomWidth={1} py={2}>
-                <Text color="gray.600">En attente</Text>
-                <Text fontWeight="bold" fontSize="lg" color="red.500">{stats.tasks.pending}</Text>
+            <Flex justify="space-between" align="center" borderBottomWidth={1} borderColor="gray.700" py={2}>
+                <Text color="gray.400">En attente</Text>
+                <Text fontWeight="bold" fontSize="lg" color="red.400">{stats.tasks.pending}</Text>
             </Flex>
             <Flex justify="space-between" align="center" py={2}>
-                <Text color="gray.600">Terminées</Text>
-                <Text fontWeight="bold" fontSize="lg" color="green.500">{stats.tasks.done}</Text>
+                <Text color="gray.400">Terminées</Text>
+                <Text fontWeight="bold" fontSize="lg" color="green.400">{stats.tasks.done}</Text>
             </Flex>
          </Box>
 

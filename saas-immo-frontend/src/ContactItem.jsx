@@ -29,14 +29,15 @@ export default function ContactItem({ contact, token, onContactDeleted }) {
   };
 
   return (
-    <Box 
-      p={6} 
-      borderWidth="1px" 
-      borderRadius="2xl" 
-      bg="white" 
-      shadow="sm" 
+    <Box
+      p={6}
+      borderWidth="1px"
+      borderColor="gray.700"
+      borderRadius="2xl"
+      bg="gray.800"
+      shadow="sm"
       transition="all 0.2s"
-      _hover={{ shadow: "lg", transform: "translateY(-2px)", borderColor: "blue.200" }}
+      _hover={{ shadow: "lg", transform: "translateY(-2px)", borderColor: "brand.500" }}
       position="relative"
     >
       {/* En-tête avec Avatar */}
@@ -44,7 +45,7 @@ export default function ContactItem({ contact, token, onContactDeleted }) {
         <Avatar icon={<FaUserTie fontSize="1.2rem" />} bg={contact.type === 'BUYER' ? 'blue.500' : 'green.500'} color="white" mr={4} />
         <Box>
             <Link to={`/contact/${contact.id}`}>
-                <Text fontWeight="bold" fontSize="lg" _hover={{ color: 'blue.500', textDecoration: 'underline' }}>
+                <Text fontWeight="bold" fontSize="lg" color="white" _hover={{ color: 'brand.400', textDecoration: 'underline' }}>
                     {contact.firstName} {contact.lastName}
                 </Text>
             </Link>
@@ -55,7 +56,7 @@ export default function ContactItem({ contact, token, onContactDeleted }) {
       </Flex>
 
       {/* Coordonnées */}
-      <VStack align="start" spacing={2} mb={6} color="gray.600" fontSize="sm">
+      <VStack align="start" spacing={2} mb={6} color="gray.400" fontSize="sm">
         <Flex align="center">
             <EmailIcon mr={2} color="gray.400" />
             <Text>{contact.email || "Pas d'email"}</Text>
@@ -67,7 +68,7 @@ export default function ContactItem({ contact, token, onContactDeleted }) {
       </VStack>
 
       {/* Boutons d'action */}
-      <Flex justify="flex-end" pt={4} borderTopWidth={1} borderColor="gray.100">
+      <Flex justify="flex-end" pt={4} borderTopWidth={1} borderColor="gray.700">
         
         {/* BOUTON MODIFIER (Stylo) : Redirige vers la page détail */}
         <Link to={`/contact/${contact.id}`}>
