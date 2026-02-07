@@ -38,10 +38,10 @@ export default function ContactProperties({ contactId, token }) {
       ) : (
         <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
           {properties.map(property => (
-            <Box key={property.id} p={3} bg="green.50" borderRadius="md" borderWidth="1px" borderColor="green.200">
+            <Box key={property.id} p={3} bg="green.900" borderRadius="md" borderWidth="1px" borderColor="green.700">
               <HStack mb={2}>
                 <MdHomeWork color="green" />
-                <Text fontWeight="bold" fontSize="sm">{property.address}</Text>
+                <Text fontWeight="bold" fontSize="sm" color="white">{property.address}</Text>
               </HStack>
               <HStack spacing={2}>
                 <Badge colorScheme="green">{property.price}€</Badge>

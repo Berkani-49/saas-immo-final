@@ -36,7 +36,7 @@ export default function SecretRegister({ token }) {
   };
 
   return (
-    <Box maxWidth="500px" margin="40px auto" p={8} borderWidth={1} borderRadius="2xl" boxShadow="xl" bg="white">
+    <Box maxWidth="500px" margin="40px auto" p={8} borderWidth={1} borderColor="gray.700" borderRadius="2xl" boxShadow="xl" bg="gray.800">
       <Heading as="h2" size="lg" mb={6} textAlign="center" color="brand.500">
         Ajouter un Collaborateur
       </Heading>

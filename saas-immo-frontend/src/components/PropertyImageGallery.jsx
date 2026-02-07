@@ -346,11 +346,11 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
         <Box
           textAlign="center"
           py={10}
-          bg="gray.50"
+          bg="gray.800"
           borderRadius="lg"
           borderWidth="2px"
           borderStyle="dashed"
-          borderColor="gray.300"
+          borderColor="gray.600"
         >
           <Text fontSize="lg" color="gray.500">
             📸 Aucune photo pour ce bien
@@ -363,9 +363,9 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
 
       {/* Spinner pendant l'upload */}
       {uploading && (
-        <Box textAlign="center" py={6} bg="blue.50" borderRadius="lg" mb={4}>
+        <Box textAlign="center" py={6} bg="blue.900" borderRadius="lg" mb={4}>
           <Spinner size="lg" color="blue.500" />
-          <Text mt={3} color="blue.600" fontWeight="medium">
+          <Text mt={3} color="blue.300" fontWeight="medium">
             Upload en cours...
           </Text>
         </Box>
@@ -383,13 +383,13 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
             boxShadow="md"
             transition="all 0.3s"
             _hover={{ transform: 'translateY(-5px)', boxShadow: 'xl' }}
-            bg="white"
+            bg="gray.800"
           >
             {/* Image */}
             <Box
               position="relative"
               h="200px"
-              bg="gray.100"
+              bg="gray.700"
               cursor="pointer"
               onClick={() => handleViewImage(img)}
             >
@@ -453,9 +453,9 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
             </Box>
 
             {/* Actions */}
-            <Box p={3} bg="white">
+            <Box p={3} bg="gray.800">
               <HStack spacing={2} justify="space-between">
-                <Text fontSize="sm" fontWeight="medium" color="gray.700" flex={1} noOfLines={1}>
+                <Text fontSize="sm" fontWeight="medium" color="gray.300" flex={1} noOfLines={1}>
                   {img.caption || `Photo ${index + 1}`}
                 </Text>
 
@@ -537,7 +537,7 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
           <ModalCloseButton />
           <ModalBody pb={6}>
             <VStack spacing={4} align="stretch">
-              <Text fontSize="sm" color="gray.600">
+              <Text fontSize="sm" color="gray.400">
                 Choisissez un style de décoration pour cette photo :
               </Text>
 
@@ -549,8 +549,8 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
                     p={4}
                     borderWidth="2px"
                     borderRadius="lg"
-                    borderColor={selectedStyle === style.id ? `${style.color}.500` : 'gray.200'}
-                    bg={selectedStyle === style.id ? `${style.color}.50` : 'white'}
+                    borderColor={selectedStyle === style.id ? `${style.color}.500` : 'gray.600'}
+                    bg={selectedStyle === style.id ? `${style.color}.900` : 'gray.700'}
                     cursor="pointer"
                     onClick={() => setSelectedStyle(style.id)}
                     transition="all 0.2s"
@@ -558,7 +558,7 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
                   >
                     <VStack spacing={2}>
                       <Text fontSize="3xl">{style.emoji}</Text>
-                      <Text fontWeight="bold" color={selectedStyle === style.id ? `${style.color}.700` : 'gray.700'}>
+                      <Text fontWeight="bold" color={selectedStyle === style.id ? `${style.color}.300` : 'gray.300'}>
                         {style.name}
                       </Text>
                     </VStack>

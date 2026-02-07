@@ -171,21 +171,21 @@ export default function StagingModal({ isOpen, onClose, property, token, onPrope
 
         <ModalBody>
           <VStack spacing={4} align="stretch">
-            <Text fontSize="sm" color="gray.600">
+            <Text fontSize="sm" color="gray.400">
               Bien : <strong>{property.address}</strong>
             </Text>
 
-            <Box bg="purple.50" p={4} borderRadius="md">
-              <Text fontSize="sm" fontWeight="bold" color="purple.700" mb={2}>
+            <Box bg="purple.900" p={4} borderRadius="md">
+              <Text fontSize="sm" fontWeight="bold" color="purple.300" mb={2}>
                 💡 Qu'est-ce que le Home Staging Virtuel ?
               </Text>
-              <Text fontSize="xs" color="gray.700">
+              <Text fontSize="xs" color="gray.300">
                 L'IA va meubler votre pièce vide avec le style de votre choix.
                 Parfait pour aider les clients à se projeter !
               </Text>
             </Box>
 
-            <Text fontWeight="bold" fontSize="md" color="purple.600">
+            <Text fontWeight="bold" fontSize="md" color="purple.300">
               Choisissez un style de décoration :
             </Text>
 
@@ -196,8 +196,8 @@ export default function StagingModal({ isOpen, onClose, property, token, onPrope
                   p={4}
                   borderWidth="2px"
                   borderRadius="lg"
-                  borderColor={selectedStyle === style.id ? `${style.color}.500` : 'gray.200'}
-                  bg={selectedStyle === style.id ? `${style.color}.50` : 'white'}
+                  borderColor={selectedStyle === style.id ? `${style.color}.500` : 'gray.600'}
+                  bg={selectedStyle === style.id ? `${style.color}.900` : 'gray.700'}
                   cursor="pointer"
                   onClick={() => setSelectedStyle(style.id)}
                   transition="all 0.2s"
@@ -217,7 +217,7 @@ export default function StagingModal({ isOpen, onClose, property, token, onPrope
                   <VStack spacing={2}>
                     <Text fontSize="3xl">{style.emoji}</Text>
                     <Text fontWeight="bold" fontSize="md">{style.name}</Text>
-                    <Text fontSize="xs" color="gray.600" textAlign="center">
+                    <Text fontSize="xs" color="gray.400" textAlign="center">
                       {style.description}
                     </Text>
                   </VStack>
@@ -227,7 +227,7 @@ export default function StagingModal({ isOpen, onClose, property, token, onPrope
 
             {property.imageUrl && (
               <Box>
-                <Text fontSize="sm" fontWeight="bold" color="gray.700" mb={2}>
+                <Text fontSize="sm" fontWeight="bold" color="gray.300" mb={2}>
                   Photo actuelle :
                 </Text>
                 <Image
@@ -241,8 +241,8 @@ export default function StagingModal({ isOpen, onClose, property, token, onPrope
               </Box>
             )}
 
-            <Box bg="yellow.50" p={3} borderRadius="md" borderWidth="1px" borderColor="yellow.200">
-              <Text fontSize="xs" color="yellow.800">
+            <Box bg="yellow.900" p={3} borderRadius="md" borderWidth="1px" borderColor="yellow.700">
+              <Text fontSize="xs" color="yellow.200">
                 ⚠️ <strong>Note:</strong> Le home staging virtuel coûte environ 0.06$ par génération via l'API Replicate.
                 Le traitement peut prendre 60-90 secondes.
               </Text>

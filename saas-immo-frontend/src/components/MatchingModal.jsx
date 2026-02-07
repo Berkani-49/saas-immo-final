@@ -71,19 +71,19 @@ export default function MatchingModal({ isOpen, onClose, property, token }) {
           {loading ? (
             <Box textAlign="center" py={8}>
               <Spinner size="lg" color="purple.500" />
-              <Text mt={4} color="gray.600">Recherche d'acheteurs potentiels...</Text>
+              <Text mt={4} color="gray.400">Recherche d'acheteurs potentiels...</Text>
             </Box>
           ) : matches.length === 0 ? (
             <Box textAlign="center" py={8}>
-              <Text fontSize="lg" fontWeight="bold" color="gray.600">Aucun match trouvé</Text>
+              <Text fontSize="lg" fontWeight="bold" color="gray.400">Aucun match trouvé</Text>
               <Text mt={2} color="gray.500">Aucun acheteur ne correspond aux critères de ce bien pour le moment.</Text>
             </Box>
           ) : (
             <>
-              <Text mb={4} fontWeight="bold" color="purple.600">
+              <Text mb={4} fontWeight="bold" color="purple.300">
                 🎯 {matches.length} acheteur{matches.length > 1 ? 's' : ''} potentiel{matches.length > 1 ? 's' : ''} trouvé{matches.length > 1 ? 's' : ''} !
               </Text>
-              <Text fontSize="sm" mb={4} color="gray.600">
+              <Text fontSize="sm" mb={4} color="gray.400">
                 Ces contacts recherchent un bien similaire à <strong>{property.address}</strong>
               </Text>
 
@@ -106,7 +106,7 @@ export default function MatchingModal({ isOpen, onClose, property, token }) {
                       borderWidth="2px"
                       borderRadius="lg"
                       borderColor={`${scoreColor}.300`}
-                      bg="white"
+                      bg="gray.700"
                       shadow="md"
                       _hover={{ shadow: "xl", transform: "translateY(-2px)" }}
                       transition="all 0.2s"
@@ -145,7 +145,7 @@ export default function MatchingModal({ isOpen, onClose, property, token }) {
                       />
 
                       {/* Coordonnées */}
-                      <VStack align="stretch" spacing={1} fontSize="sm" color="gray.700" mb={3}>
+                      <VStack align="stretch" spacing={1} fontSize="sm" color="gray.300" mb={3}>
                         {contact.email && (
                           <HStack>
                             <Icon as={FiMail} boxSize={4} color="gray.500" />
@@ -166,14 +166,14 @@ export default function MatchingModal({ isOpen, onClose, property, token }) {
                           mt={2}
                           pt={3}
                           borderTopWidth="1px"
-                          borderColor="gray.200"
-                          bg="gray.50"
+                          borderColor="gray.600"
+                          bg="gray.800"
                           p={3}
                           borderRadius="md"
                         >
                           <HStack mb={2}>
-                            <Icon as={FiAlertCircle} color="purple.600" boxSize={4} />
-                            <Text fontSize="xs" fontWeight="bold" color="purple.600">
+                            <Icon as={FiAlertCircle} color="purple.300" boxSize={4} />
+                            <Text fontSize="xs" fontWeight="bold" color="purple.300">
                               Analyse de compatibilité :
                             </Text>
                           </HStack>
@@ -186,7 +186,7 @@ export default function MatchingModal({ isOpen, onClose, property, token }) {
                                 <ListItem
                                   key={idx}
                                   fontSize="xs"
-                                  color={isSuccess ? 'green.700' : isPartial ? 'orange.700' : 'red.700'}
+                                  color={isSuccess ? 'green.300' : isPartial ? 'orange.300' : 'red.300'}
                                   display="flex"
                                   alignItems="center"
                                   gap={2}

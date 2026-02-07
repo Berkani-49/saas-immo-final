@@ -87,12 +87,12 @@ export default function PropertyOwners({ propertyId, token }) {
         ) : (
           owners.map(owner => (
             <HStack key={`${owner.id}-${owner.relationType}`} justify="space-between" p={2}
-              bg={owner.relationType === 'OWNER' ? 'blue.50' : 'green.50'} borderRadius="md">
+              bg={owner.relationType === 'OWNER' ? 'blue.900' : 'green.900'} borderRadius="md">
               <HStack>
                 <Badge colorScheme={owner.relationType === 'OWNER' ? 'blue' : 'green'}>
                   {owner.relationType === 'OWNER' ? 'Propriétaire' : 'Intéressé'}
                 </Badge>
-                <Text fontWeight="medium">{owner.firstName} {owner.lastName}</Text>
+                <Text fontWeight="medium" color="white">{owner.firstName} {owner.lastName}</Text>
               </HStack>
               <IconButton
                 icon={<MdDelete />}
