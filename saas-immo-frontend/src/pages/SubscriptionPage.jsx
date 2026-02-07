@@ -31,27 +31,27 @@ export default function SubscriptionPage({ token }) {
 
   return (
     <Box textAlign="center" py={10}>
-      <Heading mb={4}>Passez à la vitesse supérieure 🚀</Heading>
-      <Text fontSize="lg" color="gray.600" mb={10}>
+      <Heading mb={4} color="white">Passez à la vitesse supérieure</Heading>
+      <Text fontSize="lg" color="gray.400" mb={10}>
         Débloquez tout le potentiel de ImmoFlow pour votre agence.
       </Text>
 
       <Flex justify="center">
-        <Box 
-          bg="white" p={8} borderRadius="2xl" shadow="xl" borderWidth="1px" borderColor="brand.500"
+        <Box
+          bg="gray.800" p={8} borderRadius="2xl" shadow="xl" borderWidth="1px" borderColor="brand.500"
           maxW="400px" w="full" position="relative"
         >
-          <Badge 
+          <Badge
             colorScheme="brand" position="absolute" top="-15px" right="50%" transform="translateX(50%)"
             px={4} py={1} borderRadius="full" fontSize="sm" boxShadow="md"
           >
             OFFRE POPULAIRE
           </Badge>
 
-          <Text fontSize="sm" fontWeight="bold" color="gray.500" letterSpacing="wide">PREMIUM</Text>
+          <Text fontSize="sm" fontWeight="bold" color="gray.400" letterSpacing="wide">PREMIUM</Text>
           <Flex justify="center" align="baseline" my={4}>
-            <Text fontSize="5xl" fontWeight="extrabold" color="gray.800">29€</Text>
-            <Text fontSize="xl" color="gray.500">/mois</Text>
+            <Text fontSize="5xl" fontWeight="extrabold" color="white">29€</Text>
+            <Text fontSize="xl" color="gray.400">/mois</Text>
           </Flex>
 
           <VStack spacing={4} align="start" mb={8}>
@@ -81,8 +81,8 @@ export default function SubscriptionPage({ token }) {
 function Feature({ text }) {
   return (
     <Flex align="center">
-      <Icon as={FiCheck} color="green.500" mr={3} />
-      <Text>{text}</Text>
+      <Icon as={FiCheck} color="green.400" mr={3} />
+      <Text color="gray.300">{text}</Text>
     </Flex>
   );
 }

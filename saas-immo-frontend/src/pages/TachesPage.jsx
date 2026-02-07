@@ -58,7 +58,7 @@ export default function TachesPage({ token }) {
   const handleTaskUpdated = (updatedTask) => setTasks(tasks.map(t => (t.id === updatedTask.id ? updatedTask : t)));
 
   const tasksTodoCount = tasks.filter(t => t.status === 'PENDING').length;
-
+  
   return (
     <Box>
       <Heading mb={6} color="white">Agenda & Tâches</Heading>

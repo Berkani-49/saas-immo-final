@@ -36,7 +36,7 @@ export default function ActivitiesPage({ token }) {
 
   return (
     <Box>
-      <Heading mb={6}>Journal d'Activité</Heading>
+      <Heading mb={6} color="white">Journal d'Activité</Heading>
 
       {isLoading ? (
         <Flex justify="center"><Spinner size="xl" /></Flex>
@@ -49,13 +49,13 @@ export default function ActivitiesPage({ token }) {
             const date = new Date(log.createdAt).toLocaleString('fr-FR');
             
             return (
-              <Box key={log.id} p={4} bg="white" shadow="sm" borderRadius="lg" borderWidth="1px" borderLeftWidth="5px" borderLeftColor={`${style.color}.400`}>
+              <Box key={log.id} p={4} bg="gray.800" shadow="sm" borderRadius="lg" borderWidth="1px" borderLeftWidth="5px" borderLeftColor={`${style.color}.400`}>
                 <Flex align="center">
                   <Icon as={style.icon} color={`${style.color}.500`} w={6} h={6} mr={4} />
                   
                   <Box flex="1">
                     <Flex justify="space-between" align="center" mb={1}>
-                        <Text fontWeight="bold" fontSize="md" color="gray.700">{log.description}</Text>
+                        <Text fontWeight="bold" fontSize="md" color="white">{log.description}</Text>
                         <Text fontSize="xs" color="gray.400">{date}</Text>
                     </Flex>
                     

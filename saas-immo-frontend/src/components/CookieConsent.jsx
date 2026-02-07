@@ -42,10 +42,10 @@ export default function CookieConsent() {
       bottom="0"
       left="0"
       right="0"
-      bg="white"
+      bg="gray.800"
       borderTop="3px solid"
       borderTopColor="brand.500"
-      boxShadow="0 -4px 20px rgba(0,0,0,0.15)"
+      boxShadow="0 -4px 20px rgba(0,0,0,0.4)"
       zIndex="9999"
       p={{ base: 4, md: 5 }}
     >
@@ -59,11 +59,11 @@ export default function CookieConsent() {
         <VStack align="start" flex="1" spacing={2}>
           <HStack>
             <Icon as={FiFileText} color="brand.500" />
-            <Text fontWeight="bold" fontSize="lg">
+            <Text fontWeight="bold" fontSize="lg" color="white">
               Conditions d'utilisation
             </Text>
           </HStack>
-          <Text fontSize="sm" color="gray.600">
+          <Text fontSize="sm" color="gray.400">
             En continuant à utiliser ImmoFlow, vous acceptez nos{' '}
             <Link color="brand.500" fontWeight="medium" href="/conditions" isExternal>
               conditions d'utilisation

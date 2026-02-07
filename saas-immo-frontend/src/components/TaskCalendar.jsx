@@ -51,22 +51,33 @@ export default function TaskCalendar({ tasks }) {
   return (
     <Box 
       h={calendarHeight} 
-      bg="white" 
-      p={2} 
-      borderRadius="lg" 
-      shadow="sm" 
+      bg="gray.800"
+      p={2}
+      borderRadius="lg"
+      shadow="sm"
       borderWidth="1px"
-      fontSize={{ base: "xs", md: "sm" }} // Texte global plus petit sur mobile
+      borderColor="gray.700"
+      fontSize={{ base: "xs", md: "sm" }}
       sx={{
-        // Petits ajustements CSS pour les boutons sur mobile
         ".rbc-toolbar button": {
             fontSize: { base: "10px", md: "14px" },
-            padding: { base: "2px 5px", md: "5px 10px" }
+            padding: { base: "2px 5px", md: "5px 10px" },
+            color: "white",
+            border: "1px solid #4A5568",
         },
         ".rbc-toolbar-label": {
             fontSize: { base: "14px", md: "18px" },
-            fontWeight: "bold"
-        }
+            fontWeight: "bold",
+            color: "white",
+        },
+        ".rbc-header": { color: "#A0AEC0", borderColor: "#4A5568" },
+        ".rbc-off-range-bg": { bg: "#1A202C" },
+        ".rbc-today": { bg: "#2D3748" },
+        ".rbc-month-view, .rbc-time-view, .rbc-agenda-view": { borderColor: "#4A5568" },
+        ".rbc-month-row, .rbc-day-bg, .rbc-header": { borderColor: "#4A5568" },
+        ".rbc-date-cell": { color: "#E2E8F0" },
+        ".rbc-off-range": { color: "#718096" },
+        ".rbc-agenda-table, .rbc-agenda-date-cell, .rbc-agenda-time-cell, .rbc-agenda-event-cell": { color: "#E2E8F0" },
       }}
     >
       <Calendar

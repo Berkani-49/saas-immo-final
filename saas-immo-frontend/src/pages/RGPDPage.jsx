@@ -125,11 +125,11 @@ export default function RGPDPage({ token }) {
       <VStack align="stretch" spacing={6}>
         {/* Header */}
         <Box>
-          <Heading size="lg" mb={2}>
+          <Heading size="lg" mb={2} color="white">
             <Icon as={FiShield} mr={2} color="brand.500" />
             RGPD & Confidentialité
           </Heading>
-          <Text color="gray.600">
+          <Text color="gray.400">
             Gérez vos données personnelles conformément au Règlement Général sur la Protection des Données
           </Text>
         </Box>
@@ -146,17 +146,17 @@ export default function RGPDPage({ token }) {
         </Alert>
 
         {/* Export des données */}
-        <Card>
+        <Card bg="gray.800" borderColor="gray.700">
           <CardHeader>
             <HStack>
               <Icon as={FiDownload} color="blue.500" boxSize={5} />
-              <Heading size="md">Exporter mes données</Heading>
+              <Heading size="md" color="white">Exporter mes données</Heading>
               <Badge colorScheme="blue">Droit d'accès</Badge>
             </HStack>
           </CardHeader>
           <CardBody>
             <VStack align="stretch" spacing={4}>
-              <Text color="gray.600">
+              <Text color="gray.400">
                 Téléchargez une copie complète de toutes vos données personnelles stockées dans notre système
                 (profil, biens, contacts, tâches, factures, etc.) au format JSON.
               </Text>
@@ -181,11 +181,11 @@ export default function RGPDPage({ token }) {
         <Divider />
 
         {/* Zone danger : Suppression de compte */}
-        <Card borderColor="red.300" borderWidth="2px">
-          <CardHeader bg="red.50">
+        <Card bg="gray.800" borderColor="red.700" borderWidth="2px">
+          <CardHeader bg="red.900">
             <HStack>
-              <Icon as={FiAlertTriangle} color="red.500" boxSize={5} />
-              <Heading size="md" color="red.700">Zone de danger</Heading>
+              <Icon as={FiAlertTriangle} color="red.400" boxSize={5} />
+              <Heading size="md" color="red.300">Zone de danger</Heading>
               <Badge colorScheme="red">Droit à l'oubli</Badge>
             </HStack>
           </CardHeader>
@@ -202,16 +202,16 @@ export default function RGPDPage({ token }) {
                 </Box>
               </Alert>
 
-              <Text color="gray.600" fontWeight="bold">
+              <Text color="gray.300" fontWeight="bold">
                 Cette action supprimera :
               </Text>
               <VStack align="start" pl={4} spacing={1}>
-                <Text fontSize="sm" color="gray.600">• Votre profil et informations personnelles</Text>
-                <Text fontSize="sm" color="gray.600">• Tous vos biens immobiliers</Text>
-                <Text fontSize="sm" color="gray.600">• Tous vos contacts</Text>
-                <Text fontSize="sm" color="gray.600">• Toutes vos tâches et rendez-vous</Text>
-                <Text fontSize="sm" color="gray.600">• Toutes vos factures et activités</Text>
-                <Text fontSize="sm" color="gray.600">• Votre abonnement en cours</Text>
+                <Text fontSize="sm" color="gray.400">• Votre profil et informations personnelles</Text>
+                <Text fontSize="sm" color="gray.400">• Tous vos biens immobiliers</Text>
+                <Text fontSize="sm" color="gray.400">• Tous vos contacts</Text>
+                <Text fontSize="sm" color="gray.400">• Toutes vos tâches et rendez-vous</Text>
+                <Text fontSize="sm" color="gray.400">• Toutes vos factures et activités</Text>
+                <Text fontSize="sm" color="gray.400">• Votre abonnement en cours</Text>
               </VStack>
 
               <Button
@@ -228,15 +228,15 @@ export default function RGPDPage({ token }) {
         </Card>
 
         {/* Informations légales */}
-        <Card bg="gray.50">
+        <Card bg="gray.800" borderColor="gray.700">
           <CardBody>
             <VStack align="stretch" spacing={3}>
-              <Heading size="sm">Informations légales</Heading>
-              <Text fontSize="sm" color="gray.600">
+              <Heading size="sm" color="white">Informations légales</Heading>
+              <Text fontSize="sm" color="gray.400">
                 Conformément au RGPD (Règlement UE 2016/679), vous disposez d'un droit d'accès, de rectification,
                 d'effacement, de limitation du traitement, de portabilité et d'opposition concernant vos données personnelles.
               </Text>
-              <Text fontSize="sm" color="gray.600">
+              <Text fontSize="sm" color="gray.400">
                 Pour toute question concernant vos données personnelles, contactez-nous à : <strong>rgpd@immoflow.fr</strong>
               </Text>
             </VStack>
@@ -269,7 +269,7 @@ export default function RGPDPage({ token }) {
                 <Text fontWeight="bold">
                   Pour confirmer, tapez exactement :
                 </Text>
-                <Text fontWeight="bold" color="red.500" fontSize="lg" textAlign="center" bg="red.50" p={3} borderRadius="md">
+                <Text fontWeight="bold" color="red.400" fontSize="lg" textAlign="center" bg="red.900" p={3} borderRadius="md">
                   supprimer mon compte
                 </Text>
 
