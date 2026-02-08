@@ -10,7 +10,7 @@ import {
   FiList,
   FiUsers,
   FiCheckSquare,
-  FiTrendingUp,
+
   FiLogOut,
   FiFileText,
   FiActivity,
@@ -49,7 +49,7 @@ const navSections = [
   {
     title: 'Outils',
     items: [
-      { name: 'Estimer', icon: FiTrendingUp, path: '/estimate' },
+
       { name: 'Analytics', icon: FiBarChart2, path: '/analytics' },
       { name: 'Notifications', icon: FiBell, path: '/notifications' },
       { name: 'Abonnement', icon: FiCreditCard, path: '/abonnement' },

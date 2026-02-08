@@ -21,7 +21,7 @@ const TachesPage = lazy(() => import('./pages/TachesPage.jsx'));
 const InvoicesPage = lazy(() => import('./pages/InvoicesPage.jsx'));
 const ActivitiesPage = lazy(() => import('./pages/ActivitiesPage.jsx'));
 const TeamPage = lazy(() => import('./pages/TeamPage.jsx'));
-const PriceEstimator = lazy(() => import('./PriceEstimator.jsx'));
+
 const PublicPropertyPage = lazy(() => import('./pages/PublicPropertyPage.jsx'));
 const PropertyDetail = lazy(() => import('./pages/PropertyDetail.jsx'));
 const ContactDetail = lazy(() => import('./pages/ContactDetail.jsx'));
@@ -139,7 +139,7 @@ export default function App() {
               <Route path="factures" element={<InvoicesPage token={token} />} />
               <Route path="activites" element={<ActivitiesPage token={token} />} />
               <Route path="equipe" element={<TeamPage token={token} />} />
-              <Route path="estimate" element={<PriceEstimator token={token} />} />
+
               <Route path="analytics" element={<AnalyticsPage token={token} />} />
               <Route path="notifications" element={<NotificationsPage token={token} />} />
               <Route path="rgpd" element={<RGPDPage token={token} />} />
