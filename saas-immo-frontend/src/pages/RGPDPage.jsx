@@ -135,11 +135,11 @@ export default function RGPDPage({ token }) {
         </Box>
 
         {/* Info RGPD */}
-        <Alert status="info" borderRadius="lg">
-          <AlertIcon />
+        <Alert status="info" borderRadius="lg" bg="blue.900" borderWidth="1px" borderColor="blue.700">
+          <AlertIcon color="blue.300" />
           <Box flex="1">
-            <Text fontWeight="bold">Vos droits RGPD</Text>
-            <Text fontSize="sm">
+            <Text fontWeight="bold" color="blue.200">Vos droits RGPD</Text>
+            <Text fontSize="sm" color="gray.300">
               Vous avez le droit d'accéder, rectifier, exporter et supprimer vos données personnelles à tout moment.
             </Text>
           </Box>
@@ -191,11 +191,11 @@ export default function RGPDPage({ token }) {
           </CardHeader>
           <CardBody>
             <VStack align="stretch" spacing={4}>
-              <Alert status="warning" borderRadius="md">
-                <AlertIcon />
+              <Alert status="warning" borderRadius="md" bg="orange.900" borderWidth="1px" borderColor="orange.700">
+                <AlertIcon color="orange.300" />
                 <Box>
-                  <Text fontWeight="bold">Action irréversible</Text>
-                  <Text fontSize="sm">
+                  <Text fontWeight="bold" color="orange.200">Action irréversible</Text>
+                  <Text fontSize="sm" color="gray.300">
                     La suppression de votre compte entraînera la suppression définitive de toutes vos données
                     (profil, biens, contacts, factures, etc.). Cette action ne peut pas être annulée.
                   </Text>
@@ -252,21 +252,21 @@ export default function RGPDPage({ token }) {
         size="xl"
       >
         <AlertDialogOverlay>
-          <AlertDialogContent>
-            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+          <AlertDialogContent bg="gray.800">
+            <AlertDialogHeader fontSize="lg" fontWeight="bold" color="white">
               ⚠️ Confirmer la suppression définitive
             </AlertDialogHeader>
 
             <AlertDialogBody>
               <VStack align="stretch" spacing={4}>
-                <Alert status="error">
-                  <AlertIcon />
-                  <Text fontSize="sm">
+                <Alert status="error" bg="red.900" borderWidth="1px" borderColor="red.700">
+                  <AlertIcon color="red.300" />
+                  <Text fontSize="sm" color="gray.300">
                     Cette action est <strong>IRRÉVERSIBLE</strong>. Toutes vos données seront supprimées définitivement.
                   </Text>
                 </Alert>
 
-                <Text fontWeight="bold">
+                <Text fontWeight="bold" color="white">
                   Pour confirmer, tapez exactement :
                 </Text>
                 <Text fontWeight="bold" color="red.400" fontSize="lg" textAlign="center" bg="red.900" p={3} borderRadius="md">
@@ -274,12 +274,15 @@ export default function RGPDPage({ token }) {
                 </Text>
 
                 <FormControl>
-                  <FormLabel fontSize="sm">Confirmation</FormLabel>
+                  <FormLabel fontSize="sm" color="gray.300">Confirmation</FormLabel>
                   <Input
                     placeholder="Tapez le texte ci-dessus"
                     value={deleteConfirmation}
                     onChange={(e) => setDeleteConfirmation(e.target.value)}
                     autoFocus
+                    bg="gray.700"
+                    color="white"
+                    borderColor="gray.600"
                   />
                 </FormControl>
               </VStack>
