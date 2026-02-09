@@ -48,6 +48,95 @@ router.get('/subscription', async (req, res) => {
 });
 
 /**
+ * GET /api/billing/my-plan
+ * Retourne le plan actuel, les limites, l'utilisation et les features disponibles
+ */
+router.get('/my-plan', async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Limites par défaut (plan gratuit)
+    const FREE_LIMITS = { maxProperties: 3, maxContacts: 5, maxEmployees: 1 };
+    const FREE_FEATURES = {
+      invoices: false, analytics: false, team: false,
+      notifications: false, documents: false,
+      ai_staging: false, ai_enhancement: false, matching: false
+    };
+    const PRO_FEATURES = {
+      invoices: true, analytics: true, team: true,
+      notifications: true, documents: true,
+      ai_staging: false, ai_enhancement: false, matching: false
+    };
+    const PREMIUM_FEATURES = {
+      invoices: true, analytics: true, team: true,
+      notifications: true, documents: true,
+      ai_staging: true, ai_enhancement: true, matching: true
+    };
+
+    // Récupérer l'abonnement
+    const subscription = await prisma.subscription.findUnique({
+      where: { userId },
+    });
+
+    let plan = 'free';
+    let limits = FREE_LIMITS;
+    let features = FREE_FEATURES;
+    let subscriptionInfo = null;
+
+    if (subscription && ['active', 'trialing'].includes(subscription.status)) {
+      plan = subscription.planName || 'free';
+
+      // Récupérer les limites du plan depuis la DB
+      const planData = await prisma.subscriptionPlan.findUnique({
+        where: { stripePriceId: subscription.stripePriceId },
+      });
+
+      if (planData) {
+        limits = {
+          maxProperties: planData.maxProperties,
+          maxContacts: planData.maxContacts,
+          maxEmployees: planData.maxEmployees,
+        };
+      }
+
+      if (plan === 'premium') {
+        features = PREMIUM_FEATURES;
+      } else if (plan === 'pro') {
+        features = PRO_FEATURES;
+      }
+
+      subscriptionInfo = {
+        status: subscription.status,
+        currentPeriodEnd: subscription.currentPeriodEnd,
+        cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+      };
+    }
+
+    // Compter l'utilisation actuelle
+    const [propertyCount, contactCount, employeeCount] = await Promise.all([
+      prisma.property.count({ where: { agentId: userId } }),
+      prisma.contact.count({ where: { agentId: userId } }),
+      prisma.user.count({ where: { role: 'EMPLOYEE', parentId: userId } }),
+    ]);
+
+    res.json({
+      plan,
+      limits,
+      usage: {
+        properties: propertyCount,
+        contacts: contactCount,
+        employees: employeeCount,
+      },
+      features,
+      subscription: subscriptionInfo,
+    });
+  } catch (error) {
+    logger.error('Error fetching user plan', { error: error.message, userId: req.user.id });
+    res.status(500).json({ error: 'Erreur lors de la récupération du plan' });
+  }
+});
+
+/**
  * POST /api/billing/create-checkout-session
  * Créer une session de paiement Stripe
  */

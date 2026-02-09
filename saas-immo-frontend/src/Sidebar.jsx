@@ -1,16 +1,16 @@
-// Fichier : src/Sidebar.jsx (Version Optimisée Mobile avec sections et Dark Mode)
+// Fichier : src/Sidebar.jsx (Version avec verrous plan et badges PRO/PREMIUM)
 
 import React, { useState } from 'react';
-import { Box, VStack, Button, Heading, Spacer, CloseButton, Flex, Icon, Text, Divider, Collapse } from '@chakra-ui/react';
+import { Box, VStack, Button, Heading, Spacer, CloseButton, Flex, Icon, Text, Divider, Collapse, Badge, useDisclosure } from '@chakra-ui/react';
 import { NavLink as RouterNavLink } from 'react-router-dom';
+import { usePlan } from './contexts/PlanContext';
+import UpgradeModal from './components/UpgradeModal';
 
-// UNE SEULE ligne d'import pour toutes les icônes (nettoyée)
 import {
   FiHome,
   FiList,
   FiUsers,
   FiCheckSquare,
-
   FiLogOut,
   FiFileText,
   FiActivity,
@@ -21,10 +21,11 @@ import {
   FiChevronRight,
   FiShield,
   FiBarChart2,
-  FiBell
+  FiBell,
+  FiLock
 } from 'react-icons/fi';
 
-// Navigation organisée par sections (repliables sur mobile)
+// Navigation organisée par sections avec plan requis
 const navSections = [
   {
     title: 'Principal',
@@ -40,18 +41,17 @@ const navSections = [
   {
     title: 'Gestion',
     items: [
-      { name: 'Factures', icon: FiFileText, path: '/factures' },
-      { name: 'Activité', icon: FiActivity, path: '/activites' },
-      { name: 'Mon Équipe', icon: FiBriefcase, path: '/equipe' },
+      { name: 'Factures', icon: FiFileText, path: '/factures', requiredPlan: 'pro' },
+      { name: 'Activité', icon: FiActivity, path: '/activites', requiredPlan: 'pro' },
+      { name: 'Mon Équipe', icon: FiBriefcase, path: '/equipe', requiredPlan: 'pro' },
     ],
     defaultOpen: false
   },
   {
     title: 'Outils',
     items: [
-
-      { name: 'Analytics', icon: FiBarChart2, path: '/analytics' },
-      { name: 'Notifications', icon: FiBell, path: '/notifications' },
+      { name: 'Analytics', icon: FiBarChart2, path: '/analytics', requiredPlan: 'pro' },
+      { name: 'Notifications', icon: FiBell, path: '/notifications', requiredPlan: 'pro' },
       { name: 'Abonnement', icon: FiCreditCard, path: '/abonnement' },
       { name: 'RGPD', icon: FiShield, path: '/rgpd' },
     ],
@@ -60,6 +60,9 @@ const navSections = [
 ];
 
 export default function Sidebar({ onLogout, onClose }) {
+  const { hasPlan } = usePlan();
+  const { isOpen: isUpgradeOpen, onOpen: onUpgradeOpen, onClose: onUpgradeClose } = useDisclosure();
+  const [upgradeTarget, setUpgradeTarget] = useState({ requiredPlan: 'pro', featureName: '' });
 
   // État pour gérer l'ouverture/fermeture des sections
   const [openSections, setOpenSections] = useState(
@@ -76,9 +79,14 @@ export default function Sidebar({ onLogout, onClose }) {
     }));
   };
 
-  const NavItem = ({ icon, children, to, ...rest }) => (
-    <RouterNavLink to={to} onClick={onClose} style={{ textDecoration: 'none' }}>
-      {({ isActive }) => (
+  const handleLockedClick = (item) => {
+    setUpgradeTarget({ requiredPlan: item.requiredPlan, featureName: item.name });
+    onUpgradeOpen();
+  };
+
+  const NavItem = ({ icon, children, to, locked, requiredPlan: itemPlan, itemName, ...rest }) => {
+    if (locked) {
+      return (
         <Flex
           align="center"
           p="3"
@@ -86,29 +94,63 @@ export default function Sidebar({ onLogout, onClose }) {
           borderRadius="lg"
           role="group"
           cursor="pointer"
-          bg={isActive ? 'brand.500' : 'transparent'}
-          color={isActive ? 'white' : 'gray.300'}
-          _hover={{
-            bg: isActive ? 'brand.600' : 'whiteAlpha.100',
-            color: 'white',
-          }}
+          color="gray.500"
+          _hover={{ bg: 'whiteAlpha.50' }}
           transition="all 0.2s"
+          onClick={() => handleLockedClick({ requiredPlan: itemPlan, name: itemName })}
           {...rest}
         >
           {icon && (
-            <Icon
-              mr="3"
-              fontSize="16"
-              as={icon}
-              color={isActive ? 'white' : 'gray.400'}
-              _groupHover={{ color: 'white' }}
-            />
+            <Icon mr="3" fontSize="16" as={icon} color="gray.600" />
           )}
-          <Text fontSize="sm" fontWeight="medium">{children}</Text>
+          <Text fontSize="sm" fontWeight="medium" flex={1}>{children}</Text>
+          <Badge
+            colorScheme={itemPlan === 'premium' ? 'purple' : 'blue'}
+            fontSize="2xs"
+            variant="subtle"
+            mr={1}
+          >
+            {itemPlan === 'premium' ? 'PREMIUM' : 'PRO'}
+          </Badge>
+          <Icon as={FiLock} fontSize="12" color="gray.600" />
         </Flex>
-      )}
-    </RouterNavLink>
-  );
+      );
+    }
+
+    return (
+      <RouterNavLink to={to} onClick={onClose} style={{ textDecoration: 'none' }}>
+        {({ isActive }) => (
+          <Flex
+            align="center"
+            p="3"
+            mx="3"
+            borderRadius="lg"
+            role="group"
+            cursor="pointer"
+            bg={isActive ? 'brand.500' : 'transparent'}
+            color={isActive ? 'white' : 'gray.300'}
+            _hover={{
+              bg: isActive ? 'brand.600' : 'whiteAlpha.100',
+              color: 'white',
+            }}
+            transition="all 0.2s"
+            {...rest}
+          >
+            {icon && (
+              <Icon
+                mr="3"
+                fontSize="16"
+                as={icon}
+                color={isActive ? 'white' : 'gray.400'}
+                _groupHover={{ color: 'white' }}
+              />
+            )}
+            <Text fontSize="sm" fontWeight="medium">{children}</Text>
+          </Flex>
+        )}
+      </RouterNavLink>
+    );
+  };
 
   const SectionHeader = ({ title, isOpen, onToggle }) => (
     <Flex
@@ -168,11 +210,21 @@ export default function Sidebar({ onLogout, onClose }) {
               />
               <Collapse in={openSections[section.title]} animateOpacity>
                 <VStack align="stretch" spacing={0} pb={2}>
-                  {section.items.map((link) => (
-                    <NavItem key={link.name} icon={link.icon} to={link.path}>
-                      {link.name}
-                    </NavItem>
-                  ))}
+                  {section.items.map((link) => {
+                    const isLocked = link.requiredPlan && !hasPlan(link.requiredPlan);
+                    return (
+                      <NavItem
+                        key={link.name}
+                        icon={link.icon}
+                        to={link.path}
+                        locked={isLocked}
+                        requiredPlan={link.requiredPlan}
+                        itemName={link.name}
+                      >
+                        {link.name}
+                      </NavItem>
+                    );
+                  })}
                 </VStack>
               </Collapse>
             </Box>
@@ -200,6 +252,14 @@ export default function Sidebar({ onLogout, onClose }) {
           Déconnexion
         </Button>
       </Box>
+
+      {/* Modal d'upgrade */}
+      <UpgradeModal
+        isOpen={isUpgradeOpen}
+        onClose={onUpgradeClose}
+        requiredPlan={upgradeTarget.requiredPlan}
+        featureName={upgradeTarget.featureName}
+      />
     </Box>
   );
 }

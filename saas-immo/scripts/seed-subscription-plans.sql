@@ -1,8 +1,8 @@
--- Script pour insérer/mettre à jour les plans d'abonnement
+-- Script pour insérer/mettre à jour les plans d'abonnement (3 tiers)
 -- À exécuter après avoir créé les produits sur Stripe Dashboard
 
--- Supprimer les anciens plans (optionnel, décommenter si nécessaire)
--- DELETE FROM "SubscriptionPlan";
+-- Supprimer les anciens plans pour repartir proprement
+DELETE FROM "SubscriptionPlan";
 
 -- Insérer les 3 plans
 INSERT INTO "SubscriptionPlan" (
@@ -23,80 +23,67 @@ INSERT INTO "SubscriptionPlan" (
   "createdAt",
   "updatedAt"
 ) VALUES
-  -- PLAN STARTER
+  -- PLAN GRATUIT (pas de Stripe, placeholders)
   (
-    'price_REMPLACEZ_PAR_VOTRE_PRICE_ID_STARTER',  -- ⚠️ À REMPLACER
-    'prod_REMPLACEZ_PAR_VOTRE_PRODUCT_ID_STARTER', -- ⚠️ À REMPLACER
-    'Starter',
-    'starter',
-    'Plan de démarrage pour petites agences',
-    1900,                    -- 19.00 EUR (en centimes)
+    'price_free_placeholder',
+    'prod_free_placeholder',
+    'Gratuit',
+    'free',
+    'Plan gratuit pour découvrir ImmoFlow',
+    0,
     'eur',
     'month',
-    10,                      -- Max 10 propriétés
-    50,                      -- Max 50 contacts
-    3,                       -- Max 3 employés
-    '["basic_crm", "basic_messaging", "email_support"]',
-    true,                    -- Actif
-    false,                   -- Pas mis en avant
+    3,                       -- Max 3 biens
+    5,                       -- Max 5 contacts
+    1,                       -- Proprio uniquement (pas d''employés)
+    '["basic_crm", "tasks", "appointments", "rgpd"]',
+    true,
+    false,
     NOW(),
     NOW()
   ),
 
-  -- PLAN PRO (Recommandé)
+  -- PLAN PRO (39€/mois - Recommandé)
   (
-    'price_REMPLACEZ_PAR_VOTRE_PRICE_ID_PRO',     -- ⚠️ À REMPLACER
-    'prod_REMPLACEZ_PAR_VOTRE_PRODUCT_ID_PRO',    -- ⚠️ À REMPLACER
+    'price_REMPLACEZ_PAR_VOTRE_PRICE_ID_PRO',     -- À remplacer par le priceId Stripe
+    'prod_REMPLACEZ_PAR_VOTRE_PRODUCT_ID_PRO',    -- À remplacer par le productId Stripe
     'Pro',
     'pro',
-    'Plan professionnel avec IA et intégrations avancées',
-    4900,                    -- 49.00 EUR (en centimes)
+    'Pour les agents indépendants et petites agences',
+    3900,                    -- 39.00 EUR (en centimes)
     'eur',
     'month',
-    50,                      -- Max 50 propriétés
+    50,                      -- Max 50 biens
     200,                     -- Max 200 contacts
-    10,                      -- Max 10 employés
-    '["advanced_crm", "ai_staging", "ai_description", "calendar_integration", "matching_ai", "priority_support"]',
-    true,                    -- Actif
+    3,                       -- Max 3 membres d''équipe
+    '["basic_crm", "tasks", "appointments", "rgpd", "invoices", "activities", "team", "analytics", "notifications", "documents"]',
+    true,
     true,                    -- Mis en avant (recommandé)
     NOW(),
     NOW()
   ),
 
-  -- PLAN PREMIUM
+  -- PLAN PREMIUM (79€/mois)
   (
-    'price_REMPLACEZ_PAR_VOTRE_PRICE_ID_PREMIUM',  -- ⚠️ À REMPLACER
-    'prod_REMPLACEZ_PAR_VOTRE_PRODUCT_ID_PREMIUM', -- ⚠️ À REMPLACER
+    'price_REMPLACEZ_PAR_VOTRE_PRICE_ID_PREMIUM',  -- À remplacer par le priceId Stripe
+    'prod_REMPLACEZ_PAR_VOTRE_PRODUCT_ID_PREMIUM', -- À remplacer par le productId Stripe
     'Premium',
     'premium',
-    'Plan premium avec tout illimité et support dédié',
-    9900,                    -- 99.00 EUR (en centimes)
+    'Pour les agences qui veulent tout, sans limites',
+    7900,                    -- 79.00 EUR (en centimes)
     'eur',
     'month',
-    NULL,                    -- Propriétés illimitées
+    NULL,                    -- Biens illimités
     NULL,                    -- Contacts illimités
-    NULL,                    -- Employés illimités
-    '["unlimited_everything", "white_label", "dedicated_support", "custom_integration", "api_access"]',
-    true,                    -- Actif
-    false,                   -- Pas mis en avant
+    NULL,                    -- Équipe illimitée
+    '["basic_crm", "tasks", "appointments", "rgpd", "invoices", "activities", "team", "analytics", "notifications", "documents", "ai_staging", "ai_enhancement", "matching"]',
+    true,
+    false,
     NOW(),
     NOW()
-  )
-ON CONFLICT ("stripePriceId")
-DO UPDATE SET
-  "name" = EXCLUDED."name",
-  "slug" = EXCLUDED."slug",
-  "description" = EXCLUDED."description",
-  "amount" = EXCLUDED."amount",
-  "maxProperties" = EXCLUDED."maxProperties",
-  "maxContacts" = EXCLUDED."maxContacts",
-  "maxEmployees" = EXCLUDED."maxEmployees",
-  "features" = EXCLUDED."features",
-  "isActive" = EXCLUDED."isActive",
-  "isFeatured" = EXCLUDED."isFeatured",
-  "updatedAt" = NOW();
+  );
 
 -- Vérifier que les plans sont bien créés
-SELECT id, name, slug, amount, "maxProperties", "maxContacts", "isActive"
+SELECT id, name, slug, amount, "maxProperties", "maxContacts", "maxEmployees", "isActive"
 FROM "SubscriptionPlan"
 ORDER BY amount ASC;

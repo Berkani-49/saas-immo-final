@@ -30,8 +30,9 @@ const stripeWebhookRouter = require('./routes/stripe-webhook');
 const billingRouter = require('./routes/billing');
 const adminSubscriptionsRouter = require('./routes/admin/subscriptions');
 const employeesRouter = require('./routes/employees');
-const { requireSubscription, enrichWithSubscription } = require('./middleware/requireSubscription');
+const { requireSubscription, requirePlan, enrichWithSubscription } = require('./middleware/requireSubscription');
 const requireAdmin = require('./middleware/requireAdmin');
+const { checkPropertyLimit, checkContactLimit } = require('./middleware/checkPlanLimits');
 
 const app = express();
 const prisma = new PrismaClient();
@@ -995,7 +996,7 @@ app.get('/api/properties', authenticateToken, async (req, res) => {
     res.json(properties);
 });
 
-app.post('/api/properties', authenticateToken, async (req, res) => {
+app.post('/api/properties', authenticateToken, checkPropertyLimit, async (req, res) => {
     try {
         let lat = null, lon = null;
         try {
@@ -1372,7 +1373,7 @@ app.get('/api/contacts', authenticateToken, async (req, res) => {
     res.json(c);
 });
 
-app.post('/api/contacts', authenticateToken, async (req, res) => {
+app.post('/api/contacts', authenticateToken, checkContactLimit, async (req, res) => {
     try {
         const newContact = await prisma.contact.create({ data: { ...req.body, agentId: req.user.id } });
         logActivity(req.user.id, "CRÉATION_CONTACT", `Nouveau contact : ${req.body.firstName}`);
@@ -1537,7 +1538,7 @@ app.delete('/api/tasks/:id', authenticateToken, async (req, res) => {
 });
 
 // FACTURES
-app.get('/api/invoices', authenticateToken, async (req, res) => {
+app.get('/api/invoices', authenticateToken, requirePlan(['pro', 'premium']), async (req, res) => {
     // 🔒 ISOLATION : Récupérer uniquement les factures de l'agent
     const i = await prisma.invoice.findMany({
         where: { agentId: req.user.id },
@@ -1547,7 +1548,7 @@ app.get('/api/invoices', authenticateToken, async (req, res) => {
     res.json(i);
 });
 
-app.post('/api/invoices', authenticateToken, async (req, res) => {
+app.post('/api/invoices', authenticateToken, requirePlan(['pro', 'premium']), async (req, res) => {
     try {
         const ref = `FAC-${Date.now().toString().slice(-6)}`; 
         const newInvoice = await prisma.invoice.create({
@@ -1566,7 +1567,7 @@ app.post('/api/invoices', authenticateToken, async (req, res) => {
 });
 
 // ACTIVITÉS & STATS
-app.get('/api/activities', authenticateToken, async (req, res) => {
+app.get('/api/activities', authenticateToken, requirePlan(['pro', 'premium']), async (req, res) => {
     // 🔒 ISOLATION : Récupérer uniquement les activités de l'agent
     const logs = await prisma.activityLog.findMany({
         where: { agentId: req.user.id },
@@ -1645,7 +1646,7 @@ Description :`;
 });
 
 // 🎯 MATCHING AUTOMATIQUE - Trouver les acheteurs correspondants à un bien
-app.get('/api/properties/:id/matches', authenticateToken, async (req, res) => {
+app.get('/api/properties/:id/matches', authenticateToken, requirePlan('premium'), async (req, res) => {
     try {
         const propertyId = parseInt(req.params.id);
 
@@ -2040,8 +2041,23 @@ app.get('/api/contacts/:contactId/properties', authenticateToken, async (req, re
 // Utilisez maintenant /api/billing/create-checkout-session
 app.post('/api/create-checkout-session', authenticateToken, async (req, res) => {
   try {
-    // Prix par défaut pour le plan Premium (à remplacer par votre vrai price_id Stripe)
-    const priceId = req.body.priceId || process.env.STRIPE_PRICE_ID_PREMIUM || 'price_1234567890';
+    // Résoudre le priceId à partir du planSlug ou du priceId direct
+    let priceId = req.body.priceId;
+
+    if (!priceId && req.body.planSlug) {
+      const priceMap = {
+        pro: process.env.STRIPE_PRICE_ID_PRO,
+        premium: process.env.STRIPE_PRICE_ID_PREMIUM
+      };
+      priceId = priceMap[req.body.planSlug];
+      if (!priceId) {
+        return res.status(400).json({ error: `Plan "${req.body.planSlug}" non reconnu ou pas de priceId configuré.` });
+      }
+    }
+
+    if (!priceId) {
+      priceId = process.env.STRIPE_PRICE_ID_PREMIUM || 'price_1234567890';
+    }
 
     const stripeService = require('./services/stripeService');
     const baseUrl = process.env.FRONTEND_URL || 'https://saas-immo-final.vercel.app';
@@ -2375,7 +2391,7 @@ const formatDateFR = (date) => {
 };
 
 // 📄 Générer un Bon de Visite
-app.get('/api/properties/:id/documents/bon-de-visite', authenticateToken, async (req, res) => {
+app.get('/api/properties/:id/documents/bon-de-visite', authenticateToken, requirePlan(['pro', 'premium']), async (req, res) => {
   try {
     const propertyId = parseInt(req.params.id);
     const { clientName, visitDate } = req.query;
@@ -2485,7 +2501,7 @@ app.get('/api/properties/:id/documents/bon-de-visite', authenticateToken, async 
 });
 
 // 📄 Générer une Offre d'Achat
-app.get('/api/properties/:id/documents/offre-achat', authenticateToken, async (req, res) => {
+app.get('/api/properties/:id/documents/offre-achat', authenticateToken, requirePlan(['pro', 'premium']), async (req, res) => {
   try {
     const propertyId = parseInt(req.params.id);
     const { buyerName, buyerEmail, buyerPhone, offerAmount } = req.query;
@@ -2616,7 +2632,7 @@ app.get('/api/properties/:id/documents/offre-achat', authenticateToken, async (r
 // ================================
 
 // Endpoint pour améliorer automatiquement une photo
-app.post('/api/properties/:id/enhance-photo', authenticateToken, async (req, res) => {
+app.post('/api/properties/:id/enhance-photo', authenticateToken, requirePlan('premium'), async (req, res) => {
   try {
     const propertyId = parseInt(req.params.id);
 
@@ -2706,7 +2722,7 @@ app.post('/api/properties/:id/enhance-photo', authenticateToken, async (req, res
 // ========================================
 // 🛋️ HOME STAGING VIRTUEL - Meubler une pièce vide avec IA
 // ========================================
-app.post('/api/properties/:id/stage-photo', authenticateToken, async (req, res) => {
+app.post('/api/properties/:id/stage-photo', authenticateToken, requirePlan('premium'), async (req, res) => {
   try {
     const propertyId = parseInt(req.params.id);
     const { style } = req.body; // Style: 'modern', 'scandinavian', 'industrial', 'classic', 'bohemian'
@@ -2784,7 +2800,7 @@ app.post('/api/properties/:id/stage-photo', authenticateToken, async (req, res) 
 
 // 🛋️ HOME STAGING VIRTUEL - Meubler UNE IMAGE SPÉCIFIQUE avec IA
 // ========================================
-app.post('/api/properties/:id/stage-image', authenticateToken, async (req, res) => {
+app.post('/api/properties/:id/stage-image', authenticateToken, requirePlan('premium'), async (req, res) => {
   try {
     const propertyId = parseInt(req.params.id);
     const { imageUrl, imageId, style } = req.body;
@@ -3247,7 +3263,7 @@ app.post('/api/analytics/update-duration', async (req, res) => {
 });
 
 // Obtenir les statistiques globales d'un agent
-app.get('/api/analytics/overview', authenticateToken, async (req, res) => {
+app.get('/api/analytics/overview', authenticateToken, requirePlan(['pro', 'premium']), async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -3321,7 +3337,7 @@ app.get('/api/analytics/overview', authenticateToken, async (req, res) => {
 });
 
 // Obtenir les statistiques détaillées par bien
-app.get('/api/analytics/properties', authenticateToken, async (req, res) => {
+app.get('/api/analytics/properties', authenticateToken, requirePlan(['pro', 'premium']), async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -3392,7 +3408,7 @@ app.get('/api/analytics/properties', authenticateToken, async (req, res) => {
 });
 
 // Obtenir l'origine du trafic
-app.get('/api/analytics/traffic-sources', authenticateToken, async (req, res) => {
+app.get('/api/analytics/traffic-sources', authenticateToken, requirePlan(['pro', 'premium']), async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -3437,7 +3453,7 @@ app.get('/api/analytics/traffic-sources', authenticateToken, async (req, res) =>
 });
 
 // Obtenir la répartition par appareil
-app.get('/api/analytics/devices', authenticateToken, async (req, res) => {
+app.get('/api/analytics/devices', authenticateToken, requirePlan(['pro', 'premium']), async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -3481,7 +3497,7 @@ app.get('/api/analytics/devices', authenticateToken, async (req, res) => {
 // ================================
 
 // GET /api/notifications - Historique des notifications de l'agent
-app.get('/api/notifications', authenticateToken, async (req, res) => {
+app.get('/api/notifications', authenticateToken, requirePlan(['pro', 'premium']), async (req, res) => {
   try {
     const { limit = 50, offset = 0, type, status } = req.query;
 
@@ -3537,7 +3553,7 @@ app.get('/api/notifications', authenticateToken, async (req, res) => {
 });
 
 // GET /api/notifications/stats - Statistiques des notifications
-app.get('/api/notifications/stats', authenticateToken, async (req, res) => {
+app.get('/api/notifications/stats', authenticateToken, requirePlan(['pro', 'premium']), async (req, res) => {
   try {
     // Récupérer tous les contacts de l'agent
     const contacts = await prisma.contact.findMany({
@@ -3599,7 +3615,7 @@ app.get('/api/notifications/stats', authenticateToken, async (req, res) => {
 });
 
 // POST /api/notifications/test-matching - Tester le matching pour un bien existant
-app.post('/api/notifications/test-matching/:propertyId', authenticateToken, async (req, res) => {
+app.post('/api/notifications/test-matching/:propertyId', authenticateToken, requirePlan(['pro', 'premium']), async (req, res) => {
   try {
     const propertyId = parseInt(req.params.propertyId);
 
@@ -3660,7 +3676,7 @@ app.post('/api/notifications/test-matching/:propertyId', authenticateToken, asyn
 });
 
 // GET /api/notifications/test-email - Tester l'envoi d'email avec Resend
-app.get('/api/notifications/test-email', authenticateToken, async (req, res) => {
+app.get('/api/notifications/test-email', authenticateToken, requirePlan(['pro', 'premium']), async (req, res) => {
   try {
     const testEmail = req.query.email || req.user.email || 'test@example.com';
 
@@ -3714,7 +3730,7 @@ app.get('/api/notifications/test-email', authenticateToken, async (req, res) => 
 });
 
 // POST /api/notifications/send-manual - Envoyer une notification manuelle
-app.post('/api/notifications/send-manual', authenticateToken, async (req, res) => {
+app.post('/api/notifications/send-manual', authenticateToken, requirePlan(['pro', 'premium']), async (req, res) => {
   try {
     const { propertyId, contactId } = req.body;
 

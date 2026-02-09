@@ -11,6 +11,15 @@ import CookieConsent from './components/CookieConsent.jsx';
 import PWAPrompt from './components/PWAPrompt.jsx';
 import PageLoader from './components/PageLoader.jsx';
 import LoginPage from './pages/LoginPage.jsx';
+import { PlanProvider, usePlan } from './contexts/PlanContext';
+
+// Composant garde-plan : redirige vers /abonnement si le plan est insuffisant
+function PlanGate({ requiredPlan, children }) {
+  const { hasPlan, loading } = usePlan();
+  if (loading) return <PageLoader />;
+  if (!hasPlan(requiredPlan)) return <Navigate to="/abonnement" replace />;
+  return children;
+}
 
 // Lazy loading des pages (chargées à la demande)
 const HomePage = lazy(() => import('./pages/HomePage.jsx'));
@@ -129,22 +138,24 @@ export default function App() {
           <Route path="/nouveau-membre-agence" element={<SecretRegister token={token} />} />
 
           {token ? (
-            <Route path="/" element={<Layout onLogout={handleLogout} />}>
+            <Route path="/" element={<PlanProvider token={token}><Layout onLogout={handleLogout} /></PlanProvider>}>
+              {/* Routes accessibles à tous les plans */}
               <Route index element={<HomePage token={token} />} />
               <Route path="biens" element={<Dashboard token={token} />} />
               <Route path="contacts" element={<ContactsPage token={token} />} />
               <Route path="abonnement" element={<SubscriptionPage token={token} />} />
               <Route path="taches" element={<TachesPage token={token} />} />
               <Route path="rendez-vous" element={<AppointmentsPage token={token} />} />
-              <Route path="factures" element={<InvoicesPage token={token} />} />
-              <Route path="activites" element={<ActivitiesPage token={token} />} />
-              <Route path="equipe" element={<TeamPage token={token} />} />
-
-              <Route path="analytics" element={<AnalyticsPage token={token} />} />
-              <Route path="notifications" element={<NotificationsPage token={token} />} />
               <Route path="rgpd" element={<RGPDPage token={token} />} />
               <Route path="property/:propertyId" element={<PropertyDetail token={token} />} />
               <Route path="contact/:contactId" element={<ContactDetail token={token} />} />
+
+              {/* Routes Pro+ */}
+              <Route path="factures" element={<PlanGate requiredPlan="pro"><InvoicesPage token={token} /></PlanGate>} />
+              <Route path="activites" element={<PlanGate requiredPlan="pro"><ActivitiesPage token={token} /></PlanGate>} />
+              <Route path="equipe" element={<PlanGate requiredPlan="pro"><TeamPage token={token} /></PlanGate>} />
+              <Route path="analytics" element={<PlanGate requiredPlan="pro"><AnalyticsPage token={token} /></PlanGate>} />
+              <Route path="notifications" element={<PlanGate requiredPlan="pro"><NotificationsPage token={token} /></PlanGate>} />
             </Route>
           ) : (
             // PAGE DE CONNEXION MODERNE

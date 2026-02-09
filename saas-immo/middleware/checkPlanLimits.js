@@ -2,6 +2,13 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const logger = require('../utils/logger');
 
+// Limites du plan gratuit par défaut
+const FREE_PLAN_LIMITS = {
+  maxProperties: 3,
+  maxContacts: 5,
+  maxEmployees: 0, // Pas d'employés sur le plan gratuit
+};
+
 /**
  * Middleware pour vérifier les limites du plan avant création de ressources
  */
@@ -18,23 +25,24 @@ async function checkPropertyLimit(req, res, next) {
       where: { userId },
     });
 
-    if (!subscription) {
-      // Pas d'abonnement = plan gratuit (limite 0)
-      return res.status(403).json({
-        error: 'Limite atteinte',
-        message: 'Vous devez avoir un abonnement actif pour créer des propriétés',
-        requiresSubscription: true,
+    let maxProperties = FREE_PLAN_LIMITS.maxProperties;
+    let planName = 'Gratuit';
+
+    if (subscription) {
+      // Récupérer le plan
+      const plan = await prisma.subscriptionPlan.findUnique({
+        where: { stripePriceId: subscription.stripePriceId },
       });
-    }
 
-    // Récupérer le plan
-    const plan = await prisma.subscriptionPlan.findUnique({
-      where: { stripePriceId: subscription.stripePriceId },
-    });
+      // Si pas de limite (null) = illimité
+      if (plan && plan.maxProperties === null) {
+        return next();
+      }
 
-    // Si pas de limite (null) = illimité
-    if (!plan || plan.maxProperties === null) {
-      return next();
+      if (plan) {
+        maxProperties = plan.maxProperties;
+        planName = subscription.planName;
+      }
     }
 
     // Compter les propriétés actuelles
@@ -43,15 +51,15 @@ async function checkPropertyLimit(req, res, next) {
     });
 
     // Vérifier la limite
-    if (currentCount >= plan.maxProperties) {
-      logger.warn('Property limit reached', { userId, currentCount, limit: plan.maxProperties });
+    if (currentCount >= maxProperties) {
+      logger.warn('Property limit reached', { userId, currentCount, limit: maxProperties, plan: planName });
 
       return res.status(403).json({
         error: 'Limite atteinte',
-        message: `Vous avez atteint la limite de ${plan.maxProperties} propriétés pour votre plan ${subscription.planName}`,
+        message: `Vous avez atteint la limite de ${maxProperties} biens pour votre plan ${planName}. Passez au plan supérieur pour en ajouter davantage.`,
         currentCount,
-        limit: plan.maxProperties,
-        planName: subscription.planName,
+        limit: maxProperties,
+        planName,
         upgradeRequired: true,
       });
     }
@@ -59,7 +67,6 @@ async function checkPropertyLimit(req, res, next) {
     next();
   } catch (error) {
     logger.error('Error checking property limit', { error: error.message, userId: req.user?.id });
-    // En cas d'erreur, laisser passer pour ne pas bloquer l'utilisateur
     next();
   }
 }
@@ -76,23 +83,24 @@ async function checkContactLimit(req, res, next) {
       where: { userId },
     });
 
-    if (!subscription) {
-      // Pas d'abonnement = plan gratuit (limite 0)
-      return res.status(403).json({
-        error: 'Limite atteinte',
-        message: 'Vous devez avoir un abonnement actif pour créer des contacts',
-        requiresSubscription: true,
+    let maxContacts = FREE_PLAN_LIMITS.maxContacts;
+    let planName = 'Gratuit';
+
+    if (subscription) {
+      // Récupérer le plan
+      const plan = await prisma.subscriptionPlan.findUnique({
+        where: { stripePriceId: subscription.stripePriceId },
       });
-    }
 
-    // Récupérer le plan
-    const plan = await prisma.subscriptionPlan.findUnique({
-      where: { stripePriceId: subscription.stripePriceId },
-    });
+      // Si pas de limite (null) = illimité
+      if (plan && plan.maxContacts === null) {
+        return next();
+      }
 
-    // Si pas de limite (null) = illimité
-    if (!plan || plan.maxContacts === null) {
-      return next();
+      if (plan) {
+        maxContacts = plan.maxContacts;
+        planName = subscription.planName;
+      }
     }
 
     // Compter les contacts actuels
@@ -101,15 +109,15 @@ async function checkContactLimit(req, res, next) {
     });
 
     // Vérifier la limite
-    if (currentCount >= plan.maxContacts) {
-      logger.warn('Contact limit reached', { userId, currentCount, limit: plan.maxContacts });
+    if (currentCount >= maxContacts) {
+      logger.warn('Contact limit reached', { userId, currentCount, limit: maxContacts, plan: planName });
 
       return res.status(403).json({
         error: 'Limite atteinte',
-        message: `Vous avez atteint la limite de ${plan.maxContacts} contacts pour votre plan ${subscription.planName}`,
+        message: `Vous avez atteint la limite de ${maxContacts} contacts pour votre plan ${planName}. Passez au plan supérieur pour en ajouter davantage.`,
         currentCount,
-        limit: plan.maxContacts,
-        planName: subscription.planName,
+        limit: maxContacts,
+        planName,
         upgradeRequired: true,
       });
     }
@@ -117,7 +125,6 @@ async function checkContactLimit(req, res, next) {
     next();
   } catch (error) {
     logger.error('Error checking contact limit', { error: error.message, userId: req.user?.id });
-    // En cas d'erreur, laisser passer pour ne pas bloquer l'utilisateur
     next();
   }
 }
@@ -134,42 +141,44 @@ async function checkEmployeeLimit(req, res, next) {
       where: { userId },
     });
 
-    if (!subscription) {
-      return res.status(403).json({
-        error: 'Limite atteinte',
-        message: 'Vous devez avoir un abonnement actif pour ajouter des employés',
-        requiresSubscription: true,
+    let maxEmployees = FREE_PLAN_LIMITS.maxEmployees;
+    let planName = 'Gratuit';
+
+    if (subscription) {
+      // Récupérer le plan
+      const plan = await prisma.subscriptionPlan.findUnique({
+        where: { stripePriceId: subscription.stripePriceId },
       });
+
+      // Si pas de limite (null) = illimité
+      if (plan && plan.maxEmployees === null) {
+        return next();
+      }
+
+      if (plan) {
+        maxEmployees = plan.maxEmployees;
+        planName = subscription.planName;
+      }
     }
 
-    // Récupérer le plan
-    const plan = await prisma.subscriptionPlan.findUnique({
-      where: { stripePriceId: subscription.stripePriceId },
-    });
-
-    // Si pas de limite (null) = illimité
-    if (!plan || plan.maxEmployees === null) {
-      return next();
-    }
-
-    // Compter les employés actuels (à adapter selon votre logique)
+    // Compter les employés actuels de cet utilisateur
     const currentCount = await prisma.user.count({
       where: {
         role: 'EMPLOYEE',
-        // Ajoutez ici la logique pour lier les employés à l'agence
+        parentId: userId,
       },
     });
 
     // Vérifier la limite
-    if (currentCount >= plan.maxEmployees) {
-      logger.warn('Employee limit reached', { userId, currentCount, limit: plan.maxEmployees });
+    if (currentCount >= maxEmployees) {
+      logger.warn('Employee limit reached', { userId, currentCount, limit: maxEmployees, plan: planName });
 
       return res.status(403).json({
         error: 'Limite atteinte',
-        message: `Vous avez atteint la limite de ${plan.maxEmployees} employés pour votre plan ${subscription.planName}`,
+        message: `Vous avez atteint la limite de ${maxEmployees} membres d'équipe pour votre plan ${planName}. Passez au plan supérieur pour en ajouter davantage.`,
         currentCount,
-        limit: plan.maxEmployees,
-        planName: subscription.planName,
+        limit: maxEmployees,
+        planName,
         upgradeRequired: true,
       });
     }
@@ -177,7 +186,6 @@ async function checkEmployeeLimit(req, res, next) {
     next();
   } catch (error) {
     logger.error('Error checking employee limit', { error: error.message, userId: req.user?.id });
-    // En cas d'erreur, laisser passer pour ne pas bloquer l'utilisateur
     next();
   }
 }
@@ -198,8 +206,9 @@ function requireFeature(featureName) {
       if (!subscription) {
         return res.status(403).json({
           error: 'Fonctionnalité non disponible',
-          message: `La fonctionnalité "${featureName}" nécessite un abonnement actif`,
+          message: `La fonctionnalité "${featureName}" nécessite un abonnement actif. Passez au plan Pro ou Premium.`,
           requiresSubscription: true,
+          upgradeRequired: true,
         });
       }
 
@@ -212,6 +221,7 @@ function requireFeature(featureName) {
         return res.status(403).json({
           error: 'Fonctionnalité non disponible',
           message: `La fonctionnalité "${featureName}" n'est pas disponible pour votre plan`,
+          upgradeRequired: true,
         });
       }
 
@@ -223,7 +233,7 @@ function requireFeature(featureName) {
 
         return res.status(403).json({
           error: 'Fonctionnalité non disponible',
-          message: `La fonctionnalité "${featureName}" n'est pas disponible pour votre plan ${subscription.planName}`,
+          message: `La fonctionnalité "${featureName}" n'est pas disponible pour votre plan ${subscription.planName}. Passez au plan supérieur.`,
           planName: subscription.planName,
           upgradeRequired: true,
         });
@@ -232,7 +242,6 @@ function requireFeature(featureName) {
       next();
     } catch (error) {
       logger.error('Error checking feature availability', { error: error.message, userId: req.user?.id });
-      // En cas d'erreur, laisser passer pour ne pas bloquer l'utilisateur
       next();
     }
   };
@@ -243,4 +252,5 @@ module.exports = {
   checkContactLimit,
   checkEmployeeLimit,
   requireFeature,
+  FREE_PLAN_LIMITS,
 };
