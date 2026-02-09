@@ -113,11 +113,11 @@ router.get('/my-plan', async (req, res) => {
     }
 
     // Compter l'utilisation actuelle
-    const [propertyCount, contactCount, employeeCount] = await Promise.all([
+    const [propertyCount, contactCount] = await Promise.all([
       prisma.property.count({ where: { agentId: userId } }),
       prisma.contact.count({ where: { agentId: userId } }),
-      prisma.user.count({ where: { role: 'EMPLOYEE', parentId: userId } }),
     ]);
+    const employeeCount = 0; // parentId n'existe pas encore dans le schéma
 
     res.json({
       plan,

@@ -161,13 +161,8 @@ async function checkEmployeeLimit(req, res, next) {
       }
     }
 
-    // Compter les employés actuels de cet utilisateur
-    const currentCount = await prisma.user.count({
-      where: {
-        role: 'EMPLOYEE',
-        parentId: userId,
-      },
-    });
+    // Compter les employés actuels (parentId n'existe pas encore dans le schéma)
+    const currentCount = 0;
 
     // Vérifier la limite
     if (currentCount >= maxEmployees) {
