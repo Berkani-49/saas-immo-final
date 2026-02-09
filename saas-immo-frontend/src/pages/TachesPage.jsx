@@ -11,16 +11,15 @@ import { FaList, FaCalendarAlt } from 'react-icons/fa';
 import AddTaskForm from '../AddTaskForm.jsx';
 import TaskItem from '../TaskItem.jsx';
 import TaskCalendar from '../components/TaskCalendar.jsx';
+import { API_URL } from '../config';
 
 export default function TachesPage({ token }) {
   const [tasks, setTasks] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [properties, setProperties] = useState([]);
-  
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  
-  const API_URL = 'https://saas-immo.onrender.com'; 
 
   useEffect(() => {
     if (!token) return;
@@ -58,6 +57,7 @@ export default function TachesPage({ token }) {
   const handleTaskUpdated = (updatedTask) => setTasks(tasks.map(t => (t.id === updatedTask.id ? updatedTask : t)));
 
   const tasksTodoCount = tasks.filter(t => t.status === 'PENDING').length;
+
   
   return (
     <Box>

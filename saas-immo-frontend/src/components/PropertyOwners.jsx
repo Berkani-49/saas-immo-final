@@ -5,6 +5,7 @@ import {
   Box, Heading, Button, Select, HStack, VStack, Text, Badge, IconButton, useToast, Spinner
 } from '@chakra-ui/react';
 import { MdDelete, MdAdd } from 'react-icons/md';
+import { API_URL } from '../config';
 
 export default function PropertyOwners({ propertyId, token }) {
   const [owners, setOwners] = useState([]);
@@ -24,7 +25,7 @@ export default function PropertyOwners({ propertyId, token }) {
 
   const fetchOwners = async () => {
     try {
-      const response = await axios.get(`https://saas-immo.onrender.com/api/properties/${propertyId}/owners`, config);
+      const response = await axios.get(`${API_URL}/api/properties/${propertyId}/owners`, config);
       setOwners(response.data);
     } catch (err) {
       console.error("Erreur chargement propriétaires:", err);
@@ -35,7 +36,7 @@ export default function PropertyOwners({ propertyId, token }) {
 
   const fetchContacts = async () => {
     try {
-      const response = await axios.get('https://saas-immo.onrender.com/api/contacts', config);
+      const response = await axios.get(`${API_URL}/api/contacts`, config);
       setContacts(response.data);
     } catch (err) {
       console.error("Erreur chargement contacts:", err);
@@ -46,7 +47,7 @@ export default function PropertyOwners({ propertyId, token }) {
     if (!selectedContactId) return;
     setIsAdding(true);
     try {
-      await axios.post(`https://saas-immo.onrender.com/api/properties/${propertyId}/owners`,
+      await axios.post(`${API_URL}/api/properties/${propertyId}/owners`,
         { contactId: selectedContactId, type: selectedType },
         config
       );
@@ -65,7 +66,7 @@ export default function PropertyOwners({ propertyId, token }) {
   const handleRemoveOwner = async (contactId, relationType) => {
     try {
       // On passe le type en query param pour supprimer uniquement cette relation
-      await axios.delete(`https://saas-immo.onrender.com/api/properties/${propertyId}/owners/${contactId}?type=${relationType}`, config);
+      await axios.delete(`${API_URL}/api/properties/${propertyId}/owners/${contactId}?type=${relationType}`, config);
       const label = relationType === 'OWNER' ? 'Propriétaire retiré' : 'Contact intéressé retiré';
       toast({ title: label, status: "info", duration: 2000 });
       fetchOwners();

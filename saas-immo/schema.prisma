@@ -11,6 +11,30 @@ generator client {
   binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
+// --- MODÈLE AGENCY (Multi-agence) ---
+model Agency {
+  id            Int      @id @default(autoincrement())
+  name          String                      // "Agence Dupont Immobilier"
+  slug          String   @unique            // "agence-dupont" (sous-domaine)
+  isActive      Boolean  @default(true)
+  logoUrl       String?
+  primaryColor  String?  @default("#6366f1")
+  stripeCustomerId String? @unique
+  createdAt     DateTime @default(now())
+
+  // Relations
+  users         User[]
+  properties    Property[]
+  contacts      Contact[]
+  tasks         Task[]
+  invoices      Invoice[]
+  activities    ActivityLog[]
+  appointments  Appointment[]
+  subscription  Subscription?  @relation("AgencySubscription")
+
+  @@index([slug])
+}
+
 // --- MODÈLE USER ---
 model User {
   id          Int      @id @default(autoincrement())
@@ -27,6 +51,10 @@ model User {
   subscriptionPlan     String?   // starter, pro, premium
   subscriptionEndDate  DateTime? // Date de fin de l'abonnement
 
+  // Multi-agence
+  agency    Agency? @relation(fields: [agencyId], references: [id])
+  agencyId  Int?
+
   // Relations
   properties Property[]
   contacts   Contact[]
@@ -36,6 +64,8 @@ model User {
   appointments Appointment[]
   pushSubscriptions PushSubscription[]
   subscription Subscription?
+
+  @@index([agencyId])
 }
 
 // --- MODÈLE PROPERTY ---
@@ -85,6 +115,11 @@ model Property {
 
   agent     User @relation(fields: [agentId], references: [id], onDelete: Cascade)
   agentId   Int
+
+  // Multi-agence
+  agency    Agency? @relation(fields: [agencyId], references: [id])
+  agencyId  Int?
+
   tasks     Task[]
 
   // Relation many-to-many avec Contact (propriétaires)
@@ -94,6 +129,7 @@ model Property {
   images    PropertyImage[]
 
   @@index([agentId])
+  @@index([agencyId])
 }
 
 // --- MODÈLE CONTACT ---
@@ -121,6 +157,11 @@ model Contact {
 
   agent     User @relation(fields: [agentId], references: [id], onDelete: Cascade)
   agentId   Int
+
+  // Multi-agence
+  agency    Agency? @relation(fields: [agencyId], references: [id])
+  agencyId  Int?
+
   tasks     Task[]
 
   // 👇 C'est ici qu'on ajoute la ligne pour les factures
@@ -133,6 +174,7 @@ model Contact {
   notifications Notification[]
 
   @@index([agentId])
+  @@index([agencyId])
 }
 
 // --- MODÈLE TASK ---
@@ -146,6 +188,10 @@ model Task {
   agent     User @relation(fields: [agentId], references: [id], onDelete: Cascade)
   agentId   Int
 
+  // Multi-agence
+  agency    Agency? @relation(fields: [agencyId], references: [id])
+  agencyId  Int?
+
   contact     Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
   contactId   Int?
 
@@ -153,6 +199,7 @@ model Task {
   propertyId  Int?
 
   @@index([agentId])
+  @@index([agencyId])
   @@index([contactId])
   @@index([propertyId])
 }
@@ -172,6 +219,12 @@ model Invoice {
 
   agent       User    @relation(fields: [agentId], references: [id])
   agentId     Int
+
+  // Multi-agence
+  agency    Agency? @relation(fields: [agencyId], references: [id])
+  agencyId  Int?
+
+  @@index([agencyId])
 }
 
 // --- MODÈLE HISTORIQUE D'ACTIVITÉ ---
@@ -184,7 +237,12 @@ model ActivityLog {
   agent       User     @relation(fields: [agentId], references: [id], onDelete: Cascade)
   agentId     Int
 
+  // Multi-agence
+  agency    Agency? @relation(fields: [agencyId], references: [id])
+  agencyId  Int?
+
   @@index([agentId])
+  @@index([agencyId])
 }
 
 // --- TABLE DE JONCTION BIEN-CONTACT (Many-to-Many) ---
@@ -221,7 +279,12 @@ model Appointment {
   agent         User     @relation(fields: [agentId], references: [id], onDelete: Cascade)
   agentId       Int
 
+  // Multi-agence
+  agency    Agency? @relation(fields: [agencyId], references: [id])
+  agencyId  Int?
+
   @@index([agentId])
+  @@index([agencyId])
   @@index([appointmentDate])
 }
 
@@ -327,7 +390,12 @@ model Subscription {
   user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId                Int      @unique
 
+  // Multi-agence (l'abonnement appartient à l'agence)
+  agency                Agency?  @relation("AgencySubscription", fields: [agencyId], references: [id])
+  agencyId              Int?     @unique
+
   @@index([userId])
+  @@index([agencyId])
   @@index([status])
   @@index([stripeCustomerId])
 }

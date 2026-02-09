@@ -64,10 +64,12 @@ async function createCheckoutSession(user, priceId, successUrl, cancelUrl, optio
       cancel_url: cancelUrl,
       metadata: {
         userId: user.id.toString(),
+        agencyId: user.agencyId ? user.agencyId.toString() : '',
       },
       subscription_data: {
         metadata: {
           userId: user.id.toString(),
+          agencyId: user.agencyId ? user.agencyId.toString() : '',
         },
       },
     };

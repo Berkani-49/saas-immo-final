@@ -11,6 +11,7 @@ import { AddIcon, DownloadIcon } from '@chakra-ui/icons';
 // NOUVEAU : On importe 'pdf' pour générer manuellement
 import { pdf } from '@react-pdf/renderer';
 import InvoicePDF from '../components/InvoicePDF.jsx';
+import { API_URL } from '../config';
 
 export default function InvoicesPage({ token }) {
   const [invoices, setInvoices] = useState([]);
@@ -35,8 +36,8 @@ export default function InvoicesPage({ token }) {
       try {
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
         const [invoicesRes, contactsRes] = await Promise.all([
-            axios.get('https://saas-immo.onrender.com/api/invoices', config),
-            axios.get('https://saas-immo.onrender.com/api/contacts', config)
+            axios.get(`${API_URL}/api/invoices`, config),
+            axios.get(`${API_URL}/api/contacts`, config)
         ]);
         setInvoices(invoicesRes.data);
         setContacts(contactsRes.data);
@@ -55,7 +56,7 @@ export default function InvoicesPage({ token }) {
     setIsSubmitting(true);
     try {
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
-        await axios.post('https://saas-immo.onrender.com/api/invoices', {
+        await axios.post(`${API_URL}/api/invoices`, {
             amount, description, contactId: selectedContact
         }, config);
         window.location.reload(); 

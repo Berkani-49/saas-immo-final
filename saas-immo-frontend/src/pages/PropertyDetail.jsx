@@ -10,6 +10,7 @@ import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaFilePdf } from 'react
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import PropertyPDF from '../components/PropertyPDF.jsx';
 import PropertyOwners from '../components/PropertyOwners.jsx';
+import { API_URL } from '../config';
 
 export default function PropertyDetail({ token }) {
   const { propertyId } = useParams();
@@ -24,12 +25,12 @@ export default function PropertyDetail({ token }) {
     const fetchProperty = async () => {
       try {
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
-        const response = await axios.get(`https://saas-immo.onrender.com/api/properties/${propertyId}`, config);
+        const response = await axios.get(`${API_URL}/api/properties/${propertyId}`, config);
         setProperty(response.data);
 
         // Charger les photos multiples
         const imagesResponse = await axios.get(
-          `https://saas-immo.onrender.com/api/properties/${propertyId}/images`,
+          `${API_URL}/api/properties/${propertyId}/images`,
           config
         );
         setImages(imagesResponse.data);

@@ -5,6 +5,7 @@ import axios from 'axios';
 import { Box, Heading, Spinner, Flex, Alert, AlertIcon } from '@chakra-ui/react';
 import AddContactForm from '../AddContactForm.jsx';
 import ContactList from '../ContactList.jsx';
+import { API_URL } from '../config';
 
 export default function ContactsPage({ token }) {
   const [contacts, setContacts] = useState([]);
@@ -18,7 +19,7 @@ export default function ContactsPage({ token }) {
       try {
         console.log("Chargement des contacts...");
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
-        const response = await axios.get('https://saas-immo.onrender.com/api/contacts', config);
+        const response = await axios.get(`${API_URL}/api/contacts`, config);
         console.log("Contacts reçus:", response.data);
         setContacts(response.data);
       } catch (err) {

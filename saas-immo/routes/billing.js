@@ -6,6 +6,16 @@ const logger = require('../utils/logger');
 const stripeService = require('../services/stripeService');
 const notificationService = require('../services/subscriptionNotificationService');
 
+// Helper : trouver la subscription par agence ou par user
+async function findSubscription(req) {
+  const agencyId = req.user.agencyId;
+  const userId = req.user.id;
+  if (agencyId) {
+    return prisma.subscription.findUnique({ where: { agencyId } });
+  }
+  return prisma.subscription.findUnique({ where: { userId } });
+}
+
 /**
  * GET /api/billing/subscription
  * Récupérer l'abonnement actuel de l'utilisateur
@@ -14,9 +24,7 @@ router.get('/subscription', async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const subscription = await prisma.subscription.findUnique({
-      where: { userId: userId },
-    });
+    const subscription = await findSubscription(req);
 
     if (!subscription) {
       return res.json({
@@ -73,10 +81,11 @@ router.get('/my-plan', async (req, res) => {
       ai_staging: true, ai_enhancement: true, matching: true
     };
 
-    // Récupérer l'abonnement
-    const subscription = await prisma.subscription.findUnique({
-      where: { userId },
-    });
+    // Récupérer l'abonnement (par agence si disponible, sinon par user)
+    const agencyId = req.user.agencyId;
+    const subscription = agencyId
+      ? await prisma.subscription.findUnique({ where: { agencyId } })
+      : await prisma.subscription.findUnique({ where: { userId } });
 
     let plan = 'free';
     let limits = FREE_LIMITS;
@@ -112,12 +121,13 @@ router.get('/my-plan', async (req, res) => {
       };
     }
 
-    // Compter l'utilisation actuelle
-    const [propertyCount, contactCount] = await Promise.all([
-      prisma.property.count({ where: { agentId: userId } }),
-      prisma.contact.count({ where: { agentId: userId } }),
+    // Compter l'utilisation actuelle (par agence si disponible)
+    const countFilter = agencyId ? { agencyId } : { agentId: userId };
+    const [propertyCount, contactCount, employeeCount] = await Promise.all([
+      prisma.property.count({ where: countFilter }),
+      prisma.contact.count({ where: countFilter }),
+      agencyId ? prisma.user.count({ where: { agencyId, role: 'EMPLOYEE' } }) : Promise.resolve(0),
     ]);
-    const employeeCount = 0; // parentId n'existe pas encore dans le schéma
 
     res.json({
       plan,
@@ -193,9 +203,7 @@ router.post('/cancel-subscription', async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const subscription = await prisma.subscription.findUnique({
-      where: { userId: userId },
-    });
+    const subscription = await findSubscription(req);
 
     if (!subscription) {
       return res.status(404).json({ error: 'Aucun abonnement trouvé' });
@@ -239,9 +247,7 @@ router.post('/reactivate-subscription', async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const subscription = await prisma.subscription.findUnique({
-      where: { userId: userId },
-    });
+    const subscription = await findSubscription(req);
 
     if (!subscription) {
       return res.status(404).json({ error: 'Aucun abonnement trouvé' });
@@ -366,9 +372,7 @@ router.post('/change-plan', async (req, res) => {
     }
 
     // Récupérer l'abonnement actuel
-    const subscription = await prisma.subscription.findUnique({
-      where: { userId: userId },
-    });
+    const subscription = await findSubscription(req);
 
     if (!subscription) {
       return res.status(404).json({ error: 'Aucun abonnement trouvé' });
@@ -416,7 +420,7 @@ router.post('/change-plan', async (req, res) => {
     logger.info('Plan changed successfully', { userId, oldPlan: subscription.planName, newPlan: newPlanName });
 
     // Envoyer l'email de notification de changement de plan
-    const updatedSubscriptionData = await prisma.subscription.findUnique({ where: { userId } });
+    const updatedSubscriptionData = await findSubscription(req);
     if (updatedSubscriptionData) {
       await notificationService.sendPlanChangedEmail(req.user, subscription.planName, newPlanName, updatedSubscriptionData);
     }
@@ -447,9 +451,7 @@ router.post('/apply-coupon', async (req, res) => {
       return res.status(400).json({ error: 'Code promo requis' });
     }
 
-    const subscription = await prisma.subscription.findUnique({
-      where: { userId: userId },
-    });
+    const subscription = await findSubscription(req);
 
     if (!subscription) {
       return res.status(404).json({ error: 'Aucun abonnement trouvé' });
@@ -488,11 +490,10 @@ router.post('/apply-coupon', async (req, res) => {
 router.get('/usage', async (req, res) => {
   try {
     const userId = req.user.id;
+    const agencyId = req.user.agencyId;
 
     // Récupérer le plan actuel
-    const subscription = await prisma.subscription.findUnique({
-      where: { userId: userId },
-    });
+    const subscription = await findSubscription(req);
 
     if (!subscription) {
       return res.json({
@@ -515,11 +516,12 @@ router.get('/usage', async (req, res) => {
       where: { stripePriceId: subscription.stripePriceId },
     });
 
-    // Compter l'utilisation actuelle
+    // Compter l'utilisation actuelle (par agence)
+    const cFilter = agencyId ? { agencyId } : { agentId: userId };
     const [propertiesCount, contactsCount, employeesCount] = await Promise.all([
-      prisma.property.count({ where: { agentId: userId } }),
-      prisma.contact.count({ where: { agentId: userId } }),
-      prisma.user.count({ where: { role: 'EMPLOYEE' } }), // À adapter selon votre logique
+      prisma.property.count({ where: cFilter }),
+      prisma.contact.count({ where: cFilter }),
+      agencyId ? prisma.user.count({ where: { agencyId, role: 'EMPLOYEE' } }) : Promise.resolve(0),
     ]);
 
     res.json({
@@ -555,9 +557,7 @@ router.post('/retry-payment', async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const subscription = await prisma.subscription.findUnique({
-      where: { userId: userId },
-    });
+    const subscription = await findSubscription(req);
 
     if (!subscription) {
       return res.status(404).json({ error: 'Aucun abonnement trouvé' });

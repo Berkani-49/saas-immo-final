@@ -7,6 +7,7 @@ import {
 } from '@chakra-ui/react';
 import { MdHomeWork, MdPerson, MdCheckCircle, MdTrendingUp } from 'react-icons/md';
 import StatCard from '../StatCard.jsx';
+import { API_URL } from '../config';
 
 export default function HomePage({ token }) {
   const [stats, setStats] = useState(null);
@@ -19,7 +20,7 @@ export default function HomePage({ token }) {
       setIsLoading(true);
       try {
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
-        const response = await axios.get('https://saas-immo.onrender.com/api/stats', config);
+        const response = await axios.get(`${API_URL}/api/stats`, config);
         setStats(response.data);
       } catch (err) {
         console.error("Erreur (stats):", err);

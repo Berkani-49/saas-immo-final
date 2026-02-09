@@ -8,6 +8,7 @@ import {
 import { DeleteIcon, StarIcon, ViewIcon } from '@chakra-ui/icons';
 import { FiHome } from 'react-icons/fi';
 import axios from 'axios';
+import { API_URL } from '../config';
 
 export default function PropertyImageGallery({ propertyId, token, onImagesChange }) {
   const [images, setImages] = useState([]);
@@ -43,7 +44,7 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
       setLoading(true);
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const res = await axios.get(
-        `https://saas-immo.onrender.com/api/properties/${propertyId}/images`,
+        `${API_URL}/api/properties/${propertyId}/images`,
         config
       );
       setImages(res.data);
@@ -105,7 +106,7 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
       };
 
       const uploadResponse = await axios.post(
-        'https://saas-immo.onrender.com/api/upload-image',
+        `${API_URL}/api/upload-image`,
         formData,
         config
       );
@@ -121,7 +122,7 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
       };
 
       await axios.post(
-        `https://saas-immo.onrender.com/api/properties/${propertyId}/images`,
+        `${API_URL}/api/properties/${propertyId}/images`,
         {
           url: publicUrl,
           caption: null,
@@ -162,7 +163,7 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
       // Supprimer de la base de données (le backend s'occupe aussi de supprimer du storage)
       const config = { headers: { Authorization: `Bearer ${token}` } };
       await axios.delete(
-        `https://saas-immo.onrender.com/api/properties/${propertyId}/images/${imageId}`,
+        `${API_URL}/api/properties/${propertyId}/images/${imageId}`,
         config
       );
 
@@ -191,7 +192,7 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
       await axios.patch(
-        `https://saas-immo.onrender.com/api/properties/${propertyId}/images/${imageId}/set-primary`,
+        `${API_URL}/api/properties/${propertyId}/images/${imageId}/set-primary`,
         {},
         config
       );
@@ -239,7 +240,7 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
 
       // Appeler l'API de staging avec l'URL de l'image spécifique
       const response = await axios.post(
-        `https://saas-immo.onrender.com/api/properties/${propertyId}/stage-image`,
+        `${API_URL}/api/properties/${propertyId}/stage-image`,
         {
           imageUrl: imageToStage.url,
           imageId: stagingImageId,
@@ -262,7 +263,7 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
       const pollInterval = setInterval(async () => {
         try {
           const statusResponse = await axios.get(
-            `https://saas-immo.onrender.com/api/properties/${propertyId}/stage-status/${predictionId}?style=${selectedStyle}&imageId=${stagingImageId}`,
+            `${API_URL}/api/properties/${propertyId}/stage-status/${predictionId}?style=${selectedStyle}&imageId=${stagingImageId}`,
             config
           );
 

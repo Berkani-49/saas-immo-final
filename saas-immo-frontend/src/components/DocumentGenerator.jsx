@@ -6,6 +6,7 @@ import {
   useToast, Icon, Tabs, TabList, Tab, TabPanels, TabPanel, Badge
 } from '@chakra-ui/react';
 import { FiFileText, FiDownload } from 'react-icons/fi';
+import { API_URL } from '../config';
 
 export default function DocumentGenerator({ isOpen, onClose, property, token }) {
   const toast = useToast();
@@ -34,9 +35,9 @@ export default function DocumentGenerator({ isOpen, onClose, property, token }) 
       };
 
       if (type === 'bon-visite') {
-        url = `https://saas-immo.onrender.com/api/properties/${property.id}/documents/bon-de-visite?clientName=${encodeURIComponent(clientName)}&visitDate=${visitDate}`;
+        url = `${API_URL}/api/properties/${property.id}/documents/bon-de-visite?clientName=${encodeURIComponent(clientName)}&visitDate=${visitDate}`;
       } else if (type === 'offre-achat') {
-        url = `https://saas-immo.onrender.com/api/properties/${property.id}/documents/offre-achat?buyerName=${encodeURIComponent(buyerName)}&buyerEmail=${encodeURIComponent(buyerEmail)}&buyerPhone=${encodeURIComponent(buyerPhone)}&offerAmount=${offerAmount}`;
+        url = `${API_URL}/api/properties/${property.id}/documents/offre-achat?buyerName=${encodeURIComponent(buyerName)}&buyerEmail=${encodeURIComponent(buyerEmail)}&buyerPhone=${encodeURIComponent(buyerPhone)}&offerAmount=${offerAmount}`;
       }
 
       const response = await fetch(url, {

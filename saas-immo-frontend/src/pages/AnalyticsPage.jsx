@@ -22,6 +22,7 @@ import {
   Legend
 } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
+import { API_URL } from '../config';
 
 // Enregistrer les composants Chart.js
 ChartJS.register(
@@ -53,10 +54,10 @@ export default function AnalyticsPage({ token }) {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
 
       const [overviewRes, propertiesRes, trafficRes, devicesRes] = await Promise.all([
-        axios.get('https://saas-immo.onrender.com/api/analytics/overview', config),
-        axios.get('https://saas-immo.onrender.com/api/analytics/properties', config),
-        axios.get('https://saas-immo.onrender.com/api/analytics/traffic-sources', config),
-        axios.get('https://saas-immo.onrender.com/api/analytics/devices', config)
+        axios.get(`${API_URL}/api/analytics/overview`, config),
+        axios.get(`${API_URL}/api/analytics/properties`, config),
+        axios.get(`${API_URL}/api/analytics/traffic-sources`, config),
+        axios.get(`${API_URL}/api/analytics/devices`, config)
       ]);
 
       setOverview(overviewRes.data);

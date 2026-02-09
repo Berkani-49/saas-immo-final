@@ -7,6 +7,7 @@ import {
   Progress, Tooltip, List, ListItem, ListIcon
 } from '@chakra-ui/react';
 import { FiCheck, FiUser, FiPhone, FiMail, FiAlertCircle, FiCheckCircle, FiXCircle, FiTarget } from 'react-icons/fi';
+import { API_URL } from '../config';
 
 export default function MatchingModal({ isOpen, onClose, property, token }) {
   const [matches, setMatches] = useState([]);
@@ -23,7 +24,7 @@ export default function MatchingModal({ isOpen, onClose, property, token }) {
     try {
       setLoading(true);
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      const response = await axios.get(`https://saas-immo.onrender.com/api/properties/${property.id}/matches`, config);
+      const response = await axios.get(`${API_URL}/api/properties/${property.id}/matches`, config);
       setMatches(response.data.matches || []);
     } catch (error) {
       console.error("Erreur récupération matches:", error);
@@ -36,7 +37,7 @@ export default function MatchingModal({ isOpen, onClose, property, token }) {
   const createTaskForMatch = async (contact) => {
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      await axios.post('https://saas-immo.onrender.com/api/tasks', {
+      await axios.post(`${API_URL}/api/tasks`, {
         title: `Contacter ${contact.firstName} ${contact.lastName} pour ${property.address}`,
         description: `Ce client recherche un bien correspondant aux critères de ${property.address} (${property.city}, ${property.price.toLocaleString()}€).`,
         priority: 'HIGH',

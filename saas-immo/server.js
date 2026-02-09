@@ -33,6 +33,7 @@ const employeesRouter = require('./routes/employees');
 const { requireSubscription, requirePlan, enrichWithSubscription } = require('./middleware/requireSubscription');
 const requireAdmin = require('./middleware/requireAdmin');
 const { checkPropertyLimit, checkContactLimit } = require('./middleware/checkPlanLimits');
+const resolveTenant = require('./middleware/resolveTenant');
 
 const app = express();
 const prisma = new PrismaClient();
@@ -148,17 +149,33 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')
   : ['http://localhost:5173', 'http://localhost:3000'];
 
-// Middleware CORS sécurisé avec vérification de l'origine
+// Domaine principal pour CORS wildcard (sous-domaines agences)
+const APP_DOMAIN = process.env.APP_DOMAIN; // ex: "immoflow.fr"
+
+// Middleware CORS sécurisé avec vérification de l'origine + sous-domaines
 app.use((req, res, next) => {
   const origin = req.headers.origin;
 
-  // Vérifier si l'origine est dans la liste autorisée
-  if (origin && ALLOWED_ORIGINS.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
+  let isAllowed = false;
+  if (origin) {
+    // Vérifier la liste statique
+    if (ALLOWED_ORIGINS.includes(origin)) {
+      isAllowed = true;
+    }
+    // Vérifier les sous-domaines wildcard (*.APP_DOMAIN)
+    if (!isAllowed && APP_DOMAIN) {
+      const regex = new RegExp(`^https?://[a-z0-9-]+\\.${APP_DOMAIN.replace('.', '\\.')}$`);
+      if (regex.test(origin)) {
+        isAllowed = true;
+      }
+    }
+    if (isAllowed) {
+      res.header('Access-Control-Allow-Origin', origin);
+    }
   }
 
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Tenant-Slug');
   res.header('Access-Control-Max-Age', '86400'); // 24h cache
   res.header('Access-Control-Allow-Credentials', 'true');
 
@@ -185,6 +202,9 @@ app.use((req, res, next) => {
   });
   next();
 });
+
+// --- Résolution du tenant (agence) via sous-domaine ou header ---
+app.use(resolveTenant);
 
 // --- 2. RATE LIMITING (Protection contre brute-force) ---
 // Limiter les tentatives de connexion
@@ -233,10 +253,12 @@ function isStrongPassword(password) {
 }
 
 // --- FONCTION LOG ---
-async function logActivity(agentId, action, description) {
+async function logActivity(agentId, agencyId, action, description) {
   try {
     if (!agentId) return;
-    await prisma.activityLog.create({ data: { agentId, action, description } });
+    const data = { agentId, action, description };
+    if (agencyId) data.agencyId = agencyId;
+    await prisma.activityLog.create({ data });
     console.log(`📝 Activité : ${action}`);
   } catch (e) { console.error("Log erreur:", e); }
 }
@@ -806,6 +828,21 @@ async function sendAppointmentReminders() {
 
 app.get('/', (req, res) => res.json({ message: "Serveur en ligne !" }));
 
+// --- Info agence publique (résolu via sous-domaine ou header) ---
+app.get('/api/agency/info', (req, res) => {
+  if (!req.agency) {
+    return res.json({ agency: null }); // Pas de tenant → mode app principale
+  }
+  res.json({
+    agency: {
+      name: req.agency.name,
+      slug: req.agency.slug,
+      logoUrl: req.agency.logoUrl,
+      primaryColor: req.agency.primaryColor
+    }
+  });
+});
+
 // INSCRIPTION AGENT (avec rate limiting)
 app.post('/api/auth/register', registerLimiter, async (req, res) => {
   try {
@@ -856,13 +893,23 @@ app.post('/api/auth/login', loginLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Format d\'email invalide.' });
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { agency: { select: { id: true, slug: true, name: true } } }
+    });
     if (!user || !(await bcrypt.compare(password, user.password))) {
         return res.status(401).json({ error: 'Identifiants incorrects' });
     }
-    // Générer un token JWT avec expiration de 24h
-    const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '24h' });
-    res.json({ token });
+    // Générer un token JWT enrichi avec agencyId et role
+    const token = jwt.sign(
+      { id: user.id, agencyId: user.agencyId, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+    res.json({
+      token,
+      agency: user.agency ? { slug: user.agency.slug, name: user.agency.name } : null
+    });
   } catch (e) { res.status(500).json({ error: "Erreur connexion" }); }
 });
 
@@ -951,7 +998,23 @@ const authenticateToken = async (req, res, next) => {
   if (!token) return res.status(401).json({ error: 'Token manquant' });
   try {
     const payload = jwt.verify(token, JWT_SECRET);
-    req.user = { id: payload.id };
+
+    // Fetch le user complet avec agencyId et role
+    const user = await prisma.user.findUnique({
+      where: { id: payload.id },
+      select: { id: true, email: true, firstName: true, lastName: true, role: true, agencyId: true }
+    });
+
+    if (!user) {
+      return res.status(401).json({ error: 'Utilisateur introuvable.' });
+    }
+
+    // Vérification tenant : si un sous-domaine est résolu, le user doit appartenir à cette agence
+    if (req.agency && user.agencyId !== req.agency.id) {
+      return res.status(403).json({ error: 'Accès interdit : vous n\'appartenez pas à cette agence.' });
+    }
+
+    req.user = user;
     next();
   } catch (e) {
     // Token invalide ou expiré
@@ -962,7 +1025,17 @@ const authenticateToken = async (req, res, next) => {
   }
 };
 
-app.get('/api/me', authenticateToken, (req, res) => res.json(req.user));
+app.get('/api/me', authenticateToken, async (req, res) => {
+  // Retourner aussi les infos de l'agence
+  if (req.user.agencyId) {
+    const agency = await prisma.agency.findUnique({
+      where: { id: req.user.agencyId },
+      select: { slug: true, name: true, logoUrl: true, primaryColor: true }
+    });
+    return res.json({ ...req.user, agency });
+  }
+  res.json(req.user);
+});
 
 // --- BILLING & SUBSCRIPTION ROUTES (APRÈS authentification) ---
 app.use('/api/billing', authenticateToken, billingRouter);
@@ -977,7 +1050,7 @@ app.use('/api/employees', authenticateToken, employeesRouter);
 app.get('/api/properties', authenticateToken, async (req, res) => {
     const { minPrice, maxPrice, minRooms, city } = req.query;
     // 🔒 ISOLATION : Filtrer uniquement les biens de cet agent
-    const filters = { agentId: req.user.id };
+    const filters = { agencyId: req.user.agencyId };
     if (minPrice) filters.price = { gte: parseInt(minPrice) };
     if (maxPrice) filters.price = { ...filters.price, lte: parseInt(maxPrice) };
     if (minRooms) filters.rooms = { gte: parseInt(minRooms) };
@@ -1015,10 +1088,11 @@ app.post('/api/properties', authenticateToken, checkPropertyLimit, async (req, r
                 rooms: parseInt(req.body.rooms),
                 bedrooms: parseInt(req.body.bedrooms),
                 latitude: lat, longitude: lon,
-                agentId: req.user.id
+                agentId: req.user.id,
+                agencyId: req.user.agencyId
             }
         });
-        logActivity(req.user.id, "CRÉATION_BIEN", `Ajout du bien : ${req.body.address}`);
+        logActivity(req.user.id, req.user.agencyId, "CRÉATION_BIEN", `Ajout du bien : ${req.body.address}`);
 
         // 🔔 Déclencher les notifications automatiques en arrière-plan
         // Note: On ne bloque pas la réponse pour éviter les timeouts
@@ -1038,7 +1112,7 @@ app.put('/api/properties/:id', authenticateToken, async (req, res) => {
     try {
         // 🔒 ISOLATION : Vérifier que le bien appartient à l'agent
         const property = await prisma.property.findFirst({
-            where: { id: parseInt(req.params.id), agentId: req.user.id }
+            where: { id: parseInt(req.params.id), agencyId: req.user.agencyId }
         });
         if (!property) return res.status(404).json({ error: "Bien non trouvé ou non autorisé" });
 
@@ -1080,7 +1154,7 @@ app.put('/api/properties/:id', authenticateToken, async (req, res) => {
             },
             include: { images: { orderBy: { order: 'asc' } } } // Inclure les images dans la réponse
         });
-        logActivity(req.user.id, "MODIF_BIEN", `Modification : ${updated.address}`);
+        logActivity(req.user.id, req.user.agencyId, "MODIF_BIEN", `Modification : ${updated.address}`);
         res.json(updated);
     } catch (e) {
         console.error("Erreur PUT /api/properties/:id:", e);
@@ -1092,12 +1166,12 @@ app.delete('/api/properties/:id', authenticateToken, async (req, res) => {
     try {
         // 🔒 ISOLATION : Vérifier que le bien appartient à l'agent avant de le supprimer
         const property = await prisma.property.findFirst({
-            where: { id: parseInt(req.params.id), agentId: req.user.id }
+            where: { id: parseInt(req.params.id), agencyId: req.user.agencyId }
         });
         if (!property) return res.status(404).json({ error: "Bien non trouvé ou non autorisé" });
 
         await prisma.property.delete({ where: { id: parseInt(req.params.id) } });
-        logActivity(req.user.id, "SUPPRESSION_BIEN", `Suppression bien`);
+        logActivity(req.user.id, req.user.agencyId, "SUPPRESSION_BIEN", `Suppression bien`);
         res.status(204).send();
     } catch (e) { res.status(500).json({ error: "Erreur" }); }
 });
@@ -1105,7 +1179,7 @@ app.delete('/api/properties/:id', authenticateToken, async (req, res) => {
 app.get('/api/properties/:id', authenticateToken, async (req, res) => {
     // 🔒 ISOLATION : Récupérer uniquement si le bien appartient à l'agent
     const p = await prisma.property.findFirst({
-        where: { id: parseInt(req.params.id), agentId: req.user.id },
+        where: { id: parseInt(req.params.id), agencyId: req.user.agencyId },
         include: { agent: true, images: { orderBy: { order: 'asc' } } }
     });
     p ? res.json(p) : res.status(404).json({ error: "Non trouvé ou non autorisé" });
@@ -1198,7 +1272,7 @@ app.post('/api/properties/:id/images', authenticateToken, async (req, res) => {
 
         // Vérifier que le bien appartient à l'agent
         const property = await prisma.property.findFirst({
-            where: { id: propertyId, agentId: req.user.id }
+            where: { id: propertyId, agencyId: req.user.agencyId }
         });
 
         if (!property) {
@@ -1229,7 +1303,7 @@ app.post('/api/properties/:id/images', authenticateToken, async (req, res) => {
             }
         });
 
-        logActivity(req.user.id, "PHOTO_AJOUTÉE", `Photo ajoutée au bien ${property.address}`);
+        logActivity(req.user.id, req.user.agencyId, "PHOTO_AJOUTÉE", `Photo ajoutée au bien ${property.address}`);
 
         res.status(201).json(newImage);
     } catch (error) {
@@ -1245,7 +1319,7 @@ app.get('/api/properties/:id/images', authenticateToken, async (req, res) => {
 
         // Vérifier que le bien appartient à l'agent
         const property = await prisma.property.findFirst({
-            where: { id: propertyId, agentId: req.user.id }
+            where: { id: propertyId, agencyId: req.user.agencyId }
         });
 
         if (!property) {
@@ -1275,7 +1349,7 @@ app.delete('/api/properties/:propertyId/images/:imageId', authenticateToken, asy
 
         // Vérifier que le bien appartient à l'agent
         const property = await prisma.property.findFirst({
-            where: { id: propertyId, agentId: req.user.id }
+            where: { id: propertyId, agencyId: req.user.agencyId }
         });
 
         if (!property) {
@@ -1287,7 +1361,7 @@ app.delete('/api/properties/:propertyId/images/:imageId', authenticateToken, asy
             where: { id: imageId }
         });
 
-        logActivity(req.user.id, "PHOTO_SUPPRIMÉE", `Photo supprimée du bien ${property.address}`);
+        logActivity(req.user.id, req.user.agencyId, "PHOTO_SUPPRIMÉE", `Photo supprimée du bien ${property.address}`);
 
         res.status(204).send();
     } catch (error) {
@@ -1304,7 +1378,7 @@ app.patch('/api/properties/:propertyId/images/:imageId/set-primary', authenticat
 
         // Vérifier que le bien appartient à l'agent
         const property = await prisma.property.findFirst({
-            where: { id: propertyId, agentId: req.user.id }
+            where: { id: propertyId, agencyId: req.user.agencyId }
         });
 
         if (!property) {
@@ -1338,7 +1412,7 @@ app.put('/api/properties/:id/images/reorder', authenticateToken, async (req, res
 
         // Vérifier que le bien appartient à l'agent
         const property = await prisma.property.findFirst({
-            where: { id: propertyId, agentId: req.user.id }
+            where: { id: propertyId, agencyId: req.user.agencyId }
         });
 
         if (!property) {
@@ -1366,7 +1440,7 @@ app.put('/api/properties/:id/images/reorder', authenticateToken, async (req, res
 app.get('/api/contacts', authenticateToken, async (req, res) => {
     // 🔒 ISOLATION : Récupérer uniquement les contacts de l'agent
     const c = await prisma.contact.findMany({
-        where: { agentId: req.user.id },
+        where: { agencyId: req.user.agencyId },
         orderBy: { lastName: 'asc' },
         include: { agent: true }
     });
@@ -1375,8 +1449,8 @@ app.get('/api/contacts', authenticateToken, async (req, res) => {
 
 app.post('/api/contacts', authenticateToken, checkContactLimit, async (req, res) => {
     try {
-        const newContact = await prisma.contact.create({ data: { ...req.body, agentId: req.user.id } });
-        logActivity(req.user.id, "CRÉATION_CONTACT", `Nouveau contact : ${req.body.firstName}`);
+        const newContact = await prisma.contact.create({ data: { ...req.body, agentId: req.user.id, agencyId: req.user.agencyId } });
+        logActivity(req.user.id, req.user.agencyId, "CRÉATION_CONTACT", `Nouveau contact : ${req.body.firstName}`);
 
         // Envoyer notification push pour nouveau lead/contact
         if (newContact.type === 'BUYER') {
@@ -1396,7 +1470,7 @@ app.post('/api/contacts', authenticateToken, checkContactLimit, async (req, res)
 app.get('/api/contacts/:id', authenticateToken, async (req, res) => {
     // 🔒 ISOLATION : Récupérer uniquement si le contact appartient à l'agent
     const c = await prisma.contact.findFirst({
-        where: { id: parseInt(req.params.id), agentId: req.user.id },
+        where: { id: parseInt(req.params.id), agencyId: req.user.agencyId },
         include: { agent: true }
     });
     c ? res.json(c) : res.status(404).json({ error: "Non trouvé ou non autorisé" });
@@ -1407,7 +1481,7 @@ app.put('/api/contacts/:id', authenticateToken, async (req, res) => {
         const id = parseInt(req.params.id);
         // 🔒 ISOLATION : Vérifier que le contact appartient à l'agent
         const contact = await prisma.contact.findFirst({
-            where: { id: id, agentId: req.user.id }
+            where: { id: id, agencyId: req.user.agencyId }
         });
         if (!contact) return res.status(404).json({ error: "Contact non trouvé ou non autorisé" });
 
@@ -1421,7 +1495,7 @@ app.put('/api/contacts/:id', authenticateToken, async (req, res) => {
                 type: req.body.type
             }
         });
-        logActivity(req.user.id, "MODIF_CONTACT", `Modification contact : ${updated.lastName}`);
+        logActivity(req.user.id, req.user.agencyId, "MODIF_CONTACT", `Modification contact : ${updated.lastName}`);
         res.json(updated);
     } catch (e) { res.status(500).json({ error: "Erreur" }); }
 });
@@ -1434,13 +1508,13 @@ app.delete('/api/contacts/:id', authenticateToken, async (req, res) => {
 
       // 🔒 ISOLATION : Vérifier que le contact appartient à l'agent
       const contact = await prisma.contact.findFirst({
-          where: { id: id, agentId: req.user.id }
+          where: { id: id, agencyId: req.user.agencyId }
       });
       if (!contact) return res.status(404).json({ error: "Contact non trouvé ou non autorisé" });
 
       // ÉTAPE 1 : On supprime d'abord les factures de ce client (avec isolation)
       await prisma.invoice.deleteMany({
-        where: { contactId: id, agentId: req.user.id }
+        where: { contactId: id, agencyId: req.user.agencyId }
       });
 
       // ÉTAPE 2 : On supprime le contact (maintenant qu'il est libre)
@@ -1450,7 +1524,7 @@ app.delete('/api/contacts/:id', authenticateToken, async (req, res) => {
 
       // Log
       try {
-        await logActivity(req.user.id, "SUPPRESSION_CONTACT", `Suppression contact (et ses factures)`);
+        await logActivity(req.user.id, req.user.agencyId, "SUPPRESSION_CONTACT", `Suppression contact (et ses factures)`);
       } catch(e) {}
 
       res.status(204).send();
@@ -1464,7 +1538,7 @@ app.delete('/api/contacts/:id', authenticateToken, async (req, res) => {
 // TÂCHES
 app.get('/api/tasks', authenticateToken, async (req, res) => {
     const t = await prisma.task.findMany({ 
-        where: { agentId: req.user.id }, 
+        where: { agencyId: req.user.agencyId }, 
         include: { contact: true, property: true },
         orderBy: { createdAt: 'desc' }
     });
@@ -1486,6 +1560,7 @@ app.post('/api/tasks', authenticateToken, async (req, res) => {
                 title: title,
                 dueDate: dueDate ? new Date(dueDate) : null,
                 agentId: req.user.id,
+                agencyId: req.user.agencyId,
                 // On s'assure que les IDs sont bien des nombres ou null
                 contactId: contactId ? parseInt(contactId) : null,
                 propertyId: propertyId ? parseInt(propertyId) : null
@@ -1496,7 +1571,7 @@ app.post('/api/tasks', authenticateToken, async (req, res) => {
         try {
             // Vérifie que la fonction existe avant de l'appeler
             if (typeof logActivity === 'function') {
-                await logActivity(req.user.id, "CRÉATION_TÂCHE", `Tâche : ${title}`);
+                await logActivity(req.user.id, req.user.agencyId, "CRÉATION_TÂCHE", `Tâche : ${title}`);
             }
         } catch (logError) {
             console.error("Erreur optionnelle (Log):", logError);
@@ -1514,12 +1589,12 @@ app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
     try {
         // 🔒 ISOLATION : Vérifier que la tâche appartient à l'agent
         const task = await prisma.task.findFirst({
-            where: { id: parseInt(req.params.id), agentId: req.user.id }
+            where: { id: parseInt(req.params.id), agencyId: req.user.agencyId }
         });
         if (!task) return res.status(404).json({ error: "Tâche non trouvée ou non autorisée" });
 
         const t = await prisma.task.update({ where: { id: parseInt(req.params.id) }, data: req.body });
-        if (req.body.status === 'DONE') logActivity(req.user.id, "TÂCHE_TERMINÉE", `Tâche finie : ${t.title}`);
+        if (req.body.status === 'DONE') logActivity(req.user.id, req.user.agencyId, "TÂCHE_TERMINÉE", `Tâche finie : ${t.title}`);
         res.json(t);
     } catch (e) { res.status(500).json({ error: "Erreur" }); }
 });
@@ -1528,7 +1603,7 @@ app.delete('/api/tasks/:id', authenticateToken, async (req, res) => {
     try {
         // 🔒 ISOLATION : Vérifier que la tâche appartient à l'agent
         const task = await prisma.task.findFirst({
-            where: { id: parseInt(req.params.id), agentId: req.user.id }
+            where: { id: parseInt(req.params.id), agencyId: req.user.agencyId }
         });
         if (!task) return res.status(404).json({ error: "Tâche non trouvée ou non autorisée" });
 
@@ -1541,7 +1616,7 @@ app.delete('/api/tasks/:id', authenticateToken, async (req, res) => {
 app.get('/api/invoices', authenticateToken, requirePlan(['pro', 'premium']), async (req, res) => {
     // 🔒 ISOLATION : Récupérer uniquement les factures de l'agent
     const i = await prisma.invoice.findMany({
-        where: { agentId: req.user.id },
+        where: { agencyId: req.user.agencyId },
         include: { contact: true },
         orderBy: { createdAt: 'desc' }
     });
@@ -1558,10 +1633,11 @@ app.post('/api/invoices', authenticateToken, requirePlan(['pro', 'premium']), as
                 description: req.body.description || "Honoraires",
                 status: req.body.status || "PENDING",
                 agentId: req.user.id,
+                agencyId: req.user.agencyId,
                 contactId: parseInt(req.body.contactId)
             }
         });
-        logActivity(req.user.id, "CRÉATION_FACTURE", `Facture : ${ref}`);
+        logActivity(req.user.id, req.user.agencyId, "CRÉATION_FACTURE", `Facture : ${ref}`);
         res.status(201).json(newInvoice);
     } catch(e) { res.status(500).json({ error: "Erreur facture" }); }
 });
@@ -1570,7 +1646,7 @@ app.post('/api/invoices', authenticateToken, requirePlan(['pro', 'premium']), as
 app.get('/api/activities', authenticateToken, requirePlan(['pro', 'premium']), async (req, res) => {
     // 🔒 ISOLATION : Récupérer uniquement les activités de l'agent
     const logs = await prisma.activityLog.findMany({
-        where: { agentId: req.user.id },
+        where: { agencyId: req.user.agencyId },
         orderBy: { createdAt: 'desc' }, take: 50,
         include: { agent: { select: { firstName: true, lastName: true } } }
     });
@@ -1581,11 +1657,11 @@ app.get('/api/stats', authenticateToken, async (req, res) => {
     try {
         // 🔒 ISOLATION : Compter uniquement les données de l'agent
         const [p, c, b, s, t] = await Promise.all([
-            prisma.property.count({ where: { agentId: req.user.id } }),
-            prisma.contact.count({ where: { agentId: req.user.id } }),
-            prisma.contact.count({ where: { agentId: req.user.id, type: 'BUYER' } }),
-            prisma.contact.count({ where: { agentId: req.user.id, type: 'SELLER' } }),
-            prisma.task.count({ where: { agentId: req.user.id, status: 'PENDING' } })
+            prisma.property.count({ where: { agencyId: req.user.agencyId } }),
+            prisma.contact.count({ where: { agencyId: req.user.agencyId } }),
+            prisma.contact.count({ where: { agencyId: req.user.agencyId, type: 'BUYER' } }),
+            prisma.contact.count({ where: { agencyId: req.user.agencyId, type: 'SELLER' } }),
+            prisma.task.count({ where: { agencyId: req.user.agencyId, status: 'PENDING' } })
         ]);
         res.json({ properties: {total: p}, contacts: {total: c, buyers: b, sellers: s}, tasks: {pending: t, done: 0} });
     } catch (e) { res.status(500).json({ error: "Erreur" }); }
@@ -1635,7 +1711,7 @@ Description :`;
 
         const description = completion.choices[0].message.content.trim();
 
-        logActivity(req.user.id, "GÉNÉRATION_IA", `Description générée pour ${address || 'bien'}`);
+        logActivity(req.user.id, req.user.agencyId, "GÉNÉRATION_IA", `Description générée pour ${address || 'bien'}`);
 
         res.json({ description });
     } catch (error) {
@@ -1656,7 +1732,7 @@ app.get('/api/properties/:id/matches', authenticateToken, requirePlan('premium')
             include: { agent: true }
         });
 
-        if (!property || property.agentId !== req.user.id) {
+        if (!property || property.agencyId !== req.user.agencyId) {
             return res.status(404).json({ error: "Bien non trouvé" });
         }
 
@@ -1674,7 +1750,7 @@ app.get('/api/properties/:id/matches', authenticateToken, requirePlan('premium')
         // Récupérer TOUS les contacts de type BUYER (on va scorer ensuite)
         const allBuyers = await prisma.contact.findMany({
             where: {
-                agentId: req.user.id,
+                agencyId: req.user.agencyId,
                 type: "BUYER"
             }
         });
@@ -1810,6 +1886,7 @@ app.get('/api/properties/:id/matches', authenticateToken, requirePlan('premium')
 // ÉQUIPE
 app.get('/api/agents', authenticateToken, async (req, res) => {
     const agents = await prisma.user.findMany({
+      where: { agencyId: req.user.agencyId },
       orderBy: { createdAt: 'desc' },
       select: { id: true, firstName: true, lastName: true, email: true, role: true, createdAt: true }
     });
@@ -1835,9 +1912,9 @@ app.delete('/api/agents/:id', authenticateToken, async (req, res) => {
       });
     }
 
-    // Vérifier que l'utilisateur cible existe
-    const targetUser = await prisma.user.findUnique({
-      where: { id: targetUserId },
+    // Vérifier que l'utilisateur cible existe ET appartient à la même agence
+    const targetUser = await prisma.user.findFirst({
+      where: { id: targetUserId, agencyId: req.user.agencyId },
       select: { id: true, firstName: true, lastName: true, role: true }
     });
 
@@ -1979,7 +2056,7 @@ app.post('/api/properties/:propertyId/owners', authenticateToken, async (req, re
 
         const actionLabel = relationType === 'OWNER' ? "AJOUT_PROPRIÉTAIRE" : "AJOUT_INTÉRESSÉ";
         const descLabel = relationType === 'OWNER' ? "Propriétaire ajouté" : "Contact intéressé ajouté";
-        logActivity(req.user.id, actionLabel, `${descLabel} au bien ID ${propertyId}`);
+        logActivity(req.user.id, req.user.agencyId, actionLabel, `${descLabel} au bien ID ${propertyId}`);
         res.status(201).json(newOwner);
     } catch (e) {
         console.error("Erreur ajout propriétaire:", e);
@@ -1999,7 +2076,7 @@ app.delete('/api/properties/:propertyId/owners/:contactId', authenticateToken, a
 
         await prisma.propertyOwner.deleteMany({ where });
 
-        logActivity(req.user.id, "RETRAIT_PROPRIÉTAIRE", `Relation retirée du bien ID ${propertyId}`);
+        logActivity(req.user.id, req.user.agencyId, "RETRAIT_PROPRIÉTAIRE", `Relation retirée du bien ID ${propertyId}`);
         res.status(204).send();
     } catch (e) {
         console.error("Erreur retrait propriétaire:", e);
@@ -2245,7 +2322,7 @@ app.post('/api/public/agents/:agentId/appointments', async (req, res) => {
 app.get('/api/appointments', authenticateToken, async (req, res) => {
   try {
     const appointments = await prisma.appointment.findMany({
-      where: { agentId: req.user.id },
+      where: { agencyId: req.user.agencyId },
       orderBy: { appointmentDate: 'asc' }
     });
     res.json(appointments);
@@ -2270,7 +2347,7 @@ app.patch('/api/appointments/:id', authenticateToken, async (req, res) => {
       data: { status }
     });
 
-    logActivity(req.user.id, "MAJ_RDV", `Rendez-vous #${id} mis à jour: ${status}`);
+    logActivity(req.user.id, req.user.agencyId, "MAJ_RDV", `Rendez-vous #${id} mis à jour: ${status}`);
     res.json(appointment);
 
   } catch (error) {
@@ -2402,7 +2479,7 @@ app.get('/api/properties/:id/documents/bon-de-visite', authenticateToken, requir
       include: { agent: true }
     });
 
-    if (!property || property.agentId !== req.user.id) {
+    if (!property || property.agencyId !== req.user.agencyId) {
       return res.status(404).json({ error: "Bien non trouvé" });
     }
 
@@ -2492,7 +2569,7 @@ app.get('/api/properties/:id/documents/bon-de-visite', authenticateToken, requir
 
     doc.end();
 
-    logActivity(req.user.id, "PDF_GENERATED", `Bon de visite généré pour le bien #${propertyId}`);
+    logActivity(req.user.id, req.user.agencyId, "PDF_GENERATED", `Bon de visite généré pour le bien #${propertyId}`);
 
   } catch (error) {
     console.error("Erreur génération bon de visite:", error);
@@ -2512,7 +2589,7 @@ app.get('/api/properties/:id/documents/offre-achat', authenticateToken, requireP
       include: { agent: true }
     });
 
-    if (!property || property.agentId !== req.user.id) {
+    if (!property || property.agencyId !== req.user.agencyId) {
       return res.status(404).json({ error: "Bien non trouvé" });
     }
 
@@ -2619,7 +2696,7 @@ app.get('/api/properties/:id/documents/offre-achat', authenticateToken, requireP
 
     doc.end();
 
-    logActivity(req.user.id, "PDF_GENERATED", `Offre d'achat générée pour le bien #${propertyId}`);
+    logActivity(req.user.id, req.user.agencyId, "PDF_GENERATED", `Offre d'achat générée pour le bien #${propertyId}`);
 
   } catch (error) {
     console.error("Erreur génération offre d'achat:", error);
@@ -2641,7 +2718,7 @@ app.post('/api/properties/:id/enhance-photo', authenticateToken, requirePlan('pr
       where: { id: propertyId }
     });
 
-    if (!property || property.agentId !== req.user.id) {
+    if (!property || property.agencyId !== req.user.agencyId) {
       return res.status(404).json({ error: "Bien non trouvé" });
     }
 
@@ -2699,7 +2776,7 @@ app.post('/api/properties/:id/enhance-photo', authenticateToken, requirePlan('pr
       }
     });
 
-    logActivity(req.user.id, "PHOTO_ENHANCED", `Photo améliorée pour le bien #${propertyId}`);
+    logActivity(req.user.id, req.user.agencyId, "PHOTO_ENHANCED", `Photo améliorée pour le bien #${propertyId}`);
 
     res.json({
       success: true,
@@ -2737,7 +2814,7 @@ app.post('/api/properties/:id/stage-photo', authenticateToken, requirePlan('prem
     }
 
     // Vérifier que le bien appartient à l'agent connecté
-    if (property.agentId !== req.user.id) {
+    if (property.agencyId !== req.user.agencyId) {
       return res.status(403).json({ error: "Non autorisé" });
     }
 
@@ -2810,7 +2887,7 @@ app.post('/api/properties/:id/stage-image', authenticateToken, requirePlan('prem
       where: { id: propertyId }
     });
 
-    if (!property || property.agentId !== req.user.id) {
+    if (!property || property.agencyId !== req.user.agencyId) {
       return res.status(403).json({ error: "Non autorisé" });
     }
 
@@ -2877,7 +2954,7 @@ app.get('/api/properties/:id/stage-status/:predictionId', authenticateToken, asy
       where: { id: propertyId }
     });
 
-    if (!property || property.agentId !== req.user.id) {
+    if (!property || property.agencyId !== req.user.agencyId) {
       return res.status(403).json({ error: "Non autorisé" });
     }
 
@@ -2919,7 +2996,8 @@ app.get('/api/properties/:id/stage-status/:predictionId', authenticateToken, asy
           data: {
             action: 'HOME_STAGING_VIRTUEL',
             description: `Home staging virtuel appliqué sur une photo de ${property.address}`,
-            agentId: req.user.id
+            agentId: req.user.id,
+            agencyId: req.user.agencyId
           }
         });
 
@@ -2942,7 +3020,8 @@ app.get('/api/properties/:id/stage-status/:predictionId', authenticateToken, asy
           data: {
             action: 'HOME_STAGING_VIRTUEL',
             description: `Home staging virtuel appliqué sur ${property.address}`,
-            agentId: req.user.id
+            agentId: req.user.id,
+            agencyId: req.user.agencyId
           }
         });
 
@@ -3262,14 +3341,14 @@ app.post('/api/analytics/update-duration', async (req, res) => {
   }
 });
 
-// Obtenir les statistiques globales d'un agent
+// Obtenir les statistiques globales d'une agence
 app.get('/api/analytics/overview', authenticateToken, requirePlan(['pro', 'premium']), async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Récupérer tous les biens de l'agent
+    // Récupérer tous les biens de l'agence
     const properties = await prisma.property.findMany({
-      where: { agentId: userId },
+      where: { agencyId: req.user.agencyId },
       select: { id: true }
     });
 
@@ -3341,9 +3420,9 @@ app.get('/api/analytics/properties', authenticateToken, requirePlan(['pro', 'pre
   try {
     const userId = req.user.id;
 
-    // Récupérer tous les biens avec leurs vues
+    // Récupérer tous les biens de l'agence avec leurs vues
     const properties = await prisma.property.findMany({
-      where: { agentId: userId },
+      where: { agencyId: req.user.agencyId },
       select: {
         id: true,
         address: true,
@@ -3410,10 +3489,8 @@ app.get('/api/analytics/properties', authenticateToken, requirePlan(['pro', 'pre
 // Obtenir l'origine du trafic
 app.get('/api/analytics/traffic-sources', authenticateToken, requirePlan(['pro', 'premium']), async (req, res) => {
   try {
-    const userId = req.user.id;
-
     const properties = await prisma.property.findMany({
-      where: { agentId: userId },
+      where: { agencyId: req.user.agencyId },
       select: { id: true }
     });
 
@@ -3455,10 +3532,8 @@ app.get('/api/analytics/traffic-sources', authenticateToken, requirePlan(['pro',
 // Obtenir la répartition par appareil
 app.get('/api/analytics/devices', authenticateToken, requirePlan(['pro', 'premium']), async (req, res) => {
   try {
-    const userId = req.user.id;
-
     const properties = await prisma.property.findMany({
-      where: { agentId: userId },
+      where: { agencyId: req.user.agencyId },
       select: { id: true }
     });
 
@@ -3503,7 +3578,7 @@ app.get('/api/notifications', authenticateToken, requirePlan(['pro', 'premium'])
 
     // Récupérer tous les contacts de l'agent
     const contacts = await prisma.contact.findMany({
-      where: { agentId: req.user.id },
+      where: { agencyId: req.user.agencyId },
       select: { id: true }
     });
 
@@ -3557,7 +3632,7 @@ app.get('/api/notifications/stats', authenticateToken, requirePlan(['pro', 'prem
   try {
     // Récupérer tous les contacts de l'agent
     const contacts = await prisma.contact.findMany({
-      where: { agentId: req.user.id },
+      where: { agencyId: req.user.agencyId },
       select: { id: true }
     });
 
@@ -3623,7 +3698,7 @@ app.post('/api/notifications/test-matching/:propertyId', authenticateToken, requ
     const property = await prisma.property.findFirst({
       where: {
         id: propertyId,
-        agentId: req.user.id
+        agencyId: req.user.agencyId
       }
     });
 
@@ -3634,7 +3709,7 @@ app.post('/api/notifications/test-matching/:propertyId', authenticateToken, requ
     // Lancer le matching (sans envoyer d'emails)
     const buyers = await prisma.contact.findMany({
       where: {
-        agentId: req.user.id,
+        agencyId: req.user.agencyId,
         type: 'BUYER'
       }
     });
@@ -3738,7 +3813,7 @@ app.post('/api/notifications/send-manual', authenticateToken, requirePlan(['pro'
     const property = await prisma.property.findFirst({
       where: {
         id: parseInt(propertyId),
-        agentId: req.user.id
+        agencyId: req.user.agencyId
       }
     });
 
@@ -3750,7 +3825,7 @@ app.post('/api/notifications/send-manual', authenticateToken, requirePlan(['pro'
     const contact = await prisma.contact.findFirst({
       where: {
         id: parseInt(contactId),
-        agentId: req.user.id
+        agencyId: req.user.agencyId
       }
     });
 

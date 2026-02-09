@@ -7,6 +7,7 @@ import {
 } from '@chakra-ui/react';
 import { DeleteIcon, PhoneIcon } from '@chakra-ui/icons';
 import { Link } from 'react-router-dom';
+import { API_URL } from './config';
 
 export default function TaskItem({ task, token, onTaskUpdated, onTaskDeleted }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -17,7 +18,7 @@ export default function TaskItem({ task, token, onTaskUpdated, onTaskDeleted }) 
     setIsLoading(true);
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      const response = await axios.put(`https://saas-immo.onrender.com/api/tasks/${task.id}`, {
+      const response = await axios.put(`${API_URL}/api/tasks/${task.id}`, {
         title: task.title,
         status: newStatus
       }, config);
@@ -35,7 +36,7 @@ export default function TaskItem({ task, token, onTaskUpdated, onTaskDeleted }) 
     setIsLoading(true);
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      await axios.delete(`https://saas-immo.onrender.com/api/tasks/${task.id}`, config);
+      await axios.delete(`${API_URL}/api/tasks/${task.id}`, config);
       onTaskDeleted(task.id);
     } catch (error) {
       console.error("Erreur", error);

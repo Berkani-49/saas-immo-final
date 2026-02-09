@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { Box, Heading, FormControl, FormLabel, Input, Button, Alert, AlertIcon, VStack, HStack } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
+import { API_URL } from '../config';
 
 export default function SecretRegister({ token }) {
   const [firstName, setFirstName] = useState('');
@@ -18,7 +19,7 @@ export default function SecretRegister({ token }) {
     setIsLoading(true);
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      await axios.post('https://saas-immo.onrender.com/api/employees', {
+      await axios.post(`${API_URL}/api/employees`, {
         firstName,
         lastName,
         email

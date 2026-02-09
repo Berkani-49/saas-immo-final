@@ -10,6 +10,7 @@ import {
 } from '@chakra-ui/react';
 import { FiMail, FiBell, FiCheck, FiX, FiSend } from 'react-icons/fi';
 import axios from 'axios';
+import { API_URL } from '../config';
 
 export default function NotificationsPage({ token }) {
   const [loading, setLoading] = useState(true);
@@ -32,8 +33,8 @@ export default function NotificationsPage({ token }) {
 
       // Fetch stats et notifications en parallèle
       const [statsRes, notificationsRes] = await Promise.all([
-        axios.get('https://saas-immo.onrender.com/api/notifications/stats', config),
-        axios.get('https://saas-immo.onrender.com/api/notifications', {
+        axios.get(`${API_URL}/api/notifications/stats`, config),
+        axios.get(`${API_URL}/api/notifications`, {
           ...config,
           params: {
             limit: ITEMS_PER_PAGE,

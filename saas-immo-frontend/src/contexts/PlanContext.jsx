@@ -1,9 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { API_URL } from '../config';
 
 const PlanContext = createContext(null);
-
-const API_URL = 'https://saas-immo.onrender.com';
 
 // Hiérarchie des plans
 const PLAN_HIERARCHY = { free: 0, pro: 1, premium: 2 };

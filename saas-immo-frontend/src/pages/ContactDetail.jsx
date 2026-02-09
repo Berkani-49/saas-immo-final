@@ -10,6 +10,7 @@ import {
 } from '@chakra-ui/react';
 import { ArrowBackIcon } from '@chakra-ui/icons';
 import ContactProperties from '../components/ContactProperties.jsx';
+import { API_URL } from '../config';
 
 export default function ContactDetail({ token }) {
   const { contactId } = useParams();
@@ -32,7 +33,7 @@ export default function ContactDetail({ token }) {
       setIsLoading(true);
       try {
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
-        const response = await axios.get(`https://saas-immo.onrender.com/api/contacts/${contactId}`, config);
+        const response = await axios.get(`${API_URL}/api/contacts/${contactId}`, config);
         setContact(response.data);
         setEditFormData(response.data);
       } catch (err) {
@@ -51,7 +52,7 @@ export default function ContactDetail({ token }) {
     setIsSaving(true);
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      const response = await axios.put(`https://saas-immo.onrender.com/api/contacts/${contactId}`, editFormData, config);
+      const response = await axios.put(`${API_URL}/api/contacts/${contactId}`, editFormData, config);
       
       setContact(response.data);
       setEditFormData(response.data);

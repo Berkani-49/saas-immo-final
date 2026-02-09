@@ -11,6 +11,7 @@ import {
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
 import { Link } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
+import { API_URL } from '../config';
 
 export default function TeamPage({ token }) {
   const [agents, setAgents] = useState([]);
@@ -28,7 +29,7 @@ export default function TeamPage({ token }) {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
 
       // Récupérer les infos complètes de l'utilisateur actuel
-      axios.get(`https://saas-immo.onrender.com/api/agents`, config)
+      axios.get(`${API_URL}/api/agents`, config)
         .then(response => {
           const currentUser = response.data.find(agent => agent.id === decoded.id);
           if (currentUser) {
@@ -42,7 +43,7 @@ export default function TeamPage({ token }) {
     const fetchAgents = async () => {
       try {
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
-        const response = await axios.get('https://saas-immo.onrender.com/api/agents', config);
+        const response = await axios.get(`${API_URL}/api/agents`, config);
         setAgents(response.data);
       } catch (error) {
         console.error("Erreur", error);
@@ -61,7 +62,7 @@ export default function TeamPage({ token }) {
   const handleDeleteConfirm = async () => {
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      await axios.delete(`https://saas-immo.onrender.com/api/agents/${agentToDelete.id}`, config);
+      await axios.delete(`${API_URL}/api/agents/${agentToDelete.id}`, config);
 
       // Retirer l'agent de la liste
       setAgents(agents.filter(a => a.id !== agentToDelete.id));

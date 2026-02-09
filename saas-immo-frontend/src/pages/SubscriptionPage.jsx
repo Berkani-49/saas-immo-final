@@ -8,8 +8,7 @@ import {
 } from '@chakra-ui/react';
 import { FiCheck, FiX, FiZap, FiArrowRight } from 'react-icons/fi';
 import { usePlan } from '../contexts/PlanContext';
-
-const API_URL = 'https://saas-immo.onrender.com';
+import { API_URL } from '../config';
 
 const plans = [
   {

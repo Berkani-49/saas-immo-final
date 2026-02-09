@@ -12,6 +12,8 @@ import PWAPrompt from './components/PWAPrompt.jsx';
 import PageLoader from './components/PageLoader.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import { PlanProvider, usePlan } from './contexts/PlanContext';
+import { AgencyProvider } from './contexts/AgencyContext';
+import { API_URL, getAgencySlug } from './config';
 
 // Composant garde-plan : redirige vers /abonnement si le plan est insuffisant
 function PlanGate({ requiredPlan, children }) {
@@ -39,8 +41,6 @@ const AppointmentsPage = lazy(() => import('./pages/AppointmentsPage.jsx'));
 const RGPDPage = lazy(() => import('./pages/RGPDPage.jsx'));
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage.jsx'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage.jsx'));
-
-const API_URL = 'https://saas-immo.onrender.com';
 
 export default function App() {
   const [email, setEmail] = useState('');
@@ -107,6 +107,19 @@ export default function App() {
       const response = await axios.post(`${API_URL}/api/auth/login`, { email, password });
 
       localStorage.setItem('token', response.data.token);
+
+      // Si le backend retourne une agence et qu'un domaine est configuré,
+      // rediriger vers le bon sous-domaine
+      const agency = response.data.agency;
+      const appDomain = import.meta.env.VITE_APP_DOMAIN;
+      const currentSlug = getAgencySlug();
+
+      if (agency && appDomain && agency.slug !== currentSlug) {
+        // L'utilisateur est sur le mauvais sous-domaine → rediriger
+        window.location.href = `${window.location.protocol}//${agency.slug}.${appDomain}`;
+        return;
+      }
+
       setToken(response.data.token);
     } catch (error) {
       console.error("Erreur login:", error);
@@ -138,7 +151,7 @@ export default function App() {
           <Route path="/nouveau-membre-agence" element={<SecretRegister token={token} />} />
 
           {token ? (
-            <Route path="/" element={<PlanProvider token={token}><Layout onLogout={handleLogout} /></PlanProvider>}>
+            <Route path="/" element={<AgencyProvider token={token}><PlanProvider token={token}><Layout onLogout={handleLogout} /></PlanProvider></AgencyProvider>}>
               {/* Routes accessibles à tous les plans */}
               <Route index element={<HomePage token={token} />} />
               <Route path="biens" element={<Dashboard token={token} />} />

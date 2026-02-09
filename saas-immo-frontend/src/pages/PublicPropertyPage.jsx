@@ -18,6 +18,7 @@ import L from 'leaflet';
 // Petite astuce pour corriger l'icône de marker par défaut qui bug parfois dans React
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import { API_URL } from '../config';
 let DefaultIcon = L.icon({
     iconUrl: icon,
     shadowUrl: iconShadow,
@@ -44,7 +45,7 @@ export default function PublicPropertyPage() {
   useEffect(() => {
     const fetchPublicProperty = async () => {
       try {
-        const response = await axios.get(`https://saas-immo.onrender.com/api/public/properties/${id}`);
+        const response = await axios.get(`${API_URL}/api/public/properties/${id}`);
         setProperty(response.data);
       } catch (error) {
         console.error("Erreur chargement", error);
@@ -69,7 +70,7 @@ export default function PublicPropertyPage() {
     // Envoyer le tracking initial
     const trackView = async () => {
       try {
-        await axios.post('https://saas-immo.onrender.com/api/analytics/track-view', {
+        await axios.post(`${API_URL}/api/analytics/track-view`, {
           propertyId: id,
           referrer: document.referrer || 'Direct',
           userAgent: navigator.userAgent,
@@ -91,7 +92,7 @@ export default function PublicPropertyPage() {
           [JSON.stringify({ propertyId: id, duration })],
           { type: 'application/json' }
         );
-        navigator.sendBeacon('https://saas-immo.onrender.com/api/analytics/update-duration', blob);
+        navigator.sendBeacon(`${API_URL}/api/analytics/update-duration`, blob);
       }
     };
 
@@ -110,7 +111,7 @@ export default function PublicPropertyPage() {
     }
     setIsSending(true);
     try {
-        await axios.post('https://saas-immo.onrender.com/api/public/leads', {
+        await axios.post(`${API_URL}/api/public/leads`, {
             firstName, lastName, email, phone, message,
             propertyId: id
         });

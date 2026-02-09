@@ -14,6 +14,7 @@ import { supabase } from './supabaseClient';
 import DocumentGenerator from './components/DocumentGenerator';
 import StagingModal from './components/StagingModal';
 import PropertyImageGallery from './components/PropertyImageGallery';
+import { API_URL } from './config';
 
 export default function PropertyItem({ property, token, onPropertyDeleted, onPropertyUpdated }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -43,7 +44,7 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
       const response = await axios.post(
-        `https://saas-immo.onrender.com/api/properties/${property.id}/enhance-photo`,
+        `${API_URL}/api/properties/${property.id}/enhance-photo`,
         {},
         config
       );
@@ -86,7 +87,7 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
     setIsLoading(true);
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      await axios.delete(`https://saas-immo.onrender.com/api/properties/${property.id}`, config);
+      await axios.delete(`${API_URL}/api/properties/${property.id}`, config);
       onPropertyDeleted(property.id);
       toast({ title: "Bien supprimé.", status: "success", duration: 2000 });
     } catch (err) {
@@ -115,7 +116,7 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
 
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
       const payload = { ...editData, imageUrl: finalImageUrl };
-      const response = await axios.put(`https://saas-immo.onrender.com/api/properties/${property.id}`, payload, config);
+      const response = await axios.put(`${API_URL}/api/properties/${property.id}`, payload, config);
       
       onPropertyUpdated(response.data);
       setIsEditing(false);

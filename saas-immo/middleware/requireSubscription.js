@@ -9,11 +9,12 @@ const logger = require('../utils/logger');
 async function requireSubscription(req, res, next) {
   try {
     const userId = req.user.id;
+    const agencyId = req.user.agencyId;
 
-    // Récupérer l'abonnement de l'utilisateur
-    const subscription = await prisma.subscription.findUnique({
-      where: { userId: userId },
-    });
+    // Récupérer l'abonnement (par agence si disponible, sinon par user)
+    const subscription = agencyId
+      ? await prisma.subscription.findUnique({ where: { agencyId } })
+      : await prisma.subscription.findUnique({ where: { userId } });
 
     // Vérifier si l'abonnement existe et est actif
     if (!subscription) {
@@ -66,10 +67,12 @@ function requirePlan(allowedPlans) {
   return async (req, res, next) => {
     try {
       const userId = req.user.id;
+      const agencyId = req.user.agencyId;
 
-      const subscription = await prisma.subscription.findUnique({
-        where: { userId: userId },
-      });
+      // Récupérer l'abonnement (par agence si disponible, sinon par user)
+      const subscription = agencyId
+        ? await prisma.subscription.findUnique({ where: { agencyId } })
+        : await prisma.subscription.findUnique({ where: { userId } });
 
       if (!subscription || !plans.includes(subscription.planName)) {
         return res.status(403).json({
@@ -99,9 +102,10 @@ async function enrichWithSubscription(req, res, next) {
       return next();
     }
 
-    const subscription = await prisma.subscription.findUnique({
-      where: { userId: req.user.id },
-    });
+    const agencyId = req.user.agencyId;
+    const subscription = agencyId
+      ? await prisma.subscription.findUnique({ where: { agencyId } })
+      : await prisma.subscription.findUnique({ where: { userId: req.user.id } });
 
     req.subscription = subscription;
     req.hasActiveSubscription = subscription && ['active', 'trialing'].includes(subscription.status);

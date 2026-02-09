@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Box, VStack, Button, Heading, Spacer, CloseButton, Flex, Icon, Text, Divider, Collapse, Badge, useDisclosure } from '@chakra-ui/react';
 import { NavLink as RouterNavLink } from 'react-router-dom';
 import { usePlan } from './contexts/PlanContext';
+import { useAgency } from './contexts/AgencyContext';
 import UpgradeModal from './components/UpgradeModal';
 
 import {
@@ -61,6 +62,7 @@ const navSections = [
 
 export default function Sidebar({ onLogout, onClose }) {
   const { hasPlan } = usePlan();
+  const { agency } = useAgency();
   const { isOpen: isUpgradeOpen, onOpen: onUpgradeOpen, onClose: onUpgradeClose } = useDisclosure();
   const [upgradeTarget, setUpgradeTarget] = useState({ requiredPlan: 'pro', featureName: '' });
 
@@ -192,9 +194,19 @@ export default function Sidebar({ onLogout, onClose }) {
       {/* Partie scrollable */}
       <Box flex="1" overflowY="auto" pb={32}>
         <Flex h="20" alignItems="center" mx="8" justifyContent="space-between">
-          <Heading fontSize="xl" fontWeight="bold" letterSpacing="tight" color="white">
-            IMMO<Text as="span" color="brand.400">FLOW</Text>
-          </Heading>
+          {agency ? (
+            <Heading fontSize="lg" fontWeight="bold" letterSpacing="tight" color="white" noOfLines={1}>
+              {agency.logoUrl ? (
+                <img src={agency.logoUrl} alt={agency.name} style={{ maxHeight: '32px' }} />
+              ) : (
+                agency.name
+              )}
+            </Heading>
+          ) : (
+            <Heading fontSize="xl" fontWeight="bold" letterSpacing="tight" color="white">
+              IMMO<Text as="span" color="brand.400">FLOW</Text>
+            </Heading>
+          )}
           {onClose && <CloseButton display={{ base: 'flex', md: 'none' }} onClick={onClose} color="gray.400" />}
         </Flex>
 

@@ -8,6 +8,7 @@ import {
 } from '@chakra-ui/react';
 import { EditIcon, DeleteIcon, PhoneIcon, EmailIcon } from '@chakra-ui/icons';
 import { FaUserTie } from 'react-icons/fa';
+import { API_URL } from './config';
 
 export default function ContactItem({ contact, token, onContactDeleted }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -19,7 +20,7 @@ export default function ContactItem({ contact, token, onContactDeleted }) {
     setIsLoading(true);
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      await axios.delete(`https://saas-immo.onrender.com/api/contacts/${contact.id}`, config);
+      await axios.delete(`${API_URL}/api/contacts/${contact.id}`, config);
       onContactDeleted(contact.id);
       toast({ title: "Contact supprimé.", status: "success", duration: 2000 });
     } catch (err) {

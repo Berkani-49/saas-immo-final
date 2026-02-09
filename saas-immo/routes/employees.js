@@ -98,7 +98,7 @@ router.post('/', async (req, res) => {
     const generatedPassword = generateStrongPassword();
     const hashedPassword = await bcrypt.hash(generatedPassword, 10);
 
-    // Créer l'employé
+    // Créer l'employé (rattaché à la même agence que le patron)
     const newEmployee = await prisma.user.create({
       data: {
         email,
@@ -106,6 +106,7 @@ router.post('/', async (req, res) => {
         firstName,
         lastName,
         role: 'EMPLOYEE',
+        agencyId: req.user.agencyId,
       },
     });
 
@@ -187,9 +188,9 @@ router.get('/', async (req, res) => {
       return res.status(403).json({ error: 'Accès refusé' });
     }
 
-    // Récupérer tous les employés
+    // Récupérer les employés de la même agence
     const employees = await prisma.user.findMany({
-      where: { role: 'EMPLOYEE' },
+      where: { role: 'EMPLOYEE', agencyId: req.user.agencyId },
       select: {
         id: true,
         email: true,
@@ -227,9 +228,9 @@ router.delete('/:employeeId', async (req, res) => {
       return res.status(403).json({ error: 'Seul le propriétaire peut supprimer des employés' });
     }
 
-    // Vérifier que l'employé existe et est bien un EMPLOYEE
-    const employee = await prisma.user.findUnique({
-      where: { id: employeeId },
+    // Vérifier que l'employé existe, est EMPLOYEE, et dans la même agence
+    const employee = await prisma.user.findFirst({
+      where: { id: employeeId, agencyId: req.user.agencyId },
     });
 
     if (!employee) {
@@ -273,9 +274,9 @@ router.post('/:employeeId/reset-password', async (req, res) => {
       return res.status(403).json({ error: 'Seul le propriétaire peut réinitialiser les mots de passe' });
     }
 
-    // Vérifier que l'employé existe
-    const employee = await prisma.user.findUnique({
-      where: { id: employeeId },
+    // Vérifier que l'employé existe et appartient à la même agence
+    const employee = await prisma.user.findFirst({
+      where: { id: employeeId, agencyId: req.user.agencyId },
     });
 
     if (!employee) {

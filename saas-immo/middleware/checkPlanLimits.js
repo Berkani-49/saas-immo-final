@@ -19,22 +19,21 @@ const FREE_PLAN_LIMITS = {
 async function checkPropertyLimit(req, res, next) {
   try {
     const userId = req.user.id;
+    const agencyId = req.user.agencyId;
 
-    // Récupérer l'abonnement
-    const subscription = await prisma.subscription.findUnique({
-      where: { userId },
-    });
+    // Récupérer l'abonnement (par agence si disponible, sinon par user)
+    const subscription = agencyId
+      ? await prisma.subscription.findUnique({ where: { agencyId } })
+      : await prisma.subscription.findUnique({ where: { userId } });
 
     let maxProperties = FREE_PLAN_LIMITS.maxProperties;
     let planName = 'Gratuit';
 
     if (subscription) {
-      // Récupérer le plan
       const plan = await prisma.subscriptionPlan.findUnique({
         where: { stripePriceId: subscription.stripePriceId },
       });
 
-      // Si pas de limite (null) = illimité
       if (plan && plan.maxProperties === null) {
         return next();
       }
@@ -45,9 +44,9 @@ async function checkPropertyLimit(req, res, next) {
       }
     }
 
-    // Compter les propriétés actuelles
+    // Compter les propriétés de l'agence (ou du user si pas d'agence)
     const currentCount = await prisma.property.count({
-      where: { agentId: userId },
+      where: agencyId ? { agencyId } : { agentId: userId },
     });
 
     // Vérifier la limite
@@ -77,22 +76,21 @@ async function checkPropertyLimit(req, res, next) {
 async function checkContactLimit(req, res, next) {
   try {
     const userId = req.user.id;
+    const agencyId = req.user.agencyId;
 
-    // Récupérer l'abonnement
-    const subscription = await prisma.subscription.findUnique({
-      where: { userId },
-    });
+    // Récupérer l'abonnement (par agence si disponible, sinon par user)
+    const subscription = agencyId
+      ? await prisma.subscription.findUnique({ where: { agencyId } })
+      : await prisma.subscription.findUnique({ where: { userId } });
 
     let maxContacts = FREE_PLAN_LIMITS.maxContacts;
     let planName = 'Gratuit';
 
     if (subscription) {
-      // Récupérer le plan
       const plan = await prisma.subscriptionPlan.findUnique({
         where: { stripePriceId: subscription.stripePriceId },
       });
 
-      // Si pas de limite (null) = illimité
       if (plan && plan.maxContacts === null) {
         return next();
       }
@@ -103,9 +101,9 @@ async function checkContactLimit(req, res, next) {
       }
     }
 
-    // Compter les contacts actuels
+    // Compter les contacts de l'agence (ou du user si pas d'agence)
     const currentCount = await prisma.contact.count({
-      where: { agentId: userId },
+      where: agencyId ? { agencyId } : { agentId: userId },
     });
 
     // Vérifier la limite
@@ -135,22 +133,21 @@ async function checkContactLimit(req, res, next) {
 async function checkEmployeeLimit(req, res, next) {
   try {
     const userId = req.user.id;
+    const agencyId = req.user.agencyId;
 
-    // Récupérer l'abonnement
-    const subscription = await prisma.subscription.findUnique({
-      where: { userId },
-    });
+    // Récupérer l'abonnement (par agence si disponible, sinon par user)
+    const subscription = agencyId
+      ? await prisma.subscription.findUnique({ where: { agencyId } })
+      : await prisma.subscription.findUnique({ where: { userId } });
 
     let maxEmployees = FREE_PLAN_LIMITS.maxEmployees;
     let planName = 'Gratuit';
 
     if (subscription) {
-      // Récupérer le plan
       const plan = await prisma.subscriptionPlan.findUnique({
         where: { stripePriceId: subscription.stripePriceId },
       });
 
-      // Si pas de limite (null) = illimité
       if (plan && plan.maxEmployees === null) {
         return next();
       }
@@ -161,8 +158,10 @@ async function checkEmployeeLimit(req, res, next) {
       }
     }
 
-    // Compter les employés actuels (parentId n'existe pas encore dans le schéma)
-    const currentCount = 0;
+    // Compter les employés de l'agence
+    const currentCount = agencyId
+      ? await prisma.user.count({ where: { agencyId, role: 'EMPLOYEE' } })
+      : 0;
 
     // Vérifier la limite
     if (currentCount >= maxEmployees) {

@@ -32,6 +32,7 @@ import {
 import { FiDownload, FiTrash2, FiShield, FiAlertTriangle, FiCheckCircle } from 'react-icons/fi';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { API_URL } from '../config';
 
 export default function RGPDPage({ token }) {
   const [isExporting, setIsExporting] = useState(false);
@@ -46,7 +47,7 @@ export default function RGPDPage({ token }) {
     setIsExporting(true);
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      const response = await axios.get('https://saas-immo.onrender.com/api/rgpd/export-data', config);
+      const response = await axios.get(`${API_URL}/api/rgpd/export-data`, config);
 
       // Créer un fichier JSON téléchargeable
       const dataStr = JSON.stringify(response.data, null, 2);
@@ -93,7 +94,7 @@ export default function RGPDPage({ token }) {
 
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      await axios.delete('https://saas-immo.onrender.com/api/rgpd/delete-account', config);
+      await axios.delete(`${API_URL}/api/rgpd/delete-account`, config);
 
       toast({
         title: 'Compte supprimé',

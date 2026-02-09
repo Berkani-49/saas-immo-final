@@ -7,6 +7,7 @@ import {
   SimpleGrid, Badge, Spinner
 } from '@chakra-ui/react';
 import { FiHome, FiCheck } from 'react-icons/fi';
+import { API_URL } from '../config';
 
 export default function StagingModal({ isOpen, onClose, property, token, onPropertyUpdated }) {
   const [selectedStyle, setSelectedStyle] = useState('modern');
@@ -61,7 +62,7 @@ export default function StagingModal({ isOpen, onClose, property, token, onPrope
 
       // 1. Démarrer la génération (retourne immédiatement)
       const response = await axios.post(
-        `https://saas-immo.onrender.com/api/properties/${property.id}/stage-photo`,
+        `${API_URL}/api/properties/${property.id}/stage-photo`,
         { style: selectedStyle },
         config
       );
@@ -80,7 +81,7 @@ export default function StagingModal({ isOpen, onClose, property, token, onPrope
       const pollInterval = setInterval(async () => {
         try {
           const statusResponse = await axios.get(
-            `https://saas-immo.onrender.com/api/properties/${property.id}/stage-status/${predictionId}?style=${selectedStyle}`,
+            `${API_URL}/api/properties/${property.id}/stage-status/${predictionId}?style=${selectedStyle}`,
             config
           );
 

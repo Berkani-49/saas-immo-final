@@ -7,7 +7,8 @@ import {
   Badge, Button, FormControl, FormLabel, Input, Select, VStack, HStack, useToast
 } from '@chakra-ui/react';
 import { AddIcon, DownloadIcon } from '@chakra-ui/icons';
-import jsPDF from 'jspdf'; 
+import jsPDF from 'jspdf';
+import { API_URL } from '../config';
 
 export default function InvoicesPage({ token }) {
   const [invoices, setInvoices] = useState([]);
@@ -20,9 +21,6 @@ export default function InvoicesPage({ token }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toast = useToast();
-  
-  // ⚠️ VÉRIFIE BIEN CETTE URL
-  const API_URL = 'https://saas-immo.onrender.com';
 
   // --- 1. CHARGEMENT ---
   useEffect(() => {

@@ -6,6 +6,7 @@ import {
   useToast, Badge, Spinner, Center, Icon
 } from '@chakra-ui/react';
 import { FiCalendar, FiClock, FiCheck, FiDownload } from 'react-icons/fi';
+import { API_URL } from '../config';
 
 export default function AppointmentCalendar({ agentId }) {
   const [selectedDate, setSelectedDate] = useState('');
@@ -64,7 +65,7 @@ export default function AppointmentCalendar({ agentId }) {
     try {
       setLoading(true);
       const response = await axios.get(
-        `https://saas-immo.onrender.com/api/public/agents/${agentId}/availability`,
+        `${API_URL}/api/public/agents/${agentId}/availability`,
         { params: { date: selectedDate } }
       );
       setAvailableSlots(response.data.slots);
@@ -87,7 +88,7 @@ export default function AppointmentCalendar({ agentId }) {
     setIsSubmitting(true);
     try {
       const response = await axios.post(
-        `https://saas-immo.onrender.com/api/public/agents/${agentId}/appointments`,
+        `${API_URL}/api/public/agents/${agentId}/appointments`,
         {
           clientName,
           clientEmail,

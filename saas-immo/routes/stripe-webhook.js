@@ -110,6 +110,7 @@ async function handleCheckoutSessionCompleted(session) {
   logger.info('Processing checkout session completed', { sessionId: session.id });
 
   const userId = parseInt(session.metadata.userId);
+  const agencyId = session.metadata.agencyId ? parseInt(session.metadata.agencyId) : null;
   const customerId = session.customer;
   const subscriptionId = session.subscription;
 
@@ -131,10 +132,13 @@ async function handleCheckoutSessionCompleted(session) {
   else if (price.unit_amount >= 4900) planName = 'pro';
 
   // Créer ou mettre à jour l'abonnement dans la base de données
+  // Si agencyId est disponible, upsert par agencyId, sinon par userId
+  const upsertWhere = agencyId ? { agencyId } : { userId };
   await prisma.subscription.upsert({
-    where: { userId: userId },
+    where: upsertWhere,
     create: {
       userId: userId,
+      agencyId: agencyId,
       stripeSubscriptionId: subscription.id,
       stripePriceId: priceId,
       stripeCustomerId: customerId,
@@ -172,7 +176,9 @@ async function handleCheckoutSessionCompleted(session) {
   logger.info('Subscription created from checkout', { userId, subscriptionId });
 
   // Envoyer l'email de bienvenue
-  const subscriptionData = await prisma.subscription.findUnique({ where: { userId } });
+  const subscriptionData = agencyId
+    ? await prisma.subscription.findUnique({ where: { agencyId } })
+    : await prisma.subscription.findUnique({ where: { userId } });
   if (subscriptionData) {
     await notificationService.sendSubscriptionWelcomeEmail(user, subscriptionData);
   }
@@ -185,6 +191,7 @@ async function handleSubscriptionCreated(subscription) {
   logger.info('Processing subscription created', { subscriptionId: subscription.id });
 
   const userId = parseInt(subscription.metadata.userId);
+  const agencyId = subscription.metadata.agencyId ? parseInt(subscription.metadata.agencyId) : null;
   if (!userId) {
     logger.error('Missing userId in subscription metadata');
     return;
@@ -197,10 +204,12 @@ async function handleSubscriptionCreated(subscription) {
   if (price.unit_amount >= 9900) planName = 'premium';
   else if (price.unit_amount >= 4900) planName = 'pro';
 
+  const upsertWhere = agencyId ? { agencyId } : { userId };
   await prisma.subscription.upsert({
-    where: { userId: userId },
+    where: upsertWhere,
     create: {
       userId: userId,
+      agencyId: agencyId,
       stripeSubscriptionId: subscription.id,
       stripePriceId: priceId,
       stripeCustomerId: subscription.customer,

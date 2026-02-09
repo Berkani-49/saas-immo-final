@@ -6,6 +6,7 @@ import {
   Spinner, Center, Card, CardBody, CardHeader, Flex, Select, Divider
 } from '@chakra-ui/react';
 import { FiCalendar, FiClock, FiUser, FiMail, FiPhone, FiCheck, FiX, FiAlertCircle } from 'react-icons/fi';
+import { API_URL } from '../config';
 
 export default function AppointmentsPage({ token }) {
   const [appointments, setAppointments] = useState([]);
@@ -21,7 +22,7 @@ export default function AppointmentsPage({ token }) {
     try {
       setLoading(true);
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      const response = await axios.get('https://saas-immo.onrender.com/api/appointments', config);
+      const response = await axios.get(`${API_URL}/api/appointments`, config);
       setAppointments(response.data);
     } catch (error) {
       console.error("Erreur chargement rendez-vous:", error);
@@ -34,7 +35,7 @@ export default function AppointmentsPage({ token }) {
   const updateStatus = async (id, newStatus) => {
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      await axios.patch(`https://saas-immo.onrender.com/api/appointments/${id}`, { status: newStatus }, config);
+      await axios.patch(`${API_URL}/api/appointments/${id}`, { status: newStatus }, config);
 
       // Mettre à jour l'état local
       setAppointments(appointments.map(apt =>

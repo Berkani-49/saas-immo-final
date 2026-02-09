@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_URL } from './config';
 import { Box, Button, FormControl, FormLabel, Input, Textarea, HStack, VStack, Heading, useToast, Text, Select, Badge, Wrap, IconButton, useDisclosure, Divider, Checkbox, SimpleGrid } from '@chakra-ui/react';
 import { CloseIcon } from '@chakra-ui/icons';
 import MatchingModal from './components/MatchingModal';
@@ -64,7 +65,7 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
     const fetchContacts = async () => {
       try {
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
-        const response = await axios.get('https://saas-immo.onrender.com/api/contacts', config);
+        const response = await axios.get(`${API_URL}/api/contacts`, config);
         setContacts(response.data);
       } catch (err) {
         console.error("Erreur chargement contacts:", err);
@@ -109,7 +110,7 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
     setIsGenerating(true);
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      const response = await axios.post('https://saas-immo.onrender.com/api/generate-description', {
+      const response = await axios.post(`${API_URL}/api/generate-description`, {
         address, city, price, area, rooms, bedrooms
       }, config);
 
@@ -150,7 +151,7 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
         };
 
         const uploadResponse = await axios.post(
-          'https://saas-immo.onrender.com/api/upload-image',
+          `${API_URL}/api/upload-image`,
           formData,
           uploadConfig
         );
@@ -184,7 +185,7 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
         hasElevator
       };
 
-      const response = await axios.post('https://saas-immo.onrender.com/api/properties', payload, config);
+      const response = await axios.post(`${API_URL}/api/properties`, payload, config);
       const newProperty = response.data;
 
       // 3. Ajouter les propriétaires/intéressés si sélectionnés
@@ -192,7 +193,7 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
         for (const item of selectedOwners) {
           try {
             await axios.post(
-              `https://saas-immo.onrender.com/api/properties/${newProperty.id}/owners`,
+              `${API_URL}/api/properties/${newProperty.id}/owners`,
               { contactId: item.contact.id, type: item.type },
               config
             );

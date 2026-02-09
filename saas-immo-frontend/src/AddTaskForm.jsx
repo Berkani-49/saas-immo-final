@@ -6,6 +6,7 @@ import {
   Box, Button, FormControl, FormLabel, Input, Select, VStack, useToast, Heading, HStack
 } from '@chakra-ui/react';
 import { AddIcon } from '@chakra-ui/icons';
+import { API_URL } from './config';
 
 export default function AddTaskForm({ token, onTaskAdded, contacts, properties }) {
   const [title, setTitle] = useState('');
@@ -37,7 +38,7 @@ export default function AddTaskForm({ token, onTaskAdded, contacts, properties }
         propertyId: propertyId ? parseInt(propertyId, 10) : null
       };
 
-      const response = await axios.post('https://saas-immo.onrender.com/api/tasks', payload, config);
+      const response = await axios.post(`${API_URL}/api/tasks`, payload, config);
       
       const newTask = { 
         ...response.data, 

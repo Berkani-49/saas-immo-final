@@ -78,7 +78,7 @@ export async function registerServiceWorker() {
 export async function subscribeToPushNotifications(token) {
   try {
     // 1. Récupérer la clé publique VAPID du serveur
-    const vapidResponse = await fetch('https://saas-immo.onrender.com/api/push/vapid-public-key');
+    const vapidResponse = await fetch(`${API_URL}/api/push/vapid-public-key`);
     const { publicKey } = await vapidResponse.json();
 
     // 2. Obtenir le service worker
@@ -91,7 +91,7 @@ export async function subscribeToPushNotifications(token) {
     });
 
     // 4. Envoyer l'abonnement au serveur
-    const response = await fetch('https://saas-immo.onrender.com/api/push/subscribe', {
+    const response = await fetch(`${API_URL}/api/push/subscribe`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -136,7 +136,7 @@ function urlBase64ToUint8Array(base64String) {
  */
 export async function unsubscribeFromPushNotifications(token) {
   try {
-    const response = await fetch('https://saas-immo.onrender.com/api/user/unsubscribe-push', {
+    const response = await fetch(`${API_URL}/api/user/unsubscribe-push`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -5,6 +5,7 @@ import {
   Box, Heading, VStack, Text, Badge, HStack, Spinner, SimpleGrid
 } from '@chakra-ui/react';
 import { MdHomeWork } from 'react-icons/md';
+import { API_URL } from '../config';
 
 export default function ContactProperties({ contactId, token }) {
   const [properties, setProperties] = useState([]);
@@ -18,7 +19,7 @@ export default function ContactProperties({ contactId, token }) {
 
   const fetchProperties = async () => {
     try {
-      const response = await axios.get(`https://saas-immo.onrender.com/api/contacts/${contactId}/properties`, config);
+      const response = await axios.get(`${API_URL}/api/contacts/${contactId}/properties`, config);
       setProperties(response.data);
     } catch (err) {
       console.error("Erreur chargement biens:", err);

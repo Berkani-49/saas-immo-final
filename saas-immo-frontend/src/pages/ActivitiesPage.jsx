@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Box, Heading, Spinner, Flex, Text, VStack, Badge, Icon } from '@chakra-ui/react';
 import { FiActivity, FiPlusCircle, FiEdit, FiTrash2, FiCheckCircle, FiUser } from 'react-icons/fi';
+import { API_URL } from '../config';
 
 export default function ActivitiesPage({ token }) {
   const [activities, setActivities] = useState([]);
@@ -14,7 +15,7 @@ export default function ActivitiesPage({ token }) {
     const fetchActivities = async () => {
       try {
         const config = { headers: { 'Authorization': `Bearer ${token}` } };
-        const response = await axios.get('https://saas-immo.onrender.com/api/activities', config);
+        const response = await axios.get(`${API_URL}/api/activities`, config);
         setActivities(response.data);
       } catch (error) {
         console.error("Erreur logs:", error);
