@@ -1,0 +1,79 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradient principal indigo → violet -->
+    <linearGradient id="grad1" x1="0" y1="0" x2="512" y2="512">
+      <stop offset="0%" stop-color="#818cf8"/>
+      <stop offset="50%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#c084fc"/>
+    </linearGradient>
+    <linearGradient id="grad2" x1="512" y1="0" x2="0" y2="512">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <!-- Gradient pour le fond -->
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="512" y2="512">
+      <stop offset="0%" stop-color="#0f0a1e"/>
+      <stop offset="100%" stop-color="#1a1040"/>
+    </linearGradient>
+    <!-- Glow effect -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="15" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Fond arrondi -->
+  <rect width="512" height="512" rx="96" fill="url(#bgGrad)"/>
+
+  <!-- Cercle glow subtil derrière l'icône -->
+  <circle cx="256" cy="240" r="140" fill="#6366f1" opacity="0.06"/>
+  <circle cx="256" cy="240" r="100" fill="#8b5cf6" opacity="0.04"/>
+
+  <!-- Maison / Bâtiment stylisé -->
+  <g filter="url(#glow)">
+    <!-- Toit de la maison -->
+    <path d="M256 100 L148 195 L168 195 L168 310 L344 310 L344 195 L364 195 Z"
+          stroke="url(#grad1)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+    <!-- Porte / entrée -->
+    <rect x="228" y="238" width="56" height="72" rx="6"
+          stroke="url(#grad2)" stroke-width="10" fill="rgba(99,102,241,0.08)"/>
+
+    <!-- Fenêtre gauche -->
+    <rect x="180" y="215" width="35" height="35" rx="5"
+          stroke="url(#grad1)" stroke-width="8" fill="rgba(129,140,248,0.06)"/>
+
+    <!-- Fenêtre droite -->
+    <rect x="297" y="215" width="35" height="35" rx="5"
+          stroke="url(#grad1)" stroke-width="8" fill="rgba(129,140,248,0.06)"/>
+  </g>
+
+  <!-- Flèche "Flow" qui sort de la maison - courbe dynamique -->
+  <g filter="url(#glow)">
+    <path d="M310 270 C350 270, 370 240, 370 210 C370 180, 350 160, 330 160"
+          stroke="url(#grad2)" stroke-width="10" stroke-linecap="round" fill="none"/>
+    <!-- Pointe de la flèche -->
+    <path d="M342 172 L328 160 L342 148"
+          stroke="url(#grad2)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+
+  <!-- Texte "ImmoFlow" -->
+  <text x="256" y="400" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-weight="800" font-size="62" fill="url(#grad1)" letter-spacing="-1">
+    ImmoFlow
+  </text>
+
+  <!-- Sous-texte tagline -->
+  <text x="256" y="440" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-weight="400" font-size="22" fill="#818cf8" opacity="0.6" letter-spacing="4">
+    REAL ESTATE SAAS
+  </text>
+</svg>
