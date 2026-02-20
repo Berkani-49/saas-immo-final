@@ -1,6 +1,6 @@
 // Fichier : src/Sidebar.jsx (Version avec verrous plan et badges PRO/PREMIUM)
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, VStack, Button, Heading, Spacer, CloseButton, Flex, Icon, Text, Divider, Collapse, Badge, useDisclosure } from '@chakra-ui/react';
 import { NavLink as RouterNavLink } from 'react-router-dom';
 import { usePlan } from './contexts/PlanContext';
@@ -23,8 +23,13 @@ import {
   FiShield,
   FiBarChart2,
   FiBell,
-  FiLock
+  FiLock,
+  FiShare2,
+  FiEdit3,
+  FiUser,
+  FiHelpCircle
 } from 'react-icons/fi';
+import SearchBar from './components/SearchBar';
 
 // Navigation organisée par sections avec plan requis
 const navSections = [
@@ -38,6 +43,14 @@ const navSections = [
       { name: 'Rendez-vous', icon: FiCalendar, path: '/rendez-vous' },
     ],
     defaultOpen: true
+  },
+  {
+    title: 'Publication',
+    items: [
+      { name: 'Multi-diffusion', icon: FiShare2, path: '/diffusion', requiredPlan: 'pro' },
+      { name: 'Signatures', icon: FiEdit3, path: '/signatures', requiredPlan: 'pro' },
+    ],
+    defaultOpen: false
   },
   {
     title: 'Gestion',
@@ -54,17 +67,38 @@ const navSections = [
       { name: 'Analytics', icon: FiBarChart2, path: '/analytics', requiredPlan: 'pro' },
       { name: 'Notifications', icon: FiBell, path: '/notifications', requiredPlan: 'pro' },
       { name: 'Abonnement', icon: FiCreditCard, path: '/abonnement' },
+      { name: 'Mon Profil', icon: FiUser, path: '/profil' },
+      { name: 'Aide', icon: FiHelpCircle, path: '/aide' },
       { name: 'RGPD', icon: FiShield, path: '/rgpd' },
     ],
     defaultOpen: false
   }
 ];
 
-export default function Sidebar({ onLogout, onClose }) {
+export default function Sidebar({ onLogout, onClose, token }) {
   const { hasPlan } = usePlan();
   const { agency } = useAgency();
   const { isOpen: isUpgradeOpen, onOpen: onUpgradeOpen, onClose: onUpgradeClose } = useDisclosure();
   const [upgradeTarget, setUpgradeTarget] = useState({ requiredPlan: 'pro', featureName: '' });
+  const [notifCount, setNotifCount] = useState(0);
+
+  // Polling notifications non lues
+  useEffect(() => {
+    if (!token || !hasPlan('pro')) return;
+    const API = import.meta.env.VITE_API_URL || 'https://saas-immo.onrender.com';
+    const fetchCount = async () => {
+      try {
+        const res = await fetch(`${API}/api/notifications/unread-count`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        setNotifCount(data.count || 0);
+      } catch (e) {}
+    };
+    fetchCount();
+    const interval = setInterval(fetchCount, 60000);
+    return () => clearInterval(interval);
+  }, [token]);
 
   // État pour gérer l'ouverture/fermeture des sections
   const [openSections, setOpenSections] = useState(
@@ -86,7 +120,7 @@ export default function Sidebar({ onLogout, onClose }) {
     onUpgradeOpen();
   };
 
-  const NavItem = ({ icon, children, to, locked, requiredPlan: itemPlan, itemName, ...rest }) => {
+  const NavItem = ({ icon, children, to, locked, requiredPlan: itemPlan, itemName, badge: badgeCount, ...rest }) => {
     if (locked) {
       return (
         <Flex
@@ -96,8 +130,8 @@ export default function Sidebar({ onLogout, onClose }) {
           borderRadius="lg"
           role="group"
           cursor="pointer"
-          color="gray.500"
-          _hover={{ bg: 'whiteAlpha.50' }}
+          color="gray.600"
+          _hover={{ bg: 'rgba(255,255,255,0.04)', transform: 'translateX(1px)' }}
           transition="all 0.2s"
           onClick={() => handleLockedClick({ requiredPlan: itemPlan, name: itemName })}
           {...rest}
@@ -129,11 +163,15 @@ export default function Sidebar({ onLogout, onClose }) {
             borderRadius="lg"
             role="group"
             cursor="pointer"
-            bg={isActive ? 'brand.500' : 'transparent'}
-            color={isActive ? 'white' : 'gray.300'}
+            bg={isActive ? 'linear-gradient(90deg, rgba(129,140,248,0.22) 0%, rgba(129,140,248,0.06) 100%)' : 'transparent'}
+            color={isActive ? 'white' : 'gray.400'}
+            boxShadow={isActive ? 'inset 3px 0 0 #818CF8' : 'none'}
             _hover={{
-              bg: isActive ? 'brand.600' : 'whiteAlpha.100',
+              bg: isActive
+                ? 'linear-gradient(90deg, rgba(129,140,248,0.32) 0%, rgba(129,140,248,0.1) 100%)'
+                : 'rgba(255,255,255,0.05)',
               color: 'white',
+              transform: 'translateX(2px)',
             }}
             transition="all 0.2s"
             {...rest}
@@ -143,11 +181,16 @@ export default function Sidebar({ onLogout, onClose }) {
                 mr="3"
                 fontSize="16"
                 as={icon}
-                color={isActive ? 'white' : 'gray.400'}
+                color={isActive ? 'brand.300' : 'gray.500'}
                 _groupHover={{ color: 'white' }}
               />
             )}
-            <Text fontSize="sm" fontWeight="medium">{children}</Text>
+            <Text fontSize="sm" fontWeight="medium" flex="1">{children}</Text>
+            {badgeCount > 0 && (
+              <Badge colorScheme="red" borderRadius="full" fontSize="2xs" minW="18px" textAlign="center">
+                {badgeCount}
+              </Badge>
+            )}
           </Flex>
         )}
       </RouterNavLink>
@@ -162,17 +205,17 @@ export default function Sidebar({ onLogout, onClose }) {
       py="2"
       cursor="pointer"
       onClick={onToggle}
-      _hover={{ bg: 'whiteAlpha.100' }}
+      _hover={{ bg: 'rgba(255,255,255,0.03)' }}
       borderRadius="md"
       mx="2"
       mt="2"
     >
-      <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase" letterSpacing="wider">
+      <Text fontSize="xs" fontWeight="bold" color="gray.600" textTransform="uppercase" letterSpacing="widest">
         {title}
       </Text>
       <Icon
         as={isOpen ? FiChevronDown : FiChevronRight}
-        color="gray.500"
+        color="gray.600"
         w={3}
         h={3}
       />
@@ -181,19 +224,18 @@ export default function Sidebar({ onLogout, onClose }) {
 
   return (
     <Box
-      bg="gray.800"
+      bg="linear-gradient(180deg, #1a1f2e 0%, #141924 100%)"
       color="gray.100"
       h="100vh"
       w="100%"
       pos="relative"
       display="flex"
       flexDirection="column"
-      borderRight="1px"
-      borderRightColor="gray.700"
+      borderRight="1px solid rgba(99,102,241,0.15)"
     >
       {/* Partie scrollable */}
       <Box flex="1" overflowY="auto" pb={32}>
-        <Flex h="20" alignItems="center" mx="8" justifyContent="space-between">
+        <Flex h="20" alignItems="center" px={6} justifyContent="space-between" borderBottom="1px solid rgba(99,102,241,0.12)" bg="linear-gradient(135deg, rgba(26,26,46,0.9) 0%, rgba(22,33,62,0.7) 100%)" mx={0}>
           {agency ? (
             <Heading fontSize="lg" fontWeight="bold" letterSpacing="tight" color="white" noOfLines={1}>
               {agency.logoUrl ? (
@@ -210,7 +252,10 @@ export default function Sidebar({ onLogout, onClose }) {
           {onClose && <CloseButton display={{ base: 'flex', md: 'none' }} onClick={onClose} color="gray.400" />}
         </Flex>
 
-        <Divider borderColor="gray.700" mb={2} />
+        <Divider borderColor="rgba(99,102,241,0.1)" mb={2} />
+
+        {/* Barre de recherche */}
+        {token && <SearchBar token={token} />}
 
         <VStack align="stretch" spacing={0}>
           {navSections.map((section) => (
@@ -224,6 +269,7 @@ export default function Sidebar({ onLogout, onClose }) {
                 <VStack align="stretch" spacing={0} pb={2}>
                   {section.items.map((link) => {
                     const isLocked = link.requiredPlan && !hasPlan(link.requiredPlan);
+                    const badgeCount = link.name === 'Notifications' ? notifCount : 0;
                     return (
                       <NavItem
                         key={link.name}
@@ -232,6 +278,7 @@ export default function Sidebar({ onLogout, onClose }) {
                         locked={isLocked}
                         requiredPlan={link.requiredPlan}
                         itemName={link.name}
+                        badge={badgeCount}
                       >
                         {link.name}
                       </NavItem>
@@ -248,18 +295,21 @@ export default function Sidebar({ onLogout, onClose }) {
       <Box
         position="sticky"
         bottom="0"
-        p={6}
-        bg="gray.800"
-        borderTop="1px"
-        borderTopColor="gray.700"
+        p={4}
+        bg="rgba(20,25,36,0.97)"
+        backdropFilter="blur(12px)"
+        borderTop="1px solid rgba(99,102,241,0.1)"
       >
         <Button
           onClick={onLogout}
           width="full"
-          variant="outline"
-          colorScheme="red"
+          variant="ghost"
+          color="gray.500"
           leftIcon={<Icon as={FiLogOut} />}
-          _hover={{ bg: 'red.500', color: 'white', borderColor: 'red.500' }}
+          _hover={{ bg: 'rgba(239,68,68,0.1)', color: 'red.400' }}
+          fontSize="sm"
+          fontWeight="medium"
+          borderRadius="lg"
         >
           Déconnexion
         </Button>

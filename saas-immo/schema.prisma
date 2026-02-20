@@ -31,6 +31,8 @@ model Agency {
   activities    ActivityLog[]
   appointments  Appointment[]
   subscription  Subscription?  @relation("AgencySubscription")
+  diffusions    PropertyDiffusion[]
+  documents     Document[]
 
   @@index([slug])
 }
@@ -64,6 +66,7 @@ model User {
   appointments Appointment[]
   pushSubscriptions PushSubscription[]
   subscription Subscription?
+  documents  Document[]
 
   @@index([agencyId])
 }
@@ -127,6 +130,12 @@ model Property {
 
   // 📸 Photos multiples du bien
   images    PropertyImage[]
+
+  // 📡 Diffusion sur portails
+  diffusions PropertyDiffusion[]
+
+  // 📝 Documents (mandats, baux, etc.)
+  documents  Document[]
 
   @@index([agentId])
   @@index([agencyId])
@@ -419,6 +428,8 @@ model SubscriptionPlan {
   maxProperties     Int?     // Nombre max de biens
   maxContacts       Int?     // Nombre max de contacts
   maxEmployees      Int?     // Nombre max d'employés
+  maxDiffusions     Int?     // Nombre max de diffusions actives (null = illimité)
+  maxSignatures     Int?     // Nombre max de signatures par mois (null = illimité)
 
   isActive          Boolean  @default(true) // Si le plan est disponible
   isFeatured        Boolean  @default(false) // Plan mis en avant
@@ -448,4 +459,55 @@ model StripeWebhookEvent {
   @@index([type])
   @@index([processed])
   @@index([createdAt])
+}
+
+// --- MODÈLE DIFFUSION SUR PORTAILS ---
+model PropertyDiffusion {
+  id           Int       @id @default(autoincrement())
+  portal       String    // "SELOGER", "LEBONCOIN", "BIENICI", "LOGICIMMO", "PAP", "FIGARO"
+  status       String    @default("NOT_PUBLISHED") // "NOT_PUBLISHED", "PUBLISHED", "PENDING", "ERROR"
+  publishedAt  DateTime?
+  expiresAt    DateTime?
+  errorMessage String?
+
+  property     Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  propertyId   Int
+  agency       Agency?   @relation(fields: [agencyId], references: [id])
+  agencyId     Int?
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([propertyId, portal])
+  @@index([agencyId])
+  @@index([propertyId])
+}
+
+// --- MODÈLE DOCUMENT (Mandats, Baux, Signature électronique) ---
+model Document {
+  id            Int       @id @default(autoincrement())
+  title         String    // "Mandat de vente - 10 rue de la Paix"
+  type          String    // "MANDAT_VENTE", "MANDAT_GESTION", "BAIL_HABITATION"
+  status        String    @default("DRAFT") // "DRAFT", "SENT", "SIGNED", "EXPIRED"
+  signerName    String    // Nom du signataire
+  signerEmail   String    // Email du signataire
+  signingToken  String    @unique @default(cuid()) // Token unique pour le lien de signature
+  signedAt      DateTime?
+  signatureData String?   // Base64 de l'image signature
+  signerIp      String?   // IP au moment de la signature
+
+  property      Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  propertyId    Int?
+
+  agent         User      @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agentId       Int
+  agency        Agency?   @relation(fields: [agencyId], references: [id])
+  agencyId      Int?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([agencyId])
+  @@index([agentId])
+  @@index([signingToken])
 }

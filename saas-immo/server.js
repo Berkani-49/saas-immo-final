@@ -30,6 +30,8 @@ const stripeWebhookRouter = require('./routes/stripe-webhook');
 const billingRouter = require('./routes/billing');
 const adminSubscriptionsRouter = require('./routes/admin/subscriptions');
 const employeesRouter = require('./routes/employees');
+const diffusionRouter = require('./routes/diffusion');
+const signaturesRouter = require('./routes/signatures');
 const { requireSubscription, requirePlan, enrichWithSubscription } = require('./middleware/requireSubscription');
 const requireAdmin = require('./middleware/requireAdmin');
 const { checkPropertyLimit, checkContactLimit } = require('./middleware/checkPlanLimits');
@@ -1043,6 +1045,15 @@ app.use('/api/admin/subscriptions', authenticateToken, requireAdmin, adminSubscr
 
 // --- EMPLOYEE MANAGEMENT ROUTES ---
 app.use('/api/employees', authenticateToken, employeesRouter);
+
+// --- DIFFUSION ROUTES ---
+app.use('/api/diffusion', authenticateToken, diffusionRouter);
+
+// --- DOCUMENTS & SIGNATURE ROUTES ---
+app.use('/api/documents', authenticateToken, signaturesRouter);
+
+// --- PUBLIC SIGNATURE ROUTES (sans authentification) ---
+app.use('/api/public', signaturesRouter);
 
 // --- 5. ROUTES PROTÉGÉES (Biens, Contacts, Tâches, Factures) ---
 

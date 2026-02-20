@@ -7,6 +7,8 @@ const FREE_PLAN_LIMITS = {
   maxProperties: 3,
   maxContacts: 5,
   maxEmployees: 0, // Pas d'employés sur le plan gratuit
+  maxDiffusions: 0, // Pas de diffusion sur le plan gratuit
+  maxSignatures: 0, // Pas de signatures sur le plan gratuit
 };
 
 /**
@@ -241,10 +243,131 @@ function requireFeature(featureName) {
   };
 }
 
+/**
+ * Vérifier la limite de diffusions actives
+ */
+async function checkDiffusionLimit(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const agencyId = req.user.agencyId;
+
+    const subscription = agencyId
+      ? await prisma.subscription.findUnique({ where: { agencyId } })
+      : await prisma.subscription.findUnique({ where: { userId } });
+
+    let maxDiffusions = FREE_PLAN_LIMITS.maxDiffusions;
+    let planName = 'Gratuit';
+
+    if (subscription) {
+      const plan = await prisma.subscriptionPlan.findUnique({
+        where: { stripePriceId: subscription.stripePriceId },
+      });
+
+      if (plan && plan.maxDiffusions === null) {
+        return next(); // illimité
+      }
+
+      if (plan) {
+        maxDiffusions = plan.maxDiffusions;
+        planName = subscription.planName;
+      }
+    }
+
+    const currentCount = await prisma.propertyDiffusion.count({
+      where: {
+        ...(agencyId ? { agencyId } : { property: { agentId: userId } }),
+        status: 'PUBLISHED',
+      },
+    });
+
+    if (currentCount >= maxDiffusions) {
+      logger.warn('Diffusion limit reached', { userId, currentCount, limit: maxDiffusions, plan: planName });
+
+      return res.status(403).json({
+        error: 'Limite atteinte',
+        message: `Vous avez atteint la limite de ${maxDiffusions} diffusions actives pour votre plan ${planName}. Passez au plan supérieur pour en ajouter davantage.`,
+        currentCount,
+        limit: maxDiffusions,
+        planName,
+        upgradeRequired: true,
+      });
+    }
+
+    next();
+  } catch (error) {
+    logger.error('Error checking diffusion limit', { error: error.message, userId: req.user?.id });
+    next();
+  }
+}
+
+/**
+ * Vérifier la limite de signatures par mois
+ */
+async function checkSignatureLimit(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const agencyId = req.user.agencyId;
+
+    const subscription = agencyId
+      ? await prisma.subscription.findUnique({ where: { agencyId } })
+      : await prisma.subscription.findUnique({ where: { userId } });
+
+    let maxSignatures = FREE_PLAN_LIMITS.maxSignatures;
+    let planName = 'Gratuit';
+
+    if (subscription) {
+      const plan = await prisma.subscriptionPlan.findUnique({
+        where: { stripePriceId: subscription.stripePriceId },
+      });
+
+      if (plan && plan.maxSignatures === null) {
+        return next(); // illimité
+      }
+
+      if (plan) {
+        maxSignatures = plan.maxSignatures;
+        planName = subscription.planName;
+      }
+    }
+
+    // Compter les documents créés ce mois-ci
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const currentCount = await prisma.document.count({
+      where: {
+        ...(agencyId ? { agencyId } : { agentId: userId }),
+        createdAt: { gte: startOfMonth },
+      },
+    });
+
+    if (currentCount >= maxSignatures) {
+      logger.warn('Signature limit reached', { userId, currentCount, limit: maxSignatures, plan: planName });
+
+      return res.status(403).json({
+        error: 'Limite atteinte',
+        message: `Vous avez atteint la limite de ${maxSignatures} signatures ce mois-ci pour votre plan ${planName}. Passez au plan supérieur pour en créer davantage.`,
+        currentCount,
+        limit: maxSignatures,
+        planName,
+        upgradeRequired: true,
+      });
+    }
+
+    next();
+  } catch (error) {
+    logger.error('Error checking signature limit', { error: error.message, userId: req.user?.id });
+    next();
+  }
+}
+
 module.exports = {
   checkPropertyLimit,
   checkContactLimit,
   checkEmployeeLimit,
+  checkDiffusionLimit,
+  checkSignatureLimit,
   requireFeature,
   FREE_PLAN_LIMITS,
 };

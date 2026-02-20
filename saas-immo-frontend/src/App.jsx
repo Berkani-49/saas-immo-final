@@ -41,6 +41,9 @@ const AppointmentsPage = lazy(() => import('./pages/AppointmentsPage.jsx'));
 const RGPDPage = lazy(() => import('./pages/RGPDPage.jsx'));
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage.jsx'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage.jsx'));
+const DiffusionPage = lazy(() => import('./pages/DiffusionPage.jsx'));
+const SignaturesPage = lazy(() => import('./pages/SignaturesPage.jsx'));
+const PublicSignPage = lazy(() => import('./pages/PublicSignPage.jsx'));
 
 export default function App() {
   const [email, setEmail] = useState('');
@@ -148,6 +151,7 @@ export default function App() {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/share/:id" element={<PublicPropertyPage />} />
+          <Route path="/signer/:token" element={<PublicSignPage />} />
           <Route path="/nouveau-membre-agence" element={<SecretRegister token={token} />} />
 
           {token ? (
@@ -169,6 +173,8 @@ export default function App() {
               <Route path="equipe" element={<PlanGate requiredPlan="pro"><TeamPage token={token} /></PlanGate>} />
               <Route path="analytics" element={<PlanGate requiredPlan="pro"><AnalyticsPage token={token} /></PlanGate>} />
               <Route path="notifications" element={<PlanGate requiredPlan="pro"><NotificationsPage token={token} /></PlanGate>} />
+              <Route path="diffusion" element={<PlanGate requiredPlan="pro"><DiffusionPage token={token} /></PlanGate>} />
+              <Route path="signatures" element={<PlanGate requiredPlan="pro"><SignaturesPage token={token} /></PlanGate>} />
             </Route>
           ) : (
             // PAGE DE CONNEXION MODERNE

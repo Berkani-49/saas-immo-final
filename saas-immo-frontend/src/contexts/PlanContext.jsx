@@ -32,7 +32,8 @@ export function PlanProvider({ token, children }) {
         features: {
           invoices: false, analytics: false, team: false,
           notifications: false, documents: false,
-          ai_staging: false, ai_enhancement: false, matching: false
+          ai_staging: false, ai_enhancement: false, matching: false,
+          diffusion: false, signatures: false
         },
         subscription: null
       });

@@ -68,17 +68,20 @@ router.get('/my-plan', async (req, res) => {
     const FREE_FEATURES = {
       invoices: false, analytics: false, team: false,
       notifications: false, documents: false,
-      ai_staging: false, ai_enhancement: false, matching: false
+      ai_staging: false, ai_enhancement: false, matching: false,
+      diffusion: false, signatures: false
     };
     const PRO_FEATURES = {
       invoices: true, analytics: true, team: true,
       notifications: true, documents: true,
-      ai_staging: false, ai_enhancement: false, matching: false
+      ai_staging: false, ai_enhancement: false, matching: false,
+      diffusion: true, signatures: true
     };
     const PREMIUM_FEATURES = {
       invoices: true, analytics: true, team: true,
       notifications: true, documents: true,
-      ai_staging: true, ai_enhancement: true, matching: true
+      ai_staging: true, ai_enhancement: true, matching: true,
+      diffusion: true, signatures: true
     };
 
     // Récupérer l'abonnement (par agence si disponible, sinon par user)
@@ -105,6 +108,8 @@ router.get('/my-plan', async (req, res) => {
           maxProperties: planData.maxProperties,
           maxContacts: planData.maxContacts,
           maxEmployees: planData.maxEmployees,
+          maxDiffusions: planData.maxDiffusions,
+          maxSignatures: planData.maxSignatures,
         };
       }
 
@@ -123,10 +128,17 @@ router.get('/my-plan', async (req, res) => {
 
     // Compter l'utilisation actuelle (par agence si disponible)
     const countFilter = agencyId ? { agencyId } : { agentId: userId };
-    const [propertyCount, contactCount, employeeCount] = await Promise.all([
+    const diffusionFilter = agencyId ? { agencyId } : { property: { agentId: userId } };
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const [propertyCount, contactCount, employeeCount, diffusionCount, signatureCount] = await Promise.all([
       prisma.property.count({ where: countFilter }),
       prisma.contact.count({ where: countFilter }),
       agencyId ? prisma.user.count({ where: { agencyId, role: 'EMPLOYEE' } }) : Promise.resolve(0),
+      prisma.propertyDiffusion.count({ where: { ...diffusionFilter, status: 'PUBLISHED' } }),
+      prisma.document.count({ where: { ...countFilter, createdAt: { gte: startOfMonth } } }),
     ]);
 
     res.json({
@@ -136,6 +148,8 @@ router.get('/my-plan', async (req, res) => {
         properties: propertyCount,
         contacts: contactCount,
         employees: employeeCount,
+        diffusions: diffusionCount,
+        signatures: signatureCount,
       },
       features,
       subscription: subscriptionInfo,

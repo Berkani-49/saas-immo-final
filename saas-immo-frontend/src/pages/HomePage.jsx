@@ -7,6 +7,7 @@ import {
 } from '@chakra-ui/react';
 import { MdHomeWork, MdPerson, MdCheckCircle, MdTrendingUp } from 'react-icons/md';
 import StatCard from '../StatCard.jsx';
+import OnboardingChecklist from '../components/OnboardingChecklist.jsx';
 import { API_URL } from '../config';
 
 export default function HomePage({ token }) {
@@ -39,10 +40,19 @@ export default function HomePage({ token }) {
   return (
     <Container maxW="container.xl" p={0}> {/* Container pour centrer sur grand écran */}
       
-      <Heading mb={8} fontSize={{ base: "2xl", md: "3xl" }} color="white">
+      <Heading
+        mb={8}
+        fontSize={{ base: "2xl", md: "3xl" }}
+        bgGradient="linear(to-r, white, gray.400)"
+        bgClip="text"
+        letterSpacing="tight"
+      >
         Tableau de Bord
       </Heading>
-      
+
+      {/* Onboarding */}
+      <OnboardingChecklist stats={stats} />
+
       {/* GRILLE PRINCIPALE : Cartes KPI */}
       {/* spacing={6} ajoute de l'espace entre les cartes sur mobile */}
       <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} mb={10}>
@@ -70,17 +80,19 @@ export default function HomePage({ token }) {
       </SimpleGrid>
 
       {/* GRILLE SECONDAIRE : Détails */}
-      <Heading size="md" mb={5} color="gray.300">Détails de l'activité</Heading>
+      <Heading size="md" mb={5} color="gray.500" letterSpacing="tight" textTransform="uppercase" fontSize="xs" fontWeight="bold">
+        Détails de l'activité
+      </Heading>
 
       <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
 
          {/* Bloc Contacts */}
-         <Box p={6} shadow="lg" borderWidth="1px" borderColor="gray.700" borderRadius="2xl" bg="gray.800">
+         <Box p={6} shadow="xl" borderWidth="1px" borderColor="rgba(99,102,241,0.12)" borderRadius="2xl" bg="linear-gradient(135deg, #1a1f2e 0%, #141924 100%)" transition="all 0.3s" _hover={{ transform: 'translateY(-2px)', boxShadow: '0 8px 30px rgba(99,102,241,0.12)' }}>
             <Flex align="center" mb={4}>
                 <Icon as={MdPerson} color="green.400" mr={2} w={6} h={6} />
                 <Heading size="md" color="white">Répartition Contacts</Heading>
             </Flex>
-            <Flex justify="space-between" align="center" borderBottomWidth={1} borderColor="gray.700" py={2}>
+            <Flex justify="space-between" align="center" borderBottom="1px solid rgba(99,102,241,0.1)" py={2}>
                 <Text color="gray.400">Acheteurs</Text>
                 <Text fontWeight="bold" fontSize="lg" color="white">{stats.contacts.buyers}</Text>
             </Flex>
@@ -91,12 +103,12 @@ export default function HomePage({ token }) {
          </Box>
 
          {/* Bloc Tâches */}
-         <Box p={6} shadow="lg" borderWidth="1px" borderColor="gray.700" borderRadius="2xl" bg="gray.800">
+         <Box p={6} shadow="xl" borderWidth="1px" borderColor="rgba(99,102,241,0.12)" borderRadius="2xl" bg="linear-gradient(135deg, #1a1f2e 0%, #141924 100%)" transition="all 0.3s" _hover={{ transform: 'translateY(-2px)', boxShadow: '0 8px 30px rgba(99,102,241,0.12)' }}>
             <Flex align="center" mb={4}>
                 <Icon as={MdCheckCircle} color="purple.400" mr={2} w={6} h={6} />
                 <Heading size="md" color="white">Suivi des Tâches</Heading>
             </Flex>
-            <Flex justify="space-between" align="center" borderBottomWidth={1} borderColor="gray.700" py={2}>
+            <Flex justify="space-between" align="center" borderBottom="1px solid rgba(99,102,241,0.1)" py={2}>
                 <Text color="gray.400">En attente</Text>
                 <Text fontWeight="bold" fontSize="lg" color="red.400">{stats.tasks.pending}</Text>
             </Flex>
