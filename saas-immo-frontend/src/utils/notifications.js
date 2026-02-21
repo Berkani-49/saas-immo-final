@@ -174,8 +174,8 @@ export async function showLocalNotification(title, options = {}) {
 
   const notificationOptions = {
     body: options.body || '',
-    icon: options.icon || '/logo.png',
-    badge: '/logo.png',
+    icon: options.icon || '/logo.svg',
+    badge: '/logo.svg',
     tag: options.tag || 'local-notification',
     data: options.data || {},
     vibrate: options.vibrate || [200, 100, 200],
