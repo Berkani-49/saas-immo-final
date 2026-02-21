@@ -1,7 +1,7 @@
 // Fichier : src/Layout.jsx (Version avec Drawer mobile + SearchBar)
 
-import React from 'react';
-import { Box, Flex, Text, Icon, SimpleGrid, IconButton, useDisclosure, Drawer, DrawerOverlay, DrawerContent, DrawerCloseButton } from '@chakra-ui/react';
+import React, { useEffect } from 'react';
+import { Box, Flex, Text, Icon, SimpleGrid, IconButton, useDisclosure, Drawer, DrawerOverlay, DrawerContent } from '@chakra-ui/react';
 import { Outlet, NavLink as RouterNavLink, useLocation } from 'react-router-dom';
 import { FiHome, FiList, FiUsers, FiCheckSquare, FiCalendar, FiMenu, FiLogOut } from 'react-icons/fi';
 import Sidebar from './Sidebar.jsx';
@@ -19,6 +19,11 @@ export default function Layout({ onLogout }) {
   const location = useLocation();
   const { isOpen: isDrawerOpen, onOpen: onDrawerOpen, onClose: onDrawerClose } = useDisclosure();
   const token = localStorage.getItem('token');
+
+  // Ferme le drawer à chaque changement de route (évite l'overlay Chakra coincé sur mobile)
+  useEffect(() => {
+    onDrawerClose();
+  }, [location.pathname]);
 
   return (
     <Flex minH="100vh" w="100vw" bg="gray.900" overflowX="hidden" direction="column">
@@ -62,7 +67,7 @@ export default function Layout({ onLogout }) {
       </Flex>
 
       {/* --- DRAWER MOBILE (menu complet) --- */}
-      <Drawer isOpen={isDrawerOpen} placement="left" onClose={onDrawerClose} size="xs">
+      <Drawer isOpen={isDrawerOpen} placement="left" onClose={onDrawerClose} size="xs" motionPreset="none">
         <DrawerOverlay />
         <DrawerContent bg="linear-gradient(180deg, #1a1f2e 0%, #141924 100%)" maxW="280px">
           <Sidebar onLogout={onLogout} onClose={onDrawerClose} token={token} />
