@@ -23,10 +23,13 @@ async function checkPropertyLimit(req, res, next) {
     const userId = req.user.id;
     const agencyId = req.user.agencyId;
 
-    // Récupérer l'abonnement (par agence si disponible, sinon par user)
-    const subscription = agencyId
+    // Récupérer l'abonnement (par agence si disponible, fallback par user)
+    let subscription = agencyId
       ? await prisma.subscription.findUnique({ where: { agencyId } })
-      : await prisma.subscription.findUnique({ where: { userId } });
+      : null;
+    if (!subscription) {
+      subscription = await prisma.subscription.findUnique({ where: { userId } });
+    }
 
     let maxProperties = FREE_PLAN_LIMITS.maxProperties;
     let planName = 'Gratuit';
@@ -80,10 +83,13 @@ async function checkContactLimit(req, res, next) {
     const userId = req.user.id;
     const agencyId = req.user.agencyId;
 
-    // Récupérer l'abonnement (par agence si disponible, sinon par user)
-    const subscription = agencyId
+    // Récupérer l'abonnement (par agence si disponible, fallback par user)
+    let subscription = agencyId
       ? await prisma.subscription.findUnique({ where: { agencyId } })
-      : await prisma.subscription.findUnique({ where: { userId } });
+      : null;
+    if (!subscription) {
+      subscription = await prisma.subscription.findUnique({ where: { userId } });
+    }
 
     let maxContacts = FREE_PLAN_LIMITS.maxContacts;
     let planName = 'Gratuit';
@@ -137,10 +143,13 @@ async function checkEmployeeLimit(req, res, next) {
     const userId = req.user.id;
     const agencyId = req.user.agencyId;
 
-    // Récupérer l'abonnement (par agence si disponible, sinon par user)
-    const subscription = agencyId
+    // Récupérer l'abonnement (par agence si disponible, fallback par user)
+    let subscription = agencyId
       ? await prisma.subscription.findUnique({ where: { agencyId } })
-      : await prisma.subscription.findUnique({ where: { userId } });
+      : null;
+    if (!subscription) {
+      subscription = await prisma.subscription.findUnique({ where: { userId } });
+    }
 
     let maxEmployees = FREE_PLAN_LIMITS.maxEmployees;
     let planName = 'Gratuit';
@@ -251,9 +260,12 @@ async function checkDiffusionLimit(req, res, next) {
     const userId = req.user.id;
     const agencyId = req.user.agencyId;
 
-    const subscription = agencyId
+    let subscription = agencyId
       ? await prisma.subscription.findUnique({ where: { agencyId } })
-      : await prisma.subscription.findUnique({ where: { userId } });
+      : null;
+    if (!subscription) {
+      subscription = await prisma.subscription.findUnique({ where: { userId } });
+    }
 
     let maxDiffusions = FREE_PLAN_LIMITS.maxDiffusions;
     let planName = 'Gratuit';
@@ -308,9 +320,12 @@ async function checkSignatureLimit(req, res, next) {
     const userId = req.user.id;
     const agencyId = req.user.agencyId;
 
-    const subscription = agencyId
+    let subscription = agencyId
       ? await prisma.subscription.findUnique({ where: { agencyId } })
-      : await prisma.subscription.findUnique({ where: { userId } });
+      : null;
+    if (!subscription) {
+      subscription = await prisma.subscription.findUnique({ where: { userId } });
+    }
 
     let maxSignatures = FREE_PLAN_LIMITS.maxSignatures;
     let planName = 'Gratuit';
