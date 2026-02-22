@@ -11,6 +11,13 @@ const FREE_PLAN_LIMITS = {
   maxSignatures: 0, // Pas de signatures sur le plan gratuit
 };
 
+// Limites de fallback par planName (quand SubscriptionPlan n'est pas en DB)
+const PLAN_NAME_LIMITS = {
+  pro: { maxProperties: 50, maxContacts: 200, maxEmployees: 3, maxDiffusions: null, maxSignatures: null },
+  premium: { maxProperties: null, maxContacts: null, maxEmployees: null, maxDiffusions: null, maxSignatures: null },
+  starter: FREE_PLAN_LIMITS,
+};
+
 /**
  * Middleware pour vérifier les limites du plan avant création de ressources
  */
@@ -39,12 +46,14 @@ async function checkPropertyLimit(req, res, next) {
         where: { stripePriceId: subscription.stripePriceId },
       });
 
-      if (plan && plan.maxProperties === null) {
+      const limits = plan || PLAN_NAME_LIMITS[subscription.planName];
+
+      if (limits && limits.maxProperties === null) {
         return next();
       }
 
-      if (plan) {
-        maxProperties = plan.maxProperties;
+      if (limits) {
+        maxProperties = limits.maxProperties;
         planName = subscription.planName;
       }
     }
@@ -99,12 +108,14 @@ async function checkContactLimit(req, res, next) {
         where: { stripePriceId: subscription.stripePriceId },
       });
 
-      if (plan && plan.maxContacts === null) {
+      const limits = plan || PLAN_NAME_LIMITS[subscription.planName];
+
+      if (limits && limits.maxContacts === null) {
         return next();
       }
 
-      if (plan) {
-        maxContacts = plan.maxContacts;
+      if (limits) {
+        maxContacts = limits.maxContacts;
         planName = subscription.planName;
       }
     }
@@ -159,12 +170,14 @@ async function checkEmployeeLimit(req, res, next) {
         where: { stripePriceId: subscription.stripePriceId },
       });
 
-      if (plan && plan.maxEmployees === null) {
+      const limits = plan || PLAN_NAME_LIMITS[subscription.planName];
+
+      if (limits && limits.maxEmployees === null) {
         return next();
       }
 
-      if (plan) {
-        maxEmployees = plan.maxEmployees;
+      if (limits) {
+        maxEmployees = limits.maxEmployees;
         planName = subscription.planName;
       }
     }
@@ -275,12 +288,14 @@ async function checkDiffusionLimit(req, res, next) {
         where: { stripePriceId: subscription.stripePriceId },
       });
 
-      if (plan && plan.maxDiffusions === null) {
+      const limits = plan || PLAN_NAME_LIMITS[subscription.planName];
+
+      if (limits && limits.maxDiffusions === null) {
         return next(); // illimité
       }
 
-      if (plan) {
-        maxDiffusions = plan.maxDiffusions;
+      if (limits) {
+        maxDiffusions = limits.maxDiffusions;
         planName = subscription.planName;
       }
     }
@@ -335,12 +350,14 @@ async function checkSignatureLimit(req, res, next) {
         where: { stripePriceId: subscription.stripePriceId },
       });
 
-      if (plan && plan.maxSignatures === null) {
+      const limits = plan || PLAN_NAME_LIMITS[subscription.planName];
+
+      if (limits && limits.maxSignatures === null) {
         return next(); // illimité
       }
 
-      if (plan) {
-        maxSignatures = plan.maxSignatures;
+      if (limits) {
+        maxSignatures = limits.maxSignatures;
         planName = subscription.planName;
       }
     }
