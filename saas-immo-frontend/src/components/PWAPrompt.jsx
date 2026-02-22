@@ -75,7 +75,7 @@ export default function PWAPrompt({ token }) {
       const granted = await requestNotificationPermission();
 
       if (!granted) {
-        throw new Error('Permission refusée');
+        throw new Error('Notifications désactivées. Veuillez les autoriser dans les paramètres de votre navigateur.');
       }
 
       // Fermer le prompt dès que la permission est accordée
