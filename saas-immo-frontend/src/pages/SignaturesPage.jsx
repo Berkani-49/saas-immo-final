@@ -181,7 +181,7 @@ export default function SignaturesPage({ token }) {
                   const statusCfg = STATUS_CONFIG[doc.status];
                   const typeName = DOCUMENT_TYPES.find((t) => t.id === doc.type)?.name || doc.type;
                   return (
-                    <Tr key={doc.id} _hover={{ bg: 'gray.750' }}>
+                    <Tr key={doc.id} _hover={{ bg: 'gray.100' }}>
                       <Td borderColor="gray.300">
                         <Text color="gray.800" fontSize="sm" fontWeight="medium" noOfLines={1}>{doc.title}</Text>
                       </Td>

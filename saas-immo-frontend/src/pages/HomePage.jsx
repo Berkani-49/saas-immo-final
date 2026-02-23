@@ -43,8 +43,7 @@ export default function HomePage({ token }) {
       <Heading
         mb={8}
         fontSize={{ base: "2xl", md: "3xl" }}
-        bgGradient="linear(to-r, white, gray.400)"
-        bgClip="text"
+        color="gray.800"
         letterSpacing="tight"
       >
         Tableau de Bord
@@ -92,12 +91,12 @@ export default function HomePage({ token }) {
                 <Icon as={MdPerson} color="green.400" mr={2} w={6} h={6} />
                 <Heading size="md" color="gray.800">Répartition Contacts</Heading>
             </Flex>
-            <Flex justify="space-between" align="center" borderBottom="1px solid rgba(99,102,241,0.1)" py={2}>
-                <Text color="gray.400">Acheteurs</Text>
+            <Flex justify="space-between" align="center" borderBottom="1px solid" borderBottomColor="gray.200" py={2}>
+                <Text color="gray.600">Acheteurs</Text>
                 <Text fontWeight="bold" fontSize="lg" color="gray.800">{stats.contacts.buyers}</Text>
             </Flex>
             <Flex justify="space-between" align="center" py={2}>
-                <Text color="gray.400">Vendeurs</Text>
+                <Text color="gray.600">Vendeurs</Text>
                 <Text fontWeight="bold" fontSize="lg" color="gray.800">{stats.contacts.sellers}</Text>
             </Flex>
          </Box>
@@ -108,12 +107,12 @@ export default function HomePage({ token }) {
                 <Icon as={MdCheckCircle} color="purple.400" mr={2} w={6} h={6} />
                 <Heading size="md" color="gray.800">Suivi des Tâches</Heading>
             </Flex>
-            <Flex justify="space-between" align="center" borderBottom="1px solid rgba(99,102,241,0.1)" py={2}>
-                <Text color="gray.400">En attente</Text>
+            <Flex justify="space-between" align="center" borderBottom="1px solid" borderBottomColor="gray.200" py={2}>
+                <Text color="gray.600">En attente</Text>
                 <Text fontWeight="bold" fontSize="lg" color="red.400">{stats.tasks.pending}</Text>
             </Flex>
             <Flex justify="space-between" align="center" py={2}>
-                <Text color="gray.400">Terminées</Text>
+                <Text color="gray.600">Terminées</Text>
                 <Text fontWeight="bold" fontSize="lg" color="green.400">{stats.tasks.done}</Text>
             </Flex>
          </Box>

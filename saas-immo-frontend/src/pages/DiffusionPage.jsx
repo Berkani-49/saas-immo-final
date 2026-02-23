@@ -184,7 +184,7 @@ export default function DiffusionPage({ token }) {
               </Thead>
               <Tbody>
                 {properties.map((property) => (
-                  <Tr key={property.id} _hover={{ bg: 'gray.750' }}>
+                  <Tr key={property.id} _hover={{ bg: 'gray.100' }}>
                     <Td borderColor="gray.300" maxW="250px">
                       <HStack spacing={3}>
                         {property.imageUrl && (

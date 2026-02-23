@@ -99,7 +99,7 @@ export default function HelpPage() {
                   <AccordionButton
                     bg="gray.50"
                     borderRadius="lg"
-                    _hover={{ bg: 'gray.600' }}
+                    _hover={{ bg: 'gray.100' }}
                     _expanded={{ bg: 'gray.600', borderBottomRadius: 0 }}
                   >
                     <Box flex="1" textAlign="left" color="gray.800" fontWeight="medium" fontSize="sm">

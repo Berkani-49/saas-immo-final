@@ -57,7 +57,7 @@ export default function ActivitiesPage({ token }) {
                   <Box flex="1">
                     <Flex justify="space-between" align="center" mb={1}>
                         <Text fontWeight="bold" fontSize="md" color="gray.800">{log.description}</Text>
-                        <Text fontSize="xs" color="gray.400">{date}</Text>
+                        <Text fontSize="xs" color="gray.600">{date}</Text>
                     </Flex>
                     
                     <Flex align="center" gap={3}>

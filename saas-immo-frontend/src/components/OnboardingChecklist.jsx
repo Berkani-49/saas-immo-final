@@ -75,20 +75,20 @@ export default function OnboardingChecklist({ stats }) {
                 key={step.key}
                 px={3} py={2}
                 borderRadius="md"
-                bg={isDone ? 'whiteAlpha.50' : 'transparent'}
+                bg={isDone ? 'green.50' : 'transparent'}
                 cursor={isDone ? 'default' : 'pointer'}
                 onClick={() => !isDone && navigate(step.path)}
-                _hover={!isDone ? { bg: 'whiteAlpha.100' } : {}}
+                _hover={!isDone ? { bg: 'gray.100' } : {}}
                 transition="all 0.2s"
               >
                 <Icon
                   as={FiCheck}
-                  color={isDone ? 'green.400' : 'gray.600'}
+                  color={isDone ? 'green.500' : 'gray.400'}
                   boxSize={4}
                 />
                 <Text
                   fontSize="sm"
-                  color={isDone ? 'gray.500' : 'gray.300'}
+                  color={isDone ? 'gray.400' : 'gray.700'}
                   textDecoration={isDone ? 'line-through' : 'none'}
                 >
                   {step.label}

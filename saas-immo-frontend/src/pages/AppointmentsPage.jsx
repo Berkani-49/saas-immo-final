@@ -130,25 +130,25 @@ export default function AppointmentsPage({ token }) {
           <Card bg="white" borderWidth="1px" borderColor="gray.200">
             <CardBody textAlign="center">
               <Text fontSize="3xl" fontWeight="bold" color="blue.400">{stats.total}</Text>
-              <Text fontSize="sm" color="gray.400">Total</Text>
+              <Text fontSize="sm" color="gray.600">Total</Text>
             </CardBody>
           </Card>
           <Card bg="white" borderWidth="1px" borderColor="gray.200">
             <CardBody textAlign="center">
               <Text fontSize="3xl" fontWeight="bold" color="orange.400">{stats.pending}</Text>
-              <Text fontSize="sm" color="gray.400">En attente</Text>
+              <Text fontSize="sm" color="gray.600">En attente</Text>
             </CardBody>
           </Card>
           <Card bg="white" borderWidth="1px" borderColor="gray.200">
             <CardBody textAlign="center">
               <Text fontSize="3xl" fontWeight="bold" color="green.400">{stats.confirmed}</Text>
-              <Text fontSize="sm" color="gray.400">Confirmés</Text>
+              <Text fontSize="sm" color="gray.600">Confirmés</Text>
             </CardBody>
           </Card>
           <Card bg="white" borderWidth="1px" borderColor="gray.200">
             <CardBody textAlign="center">
               <Text fontSize="3xl" fontWeight="bold" color="red.400">{stats.cancelled}</Text>
-              <Text fontSize="sm" color="gray.400">Annulés</Text>
+              <Text fontSize="sm" color="gray.600">Annulés</Text>
             </CardBody>
           </Card>
         </Grid>
@@ -189,7 +189,7 @@ export default function AppointmentsPage({ token }) {
         {pastAppointments.length > 0 && (
           <Box>
             <Divider my={6} />
-            <Heading size="md" mb={4} color="gray.400">
+            <Heading size="md" mb={4} color="gray.600">
               📋 Passés ({pastAppointments.length})
             </Heading>
             <VStack spacing={4} align="stretch">
@@ -257,8 +257,8 @@ function AppointmentCard({ appointment, onUpdateStatus, getStatusColor, getStatu
                   {date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                 </Text>
                 <HStack>
-                  <Icon as={FiClock} color="gray.400" w={4} h={4} />
-                  <Text color="gray.400" fontSize="md">
+                  <Icon as={FiClock} color="gray.600" w={4} h={4} />
+                  <Text color="gray.600" fontSize="md">
                     {date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                   </Text>
                 </HStack>
@@ -274,13 +274,13 @@ function AppointmentCard({ appointment, onUpdateStatus, getStatusColor, getStatu
                 <Text fontWeight="semibold" color="gray.800">{appointment.clientName}</Text>
               </HStack>
               <HStack>
-                <Icon as={FiMail} color="gray.400" w={4} h={4} />
-                <Text fontSize="sm" color="gray.400">{appointment.clientEmail}</Text>
+                <Icon as={FiMail} color="gray.600" w={4} h={4} />
+                <Text fontSize="sm" color="gray.600">{appointment.clientEmail}</Text>
               </HStack>
               {appointment.clientPhone && (
                 <HStack>
-                  <Icon as={FiPhone} color="gray.400" w={4} h={4} />
-                  <Text fontSize="sm" color="gray.400">{appointment.clientPhone}</Text>
+                  <Icon as={FiPhone} color="gray.600" w={4} h={4} />
+                  <Text fontSize="sm" color="gray.600">{appointment.clientPhone}</Text>
                 </HStack>
               )}
             </VStack>

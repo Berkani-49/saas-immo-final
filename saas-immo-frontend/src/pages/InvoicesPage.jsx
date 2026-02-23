@@ -167,7 +167,7 @@ export default function InvoicesPage({ token }) {
                             <Td isNumeric fontWeight="bold" color="gray.800" borderColor="gray.200">{inv.amount.toLocaleString()} €</Td>
                             <Td borderColor="gray.200"><Badge colorScheme={inv.status === 'PAID' ? 'green' : 'orange'}>{inv.status === 'PAID' ? 'Payée' : 'En attente'}</Badge></Td>
                             <Td borderColor="gray.200">
-                                <Button size="xs" leftIcon={<DownloadIcon />} onClick={() => generatePDF(inv)} bg="gray.50" color="gray.800" _hover={{ bg: 'gray.600' }}>
+                                <Button size="xs" leftIcon={<DownloadIcon />} onClick={() => generatePDF(inv)} bg="gray.50" color="gray.800" _hover={{ bg: 'gray.100' }}>
                                     PDF
                                 </Button>
                             </Td>

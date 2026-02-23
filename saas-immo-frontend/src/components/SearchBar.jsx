@@ -86,14 +86,14 @@ export default function SearchBar({ token }) {
         mx={4}
         mb={4}
         align="center"
-        _hover={{ bg: 'gray.600' }}
+        _hover={{ bg: 'gray.100' }}
         transition="all 0.2s"
       >
         <Icon as={FiSearch} color="gray.400" mr={2} />
         <Text color="gray.400" fontSize="sm" flex="1">Rechercher...</Text>
         <HStack spacing={1}>
-          <Kbd fontSize="xs" bg="gray.600" color="gray.600">Ctrl</Kbd>
-          <Kbd fontSize="xs" bg="gray.600" color="gray.600">K</Kbd>
+          <Kbd fontSize="xs" bg="gray.100" color="gray.500">Ctrl</Kbd>
+          <Kbd fontSize="xs" bg="gray.100" color="gray.500">K</Kbd>
         </HStack>
       </Flex>
 
@@ -132,7 +132,7 @@ export default function SearchBar({ token }) {
                         px={3} py={2}
                         borderRadius="md"
                         cursor="pointer"
-                        _hover={{ bg: 'gray.700' }}
+                        _hover={{ bg: 'gray.100' }}
                         onClick={() => handleSelect('property', p.id)}
                       >
                         <Icon as={FiHome} color="blue.400" />
@@ -152,7 +152,7 @@ export default function SearchBar({ token }) {
                         px={3} py={2}
                         borderRadius="md"
                         cursor="pointer"
-                        _hover={{ bg: 'gray.700' }}
+                        _hover={{ bg: 'gray.100' }}
                         onClick={() => handleSelect('contact', c.id)}
                       >
                         <Icon as={FiUser} color="purple.400" />
@@ -172,7 +172,7 @@ export default function SearchBar({ token }) {
                         px={3} py={2}
                         borderRadius="md"
                         cursor="pointer"
-                        _hover={{ bg: 'gray.700' }}
+                        _hover={{ bg: 'gray.100' }}
                         onClick={() => handleSelect('task', t.id)}
                       >
                         <Icon as={FiCheckSquare} color="green.400" />
