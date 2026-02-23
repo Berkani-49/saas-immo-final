@@ -240,7 +240,7 @@ function AppointmentCard({ appointment, onUpdateStatus, getStatusColor, getStatu
       shadow="md"
       borderWidth="1px"
       borderColor="gray.200"
-      bg={isPast ? "gray.900" : "gray.800"}
+      bg={isPast ? "gray.100" : "white"}
       opacity={isPast ? 0.8 : 1}
     >
       <CardBody>
@@ -288,7 +288,7 @@ function AppointmentCard({ appointment, onUpdateStatus, getStatusColor, getStatu
             {/* Notes */}
             {appointment.notes && (
               <Box bg="gray.50" p={3} borderRadius="md" borderWidth="1px" borderColor="gray.300">
-                <Text fontSize="sm" fontWeight="semibold" color="blue.300" mb={1}>Message :</Text>
+                <Text fontSize="sm" fontWeight="semibold" color="blue.600" mb={1}>Message :</Text>
                 <Text fontSize="sm" color="gray.600">{appointment.notes}</Text>
               </Box>
             )}

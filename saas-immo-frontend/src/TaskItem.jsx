@@ -52,7 +52,7 @@ export default function TaskItem({ task, token, onTaskUpdated, onTaskDeleted }) 
     <Box
       p={4} mb={3}
       borderWidth="1px" borderRadius="lg"
-      bg={isDone ? "gray.900" : "gray.800"}
+      bg={isDone ? "gray.100" : "white"}
       borderColor="gray.200"
       opacity={isDone ? 0.7 : 1}
       shadow="sm"
@@ -78,7 +78,7 @@ export default function TaskItem({ task, token, onTaskUpdated, onTaskDeleted }) 
           <Text
             as={isDone ? "s" : "b"}
             fontSize="md"
-            color={isDone ? "gray.500" : "white"}
+            color={isDone ? "gray.500" : "gray.800"}
             lineHeight="short"
           >
             {task.title}
@@ -98,8 +98,8 @@ export default function TaskItem({ task, token, onTaskUpdated, onTaskDeleted }) 
             {task.contact && (
               <HStack spacing={0} borderWidth="1px" borderColor="gray.300" borderRadius="full" overflow="hidden">
                 <Link to={`/contact/${task.contact.id}`}>
-                  <Box px={3} py={1} bg="blue.900" _hover={{ bg: "blue.800" }} cursor="pointer">
-                    <Text fontSize="xs" fontWeight="bold" color="blue.200">
+                  <Box px={3} py={1} bg="blue.50" _hover={{ bg: "blue.100" }} cursor="pointer">
+                    <Text fontSize="xs" fontWeight="bold" color="blue.700">
                       👤 {task.contact.firstName} {task.contact.lastName}
                     </Text>
                   </Box>
@@ -110,8 +110,8 @@ export default function TaskItem({ task, token, onTaskUpdated, onTaskDeleted }) 
                   <Tooltip label={task.contact.phoneNumber}>
                     <Box
                       as="a" href={`tel:${task.contact.phoneNumber}`}
-                      px={2} py={1} bg="green.900" color="green.300"
-                      _hover={{ bg: "green.800" }} display="flex" alignItems="center"
+                      px={2} py={1} bg="green.50" color="green.700"
+                      _hover={{ bg: "green.100" }} display="flex" alignItems="center"
                       borderLeftWidth="1px" borderColor="gray.200"
                     >
                       <PhoneIcon w={3} h={3} />
@@ -124,7 +124,7 @@ export default function TaskItem({ task, token, onTaskUpdated, onTaskDeleted }) 
             {/* Bien Immobilier */}
             {task.property && (
                <Link to={`/property/${task.property.id}`}>
-                <Badge colorScheme="orange" variant="outline" px={2} py={1} borderRadius="full" cursor="pointer" _hover={{ bg: "orange.900" }}>
+                <Badge colorScheme="orange" variant="outline" px={2} py={1} borderRadius="full" cursor="pointer" _hover={{ bg: "orange.50" }}>
                   🏠 {task.property.address}
                 </Badge>
                </Link>
@@ -138,7 +138,7 @@ export default function TaskItem({ task, token, onTaskUpdated, onTaskDeleted }) 
           size="sm" 
           variant="ghost" 
           colorScheme="red" 
-          _hover={{ color: "red.400", bg: "red.900" }}
+          _hover={{ color: "red.500", bg: "red.50" }}
           onClick={handleDelete}
           isLoading={isLoading}
           aria-label="Supprimer"
