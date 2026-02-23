@@ -1,6 +1,6 @@
-/* Fichier : src/index.css - Dark Mode */
+/* Fichier : src/index.css - Light Mode */
 :root {
-  background-color: #171923; /* gray.900 */
+  background-color: #F8FAFC; /* gray.50 */
 }
 
 html, body {
@@ -8,8 +8,8 @@ html, body {
   padding: 0;
   width: 100%;
   min-height: 100vh;
-  background-color: #171923; /* gray.900 */
-  color: #E2E8F0; /* gray.200 */
+  background-color: #F8FAFC; /* gray.50 */
+  color: #1A202C; /* gray.800 */
   overflow-x: hidden;
 }
 

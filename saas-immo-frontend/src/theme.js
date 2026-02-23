@@ -1,45 +1,45 @@
-// Fichier : src/theme.js (Version Dark Mode Moderne)
+// Fichier : src/theme.js (Version Light Mode - Style Agence Immobilière)
 
 import { extendTheme } from '@chakra-ui/react';
 
 const theme = extendTheme({
   config: {
-    initialColorMode: 'dark',
+    initialColorMode: 'light',
     useSystemColorMode: false,
   },
   styles: {
     global: {
       body: {
-        bg: 'gray.900',
-        color: 'gray.100',
+        bg: 'gray.50',
+        color: 'gray.800',
       },
     },
   },
   colors: {
-    // Palette moderne bleu/indigo
+    // Bleu navy professionnel - style agence immobilière
     brand: {
-      50: '#EEF2FF',
-      100: '#E0E7FF',
-      200: '#C7D2FE',
-      300: '#A5B4FC',
-      400: '#818CF8',  // Accent principal pour dark mode
-      500: '#6366F1',  // COULEUR PRINCIPALE
-      600: '#4F46E5',  // Hover
-      700: '#4338CA',
-      800: '#3730A3',
-      900: '#1E1B4B',
+      50: '#EFF6FF',
+      100: '#DBEAFE',
+      200: '#BFDBFE',
+      300: '#93C5FD',
+      400: '#60A5FA',
+      500: '#1D4ED8',  // COULEUR PRINCIPALE - bleu navy
+      600: '#1E40AF',  // Hover
+      700: '#1E3A8A',
+      800: '#1E3060',
+      900: '#172554',
     },
     blue: {
-      50: '#EEF2FF',
-      100: '#E0E7FF',
-      500: '#6366F1',
-      600: '#4F46E5',
+      50: '#EFF6FF',
+      100: '#DBEAFE',
+      500: '#1D4ED8',
+      600: '#1E40AF',
     }
   },
   components: {
     Button: {
       baseStyle: {
-        fontWeight: 'bold',
+        fontWeight: 'semibold',
         borderRadius: 'lg',
       },
     },
@@ -50,19 +50,20 @@ const theme = extendTheme({
     },
     Heading: {
       baseStyle: {
-        color: 'white',
+        color: 'gray.800',
       }
     },
     Text: {
       baseStyle: {
-        color: 'gray.300',
+        color: 'gray.700',
       }
     },
     Card: {
       baseStyle: {
         container: {
-          bg: 'gray.800',
-          borderColor: 'gray.700',
+          bg: 'white',
+          borderColor: 'gray.200',
+          boxShadow: 'sm',
         }
       }
     },
@@ -73,12 +74,12 @@ const theme = extendTheme({
       variants: {
         outline: {
           field: {
-            bg: 'gray.800',
-            borderColor: 'gray.600',
-            color: 'white',
+            bg: 'white',
+            borderColor: 'gray.300',
+            color: 'gray.800',
             _placeholder: { color: 'gray.400' },
-            _hover: { borderColor: 'gray.500' },
-            _focus: { borderColor: 'brand.500', bg: 'gray.800' },
+            _hover: { borderColor: 'gray.400' },
+            _focus: { borderColor: 'brand.500', bg: 'white' },
           }
         }
       }
@@ -87,10 +88,10 @@ const theme = extendTheme({
       variants: {
         outline: {
           field: {
-            bg: 'gray.800',
-            borderColor: 'gray.600',
-            color: 'white',
-            _hover: { borderColor: 'gray.500' },
+            bg: 'white',
+            borderColor: 'gray.300',
+            color: 'gray.800',
+            _hover: { borderColor: 'gray.400' },
           }
         }
       }
@@ -98,11 +99,11 @@ const theme = extendTheme({
     Textarea: {
       variants: {
         outline: {
-          bg: 'gray.800',
-          borderColor: 'gray.600',
-          color: 'white',
+          bg: 'white',
+          borderColor: 'gray.300',
+          color: 'gray.800',
           _placeholder: { color: 'gray.400' },
-          _hover: { borderColor: 'gray.500' },
+          _hover: { borderColor: 'gray.400' },
           _focus: { borderColor: 'brand.500' },
         }
       }
@@ -110,13 +111,13 @@ const theme = extendTheme({
     Modal: {
       baseStyle: {
         dialog: {
-          bg: 'gray.800',
+          bg: 'white',
         },
         header: {
-          color: 'white',
+          color: 'gray.800',
         },
         body: {
-          color: 'gray.300',
+          color: 'gray.700',
         }
       }
     },
@@ -124,12 +125,16 @@ const theme = extendTheme({
       variants: {
         simple: {
           th: {
-            color: 'gray.400',
-            borderColor: 'gray.700',
+            color: 'gray.600',
+            borderColor: 'gray.200',
+            bg: 'gray.50',
+            fontSize: 'xs',
+            textTransform: 'uppercase',
+            letterSpacing: 'wider',
           },
           td: {
-            borderColor: 'gray.700',
-            color: 'gray.200',
+            borderColor: 'gray.100',
+            color: 'gray.700',
           }
         }
       }
@@ -138,17 +143,22 @@ const theme = extendTheme({
       variants: {
         enclosed: {
           tab: {
-            color: 'gray.400',
+            color: 'gray.500',
             _selected: {
-              color: 'white',
-              bg: 'gray.800',
-              borderColor: 'gray.700',
+              color: 'brand.500',
+              bg: 'white',
+              borderColor: 'gray.200',
             }
           },
           tabpanel: {
-            bg: 'gray.800',
+            bg: 'white',
           }
         }
+      }
+    },
+    Divider: {
+      baseStyle: {
+        borderColor: 'gray.200',
       }
     },
   },

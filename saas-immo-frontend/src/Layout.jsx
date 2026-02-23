@@ -26,7 +26,7 @@ export default function Layout({ onLogout }) {
   }, [location.pathname]);
 
   return (
-    <Flex minH="100vh" w="100vw" bg="gray.900" overflowX="hidden" direction="column">
+    <Flex minH="100vh" w="100vw" bg="gray.50" overflowX="hidden" direction="column">
 
       {/* --- SIDEBAR ORDI --- */}
       <Box
@@ -43,19 +43,21 @@ export default function Layout({ onLogout }) {
       <Flex
         display={{ base: 'flex', md: 'none' }}
         h="60px" alignItems="center" justifyContent="space-between"
-        bg="linear-gradient(135deg, #1a1f2e 0%, #141924 100%)"
-        borderBottom="1px solid rgba(99,102,241,0.15)"
+        bg="white"
+        borderBottom="1px solid"
+        borderBottomColor="gray.200"
         px={4} position="sticky" top="0" zIndex="90"
+        boxShadow="sm"
       >
         <IconButton
           icon={<Icon as={FiMenu} />}
           size="sm"
           variant="ghost"
-          color="gray.300"
+          color="gray.600"
           onClick={onDrawerOpen}
           aria-label="Menu"
         />
-        <Text fontSize="lg" fontWeight="bold" color="white">IMMO<Text as="span" color="brand.400">FLOW</Text></Text>
+        <Text fontSize="lg" fontWeight="bold" color="gray.800">IMMO<Text as="span" color="brand.500">FLOW</Text></Text>
         <IconButton
           icon={<Icon as={FiLogOut} />}
           size="sm"
@@ -69,7 +71,7 @@ export default function Layout({ onLogout }) {
       {/* --- DRAWER MOBILE (menu complet) --- */}
       <Drawer isOpen={isDrawerOpen} placement="left" onClose={onDrawerClose} size="xs" motionPreset="none">
         <DrawerOverlay />
-        <DrawerContent bg="linear-gradient(180deg, #1a1f2e 0%, #141924 100%)" maxW="280px">
+        <DrawerContent bg="white" maxW="280px">
           <Sidebar onLogout={onLogout} onClose={onDrawerClose} token={token} />
         </DrawerContent>
       </Drawer>
@@ -90,11 +92,11 @@ export default function Layout({ onLogout }) {
       <Box
         display={{ base: 'block', md: 'none' }}
         position="fixed" bottom="0" left="0" w="100%"
-        bg="rgba(20,25,36,0.97)"
-        backdropFilter="blur(20px)"
-        borderTop="1px solid rgba(99,102,241,0.12)"
+        bg="white"
+        borderTop="1px solid"
+        borderTopColor="gray.200"
         zIndex="999" pb="env(safe-area-inset-bottom)"
-        boxShadow="0px -4px 20px rgba(0,0,0,0.4)"
+        boxShadow="0px -2px 10px rgba(0,0,0,0.06)"
       >
         <SimpleGrid columns={5} h="70px">
           {MobileNavItems.map((item) => {
@@ -103,9 +105,9 @@ export default function Layout({ onLogout }) {
               <RouterNavLink key={item.name} to={item.path} style={{ textDecoration: 'none' }}>
                 <Flex
                   direction="column" align="center" justify="center" h="100%"
-                  color={isActive ? 'brand.400' : 'gray.400'}
+                  color={isActive ? 'brand.500' : 'gray.400'}
                   transition="all 0.2s"
-                  _active={{ bg: 'gray.700' }}
+                  _active={{ bg: 'gray.100' }}
                 >
                   <Icon as={item.icon} w={6} h={6} mb={1} />
                   <Text fontSize="10px" fontWeight={isActive ? 'semibold' : 'normal'}>

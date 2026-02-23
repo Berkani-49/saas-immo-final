@@ -1,4 +1,4 @@
-// Fichier : src/Sidebar.jsx (Version avec verrous plan et badges PRO/PREMIUM)
+// Fichier : src/Sidebar.jsx (Version Light Mode - Style Agence Immobilière)
 
 import React, { useState, useEffect } from 'react';
 import { Box, VStack, Button, Heading, Spacer, CloseButton, Flex, Icon, Text, Divider, Collapse, Badge, useDisclosure } from '@chakra-ui/react';
@@ -100,7 +100,6 @@ export default function Sidebar({ onLogout, onClose, token }) {
     return () => clearInterval(interval);
   }, [token]);
 
-  // État pour gérer l'ouverture/fermeture des sections
   const [openSections, setOpenSections] = useState(
     navSections.reduce((acc, section) => {
       acc[section.title] = section.defaultOpen;
@@ -130,16 +129,16 @@ export default function Sidebar({ onLogout, onClose, token }) {
           borderRadius="lg"
           role="group"
           cursor="pointer"
-          color="gray.600"
-          _hover={{ bg: 'rgba(255,255,255,0.04)', transform: 'translateX(1px)' }}
+          color="gray.400"
+          _hover={{ bg: 'gray.100' }}
           transition="all 0.2s"
           onClick={() => handleLockedClick({ requiredPlan: itemPlan, name: itemName })}
           {...rest}
         >
           {icon && (
-            <Icon mr="3" fontSize="16" as={icon} color="gray.600" />
+            <Icon mr="3" fontSize="16" as={icon} color="gray.400" />
           )}
-          <Text fontSize="sm" fontWeight="medium" flex={1}>{children}</Text>
+          <Text fontSize="sm" fontWeight="medium" flex={1} color="gray.400">{children}</Text>
           <Badge
             colorScheme={itemPlan === 'premium' ? 'purple' : 'blue'}
             fontSize="2xs"
@@ -148,7 +147,7 @@ export default function Sidebar({ onLogout, onClose, token }) {
           >
             {itemPlan === 'premium' ? 'PREMIUM' : 'PRO'}
           </Badge>
-          <Icon as={FiLock} fontSize="12" color="gray.600" />
+          <Icon as={FiLock} fontSize="12" color="gray.400" />
         </Flex>
       );
     }
@@ -163,15 +162,13 @@ export default function Sidebar({ onLogout, onClose, token }) {
             borderRadius="lg"
             role="group"
             cursor="pointer"
-            bg={isActive ? 'linear-gradient(90deg, rgba(129,140,248,0.22) 0%, rgba(129,140,248,0.06) 100%)' : 'transparent'}
-            color={isActive ? 'white' : 'gray.400'}
-            boxShadow={isActive ? 'inset 3px 0 0 #818CF8' : 'none'}
+            bg={isActive ? 'brand.50' : 'transparent'}
+            color={isActive ? 'brand.600' : 'gray.600'}
+            borderLeft={isActive ? '3px solid' : '3px solid transparent'}
+            borderLeftColor={isActive ? 'brand.500' : 'transparent'}
             _hover={{
-              bg: isActive
-                ? 'linear-gradient(90deg, rgba(129,140,248,0.32) 0%, rgba(129,140,248,0.1) 100%)'
-                : 'rgba(255,255,255,0.05)',
-              color: 'white',
-              transform: 'translateX(2px)',
+              bg: isActive ? 'brand.50' : 'gray.100',
+              color: isActive ? 'brand.600' : 'gray.800',
             }}
             transition="all 0.2s"
             {...rest}
@@ -181,11 +178,11 @@ export default function Sidebar({ onLogout, onClose, token }) {
                 mr="3"
                 fontSize="16"
                 as={icon}
-                color={isActive ? 'brand.300' : 'gray.500'}
-                _groupHover={{ color: 'white' }}
+                color={isActive ? 'brand.500' : 'gray.400'}
+                _groupHover={{ color: isActive ? 'brand.500' : 'gray.600' }}
               />
             )}
-            <Text fontSize="sm" fontWeight="medium" flex="1">{children}</Text>
+            <Text fontSize="sm" fontWeight={isActive ? 'semibold' : 'medium'} flex="1" color="inherit">{children}</Text>
             {badgeCount > 0 && (
               <Badge colorScheme="red" borderRadius="full" fontSize="2xs" minW="18px" textAlign="center">
                 {badgeCount}
@@ -205,17 +202,17 @@ export default function Sidebar({ onLogout, onClose, token }) {
       py="2"
       cursor="pointer"
       onClick={onToggle}
-      _hover={{ bg: 'rgba(255,255,255,0.03)' }}
+      _hover={{ bg: 'gray.100' }}
       borderRadius="md"
       mx="2"
       mt="2"
     >
-      <Text fontSize="xs" fontWeight="bold" color="gray.600" textTransform="uppercase" letterSpacing="widest">
+      <Text fontSize="xs" fontWeight="bold" color="gray.400" textTransform="uppercase" letterSpacing="widest">
         {title}
       </Text>
       <Icon
         as={isOpen ? FiChevronDown : FiChevronRight}
-        color="gray.600"
+        color="gray.400"
         w={3}
         h={3}
       />
@@ -224,20 +221,30 @@ export default function Sidebar({ onLogout, onClose, token }) {
 
   return (
     <Box
-      bg="linear-gradient(180deg, #1a1f2e 0%, #141924 100%)"
-      color="gray.100"
+      bg="white"
+      color="gray.700"
       h="100vh"
       w="100%"
       pos="relative"
       display="flex"
       flexDirection="column"
-      borderRight="1px solid rgba(99,102,241,0.15)"
+      borderRight="1px solid"
+      borderRightColor="gray.200"
+      boxShadow="sm"
     >
       {/* Partie scrollable */}
       <Box flex="1" overflowY="auto" pb={32}>
-        <Flex h="20" alignItems="center" px={6} justifyContent="space-between" borderBottom="1px solid rgba(99,102,241,0.12)" bg="linear-gradient(135deg, rgba(26,26,46,0.9) 0%, rgba(22,33,62,0.7) 100%)" mx={0}>
+        {/* Logo / Nom agence */}
+        <Flex
+          h="20"
+          alignItems="center"
+          px={6}
+          justifyContent="space-between"
+          borderBottom="1px solid"
+          borderBottomColor="gray.100"
+        >
           {agency ? (
-            <Heading fontSize="lg" fontWeight="bold" letterSpacing="tight" color="white" noOfLines={1}>
+            <Heading fontSize="lg" fontWeight="bold" letterSpacing="tight" color="gray.800" noOfLines={1}>
               {agency.logoUrl ? (
                 <img src={agency.logoUrl} alt={agency.name} style={{ maxHeight: '32px' }} />
               ) : (
@@ -245,14 +252,14 @@ export default function Sidebar({ onLogout, onClose, token }) {
               )}
             </Heading>
           ) : (
-            <Heading fontSize="xl" fontWeight="bold" letterSpacing="tight" color="white">
-              IMMO<Text as="span" color="brand.400">FLOW</Text>
+            <Heading fontSize="xl" fontWeight="bold" letterSpacing="tight" color="gray.800">
+              IMMO<Text as="span" color="brand.500">FLOW</Text>
             </Heading>
           )}
-          {onClose && <CloseButton display={{ base: 'flex', md: 'none' }} onClick={onClose} color="gray.400" />}
+          {onClose && <CloseButton display={{ base: 'flex', md: 'none' }} onClick={onClose} color="gray.500" />}
         </Flex>
 
-        <Divider borderColor="rgba(99,102,241,0.1)" mb={2} />
+        <Divider borderColor="gray.100" mb={2} />
 
         {/* Barre de recherche */}
         {token && <SearchBar token={token} />}
@@ -291,14 +298,14 @@ export default function Sidebar({ onLogout, onClose, token }) {
         </VStack>
       </Box>
 
-      {/* Boutons fixes en bas */}
+      {/* Bouton déconnexion fixe en bas */}
       <Box
         position="sticky"
         bottom="0"
         p={4}
-        bg="rgba(20,25,36,0.97)"
-        backdropFilter="blur(12px)"
-        borderTop="1px solid rgba(99,102,241,0.1)"
+        bg="white"
+        borderTop="1px solid"
+        borderTopColor="gray.100"
       >
         <Button
           onClick={onLogout}
@@ -306,7 +313,7 @@ export default function Sidebar({ onLogout, onClose, token }) {
           variant="ghost"
           color="gray.500"
           leftIcon={<Icon as={FiLogOut} />}
-          _hover={{ bg: 'rgba(239,68,68,0.1)', color: 'red.400' }}
+          _hover={{ bg: 'red.50', color: 'red.500' }}
           fontSize="sm"
           fontWeight="medium"
           borderRadius="lg"
