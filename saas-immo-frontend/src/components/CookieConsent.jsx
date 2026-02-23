@@ -42,7 +42,7 @@ export default function CookieConsent() {
       bottom="0"
       left="0"
       right="0"
-      bg="gray.800"
+      bg="white"
       borderTop="3px solid"
       borderTopColor="brand.500"
       boxShadow="0 -4px 20px rgba(0,0,0,0.4)"
@@ -59,7 +59,7 @@ export default function CookieConsent() {
         <VStack align="start" flex="1" spacing={2}>
           <HStack>
             <Icon as={FiFileText} color="brand.500" />
-            <Text fontWeight="bold" fontSize="lg" color="white">
+            <Text fontWeight="bold" fontSize="lg" color="gray.800">
               Conditions d'utilisation
             </Text>
           </HStack>

@@ -241,8 +241,8 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
   };
 
   return (
-    <Box p={5} shadow="md" borderWidth="1px" borderColor="gray.700" borderRadius="lg" bg="gray.800" mb={6}>
-      <Heading size="md" mb={4} color="white">
+    <Box p={5} shadow="md" borderWidth="1px" borderColor="gray.200" borderRadius="lg" bg="white" mb={6}>
+      <Heading size="md" mb={4} color="gray.800">
         {createdPropertyId ? 'Ajouter des photos au bien' : 'Ajouter un nouveau bien'}
       </Heading>
 
@@ -290,8 +290,8 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
             </HStack>
 
             {/* ÉQUIPEMENTS */}
-            <Box width="full" p={4} borderWidth="1px" borderColor="gray.600" borderRadius="md" bg="gray.700">
-              <Text fontWeight="bold" mb={3} color="white">Équipements</Text>
+            <Box width="full" p={4} borderWidth="1px" borderColor="gray.300" borderRadius="md" bg="gray.50">
+              <Text fontWeight="bold" mb={3} color="gray.800">Équipements</Text>
 
               <SimpleGrid columns={{ base: 2, md: 3 }} spacing={3} mb={4}>
                 <Checkbox isChecked={hasGarage} onChange={(e) => setHasGarage(e.target.checked)}>

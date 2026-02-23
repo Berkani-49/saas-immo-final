@@ -93,7 +93,7 @@ export default function PropertyOwners({ propertyId, token }) {
                 <Badge colorScheme={owner.relationType === 'OWNER' ? 'blue' : 'green'}>
                   {owner.relationType === 'OWNER' ? 'Propriétaire' : 'Intéressé'}
                 </Badge>
-                <Text fontWeight="medium" color="white">{owner.firstName} {owner.lastName}</Text>
+                <Text fontWeight="medium" color="gray.800">{owner.firstName} {owner.lastName}</Text>
               </HStack>
               <IconButton
                 icon={<MdDelete />}

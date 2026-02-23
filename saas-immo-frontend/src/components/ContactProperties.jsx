@@ -42,7 +42,7 @@ export default function ContactProperties({ contactId, token }) {
             <Box key={property.id} p={3} bg="green.900" borderRadius="md" borderWidth="1px" borderColor="green.700">
               <HStack mb={2}>
                 <MdHomeWork color="green" />
-                <Text fontWeight="bold" fontSize="sm" color="white">{property.address}</Text>
+                <Text fontWeight="bold" fontSize="sm" color="gray.800">{property.address}</Text>
               </HStack>
               <HStack spacing={2}>
                 <Badge colorScheme="green">{property.price}€</Badge>

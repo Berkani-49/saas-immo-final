@@ -38,13 +38,13 @@ export default function ContactsPage({ token }) {
 
   return (
     <Box>
-      <Heading mb={6} color="white">Gestion des Contacts</Heading>
+      <Heading mb={6} color="gray.800">Gestion des Contacts</Heading>
 
       {error && <Alert status="error" mb={4}><AlertIcon />{error}</Alert>}
 
       <AddContactForm token={token} onContactAdded={handleContactAdded} />
 
-      <Heading as="h3" size="md" mt={8} mb={4} pt={4} borderTopWidth={1} borderColor="gray.700" color="white">
+      <Heading as="h3" size="md" mt={8} mb={4} pt={4} borderTopWidth={1} borderColor="gray.200" color="gray.800">
         Vos Contacts ({contacts.length})
       </Heading>
 

@@ -87,26 +87,26 @@ export default function HomePage({ token }) {
       <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
 
          {/* Bloc Contacts */}
-         <Box p={6} shadow="xl" borderWidth="1px" borderColor="rgba(99,102,241,0.12)" borderRadius="2xl" bg="linear-gradient(135deg, #1a1f2e 0%, #141924 100%)" transition="all 0.3s" _hover={{ transform: 'translateY(-2px)', boxShadow: '0 8px 30px rgba(99,102,241,0.12)' }}>
+         <Box p={6} shadow="xl" borderWidth="1px" borderColor="gray.200" borderRadius="2xl" bg="white" transition="all 0.3s" _hover={{ transform: 'translateY(-2px)', boxShadow: "md" }}>
             <Flex align="center" mb={4}>
                 <Icon as={MdPerson} color="green.400" mr={2} w={6} h={6} />
-                <Heading size="md" color="white">Répartition Contacts</Heading>
+                <Heading size="md" color="gray.800">Répartition Contacts</Heading>
             </Flex>
             <Flex justify="space-between" align="center" borderBottom="1px solid rgba(99,102,241,0.1)" py={2}>
                 <Text color="gray.400">Acheteurs</Text>
-                <Text fontWeight="bold" fontSize="lg" color="white">{stats.contacts.buyers}</Text>
+                <Text fontWeight="bold" fontSize="lg" color="gray.800">{stats.contacts.buyers}</Text>
             </Flex>
             <Flex justify="space-between" align="center" py={2}>
                 <Text color="gray.400">Vendeurs</Text>
-                <Text fontWeight="bold" fontSize="lg" color="white">{stats.contacts.sellers}</Text>
+                <Text fontWeight="bold" fontSize="lg" color="gray.800">{stats.contacts.sellers}</Text>
             </Flex>
          </Box>
 
          {/* Bloc Tâches */}
-         <Box p={6} shadow="xl" borderWidth="1px" borderColor="rgba(99,102,241,0.12)" borderRadius="2xl" bg="linear-gradient(135deg, #1a1f2e 0%, #141924 100%)" transition="all 0.3s" _hover={{ transform: 'translateY(-2px)', boxShadow: '0 8px 30px rgba(99,102,241,0.12)' }}>
+         <Box p={6} shadow="xl" borderWidth="1px" borderColor="gray.200" borderRadius="2xl" bg="white" transition="all 0.3s" _hover={{ transform: 'translateY(-2px)', boxShadow: "md" }}>
             <Flex align="center" mb={4}>
                 <Icon as={MdCheckCircle} color="purple.400" mr={2} w={6} h={6} />
-                <Heading size="md" color="white">Suivi des Tâches</Heading>
+                <Heading size="md" color="gray.800">Suivi des Tâches</Heading>
             </Flex>
             <Flex justify="space-between" align="center" borderBottom="1px solid rgba(99,102,241,0.1)" py={2}>
                 <Text color="gray.400">En attente</Text>

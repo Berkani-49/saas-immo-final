@@ -33,9 +33,9 @@ export default function ContactItem({ contact, token, onContactDeleted }) {
     <Box
       p={6}
       borderWidth="1px"
-      borderColor="gray.700"
+      borderColor="gray.200"
       borderRadius="2xl"
-      bg="gray.800"
+      bg="white"
       shadow="sm"
       transition="all 0.2s"
       _hover={{ shadow: "lg", transform: "translateY(-2px)", borderColor: "brand.500" }}
@@ -43,10 +43,10 @@ export default function ContactItem({ contact, token, onContactDeleted }) {
     >
       {/* En-tête avec Avatar */}
       <Flex align="center" mb={4}>
-        <Avatar icon={<FaUserTie fontSize="1.2rem" />} bg={contact.type === 'BUYER' ? 'blue.500' : 'green.500'} color="white" mr={4} />
+        <Avatar icon={<FaUserTie fontSize="1.2rem" />} bg={contact.type === 'BUYER' ? 'blue.500' : 'green.500'} color="gray.800" mr={4} />
         <Box>
             <Link to={`/contact/${contact.id}`}>
-                <Text fontWeight="bold" fontSize="lg" color="white" _hover={{ color: 'brand.400', textDecoration: 'underline' }}>
+                <Text fontWeight="bold" fontSize="lg" color="gray.800" _hover={{ color: 'brand.400', textDecoration: 'underline' }}>
                     {contact.firstName} {contact.lastName}
                 </Text>
             </Link>
@@ -69,7 +69,7 @@ export default function ContactItem({ contact, token, onContactDeleted }) {
       </VStack>
 
       {/* Boutons d'action */}
-      <Flex justify="flex-end" pt={4} borderTopWidth={1} borderColor="gray.700">
+      <Flex justify="flex-end" pt={4} borderTopWidth={1} borderColor="gray.200">
         
         {/* BOUTON MODIFIER (Stylo) : Redirige vers la page détail */}
         <Link to={`/contact/${contact.id}`}>

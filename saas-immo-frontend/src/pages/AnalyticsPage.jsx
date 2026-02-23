@@ -143,7 +143,7 @@ export default function AnalyticsPage({ token }) {
     <Box>
       <HStack justify="space-between" mb={6}>
         <VStack align="start" spacing={1}>
-          <Heading size="lg" color="white">📈 Tableau de Bord Avancé</Heading>
+          <Heading size="lg" color="gray.800">📈 Tableau de Bord Avancé</Heading>
           <Text color="gray.400">Statistiques des 30 derniers jours</Text>
         </VStack>
         <Button
@@ -157,7 +157,7 @@ export default function AnalyticsPage({ token }) {
 
       {/* Statistiques globales */}
       <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6} mb={8}>
-        <Card bg="gray.800" borderColor="gray.700">
+        <Card bg="white" borderColor="gray.200">
           <CardBody>
             <Stat>
               <StatLabel>
@@ -166,7 +166,7 @@ export default function AnalyticsPage({ token }) {
                   <Text color="gray.400">Total des vues</Text>
                 </HStack>
               </StatLabel>
-              <StatNumber fontSize="3xl" color="white">{overview?.totalViews || 0}</StatNumber>
+              <StatNumber fontSize="3xl" color="gray.800">{overview?.totalViews || 0}</StatNumber>
               <StatHelpText color="gray.500">
                 <StatArrow type="increase" />
                 Derniers 30 jours
@@ -175,7 +175,7 @@ export default function AnalyticsPage({ token }) {
           </CardBody>
         </Card>
 
-        <Card bg="gray.800" borderColor="gray.700">
+        <Card bg="white" borderColor="gray.200">
           <CardBody>
             <Stat>
               <StatLabel>
@@ -184,7 +184,7 @@ export default function AnalyticsPage({ token }) {
                   <Text color="gray.400">Taux de conversion</Text>
                 </HStack>
               </StatLabel>
-              <StatNumber fontSize="3xl" color="white">{overview?.conversionRate || 0}%</StatNumber>
+              <StatNumber fontSize="3xl" color="gray.800">{overview?.conversionRate || 0}%</StatNumber>
               <StatHelpText color="gray.500">
                 {overview?.conversions || 0} conversions
               </StatHelpText>
@@ -192,7 +192,7 @@ export default function AnalyticsPage({ token }) {
           </CardBody>
         </Card>
 
-        <Card bg="gray.800" borderColor="gray.700">
+        <Card bg="white" borderColor="gray.200">
           <CardBody>
             <Stat>
               <StatLabel>
@@ -201,13 +201,13 @@ export default function AnalyticsPage({ token }) {
                   <Text color="gray.400">Temps moyen</Text>
                 </HStack>
               </StatLabel>
-              <StatNumber fontSize="3xl" color="white">{overview?.avgDuration || 0}s</StatNumber>
+              <StatNumber fontSize="3xl" color="gray.800">{overview?.avgDuration || 0}s</StatNumber>
               <StatHelpText color="gray.500">Par visite</StatHelpText>
             </Stat>
           </CardBody>
         </Card>
 
-        <Card bg="gray.800" borderColor="gray.700">
+        <Card bg="white" borderColor="gray.200">
           <CardBody>
             <Stat>
               <StatLabel>
@@ -216,7 +216,7 @@ export default function AnalyticsPage({ token }) {
                   <Text color="gray.400">Biens actifs</Text>
                 </HStack>
               </StatLabel>
-              <StatNumber fontSize="3xl" color="white">{properties.length}</StatNumber>
+              <StatNumber fontSize="3xl" color="gray.800">{properties.length}</StatNumber>
               <StatHelpText color="gray.500">Avec statistiques</StatHelpText>
             </Stat>
           </CardBody>
@@ -226,9 +226,9 @@ export default function AnalyticsPage({ token }) {
       {/* Graphiques */}
       <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6} mb={8}>
         {/* Graphique des vues par jour */}
-        <Card bg="gray.800" borderColor="gray.700">
+        <Card bg="white" borderColor="gray.200">
           <CardHeader>
-            <Heading size="md" color="white">📊 Vues par jour</Heading>
+            <Heading size="md" color="gray.800">📊 Vues par jour</Heading>
           </CardHeader>
           <CardBody>
             {overview?.viewsByDay?.length > 0 ? (
@@ -252,9 +252,9 @@ export default function AnalyticsPage({ token }) {
         </Card>
 
         {/* Graphique des sources de trafic */}
-        <Card bg="gray.800" borderColor="gray.700">
+        <Card bg="white" borderColor="gray.200">
           <CardHeader>
-            <Heading size="md" color="white">🌐 Sources de trafic</Heading>
+            <Heading size="md" color="gray.800">🌐 Sources de trafic</Heading>
           </CardHeader>
           <CardBody>
             {trafficSources.length > 0 ? (
@@ -281,9 +281,9 @@ export default function AnalyticsPage({ token }) {
       {/* Graphique des appareils + Top biens */}
       <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6} mb={8}>
         {/* Répartition par appareil */}
-        <Card bg="gray.800" borderColor="gray.700">
+        <Card bg="white" borderColor="gray.200">
           <CardHeader>
-            <Heading size="md" color="white">📱 Répartition par appareil</Heading>
+            <Heading size="md" color="gray.800">📱 Répartition par appareil</Heading>
           </CardHeader>
           <CardBody>
             {devices.length > 0 ? (
@@ -305,19 +305,19 @@ export default function AnalyticsPage({ token }) {
         </Card>
 
         {/* Top 5 biens les plus vus */}
-        <Card bg="gray.800" borderColor="gray.700">
+        <Card bg="white" borderColor="gray.200">
           <CardHeader>
-            <Heading size="md" color="white">🏆 Top 5 biens les plus vus</Heading>
+            <Heading size="md" color="gray.800">🏆 Top 5 biens les plus vus</Heading>
           </CardHeader>
           <CardBody>
             {properties.length > 0 ? (
               <VStack align="stretch" spacing={3}>
                 {properties.slice(0, 5).map((property, index) => (
-                  <HStack key={property.id} justify="space-between" p={3} bg="gray.700" borderRadius="md">
+                  <HStack key={property.id} justify="space-between" p={3} bg="gray.50" borderRadius="md">
                     <HStack>
                       <Badge colorScheme="brand" fontSize="lg">{index + 1}</Badge>
                       <VStack align="start" spacing={0}>
-                        <Text fontWeight="bold" fontSize="sm" color="white">{property.address}</Text>
+                        <Text fontWeight="bold" fontSize="sm" color="gray.800">{property.address}</Text>
                         <Text fontSize="xs" color="gray.400">{property.city}</Text>
                       </VStack>
                     </HStack>
@@ -336,40 +336,40 @@ export default function AnalyticsPage({ token }) {
       </SimpleGrid>
 
       {/* Tableau détaillé des biens */}
-      <Card bg="gray.800" borderColor="gray.700">
+      <Card bg="white" borderColor="gray.200">
         <CardHeader>
-          <Heading size="md" color="white">📋 Statistiques détaillées par bien</Heading>
+          <Heading size="md" color="gray.800">📋 Statistiques détaillées par bien</Heading>
         </CardHeader>
         <CardBody overflowX="auto">
           <Table variant="simple" size="sm">
             <Thead>
               <Tr>
-                <Th color="gray.400" borderColor="gray.700">Bien</Th>
-                <Th isNumeric color="gray.400" borderColor="gray.700">Prix</Th>
-                <Th isNumeric color="gray.400" borderColor="gray.700">Vues (30j)</Th>
-                <Th isNumeric color="gray.400" borderColor="gray.700">Temps moyen</Th>
-                <Th isNumeric color="gray.400" borderColor="gray.700">Conversions</Th>
-                <Th isNumeric color="gray.400" borderColor="gray.700">Taux</Th>
+                <Th color="gray.400" borderColor="gray.200">Bien</Th>
+                <Th isNumeric color="gray.400" borderColor="gray.200">Prix</Th>
+                <Th isNumeric color="gray.400" borderColor="gray.200">Vues (30j)</Th>
+                <Th isNumeric color="gray.400" borderColor="gray.200">Temps moyen</Th>
+                <Th isNumeric color="gray.400" borderColor="gray.200">Conversions</Th>
+                <Th isNumeric color="gray.400" borderColor="gray.200">Taux</Th>
               </Tr>
             </Thead>
             <Tbody>
               {properties.map((property) => (
                 <Tr key={property.id}>
-                  <Td borderColor="gray.700">
+                  <Td borderColor="gray.200">
                     <VStack align="start" spacing={0}>
-                      <Text fontWeight="bold" fontSize="sm" color="white">{property.address}</Text>
+                      <Text fontWeight="bold" fontSize="sm" color="gray.800">{property.address}</Text>
                       <Text fontSize="xs" color="gray.500">{property.city}</Text>
                     </VStack>
                   </Td>
-                  <Td isNumeric fontWeight="bold" color="white" borderColor="gray.700">{property.price.toLocaleString()} €</Td>
-                  <Td isNumeric borderColor="gray.700">
+                  <Td isNumeric fontWeight="bold" color="gray.800" borderColor="gray.200">{property.price.toLocaleString()} €</Td>
+                  <Td isNumeric borderColor="gray.200">
                     <Badge colorScheme="blue">{property.recentViews}</Badge>
                   </Td>
-                  <Td isNumeric color="gray.300" borderColor="gray.700">{property.avgDuration}s</Td>
-                  <Td isNumeric borderColor="gray.700">
+                  <Td isNumeric color="gray.600" borderColor="gray.200">{property.avgDuration}s</Td>
+                  <Td isNumeric borderColor="gray.200">
                     <Badge colorScheme="green">{property.conversions}</Badge>
                   </Td>
-                  <Td isNumeric fontWeight="bold" borderColor="gray.700" color={parseFloat(property.conversionRate) > 5 ? 'green.400' : 'gray.400'}>
+                  <Td isNumeric fontWeight="bold" borderColor="gray.200" color={parseFloat(property.conversionRate) > 5 ? 'green.400' : 'gray.400'}>
                     {property.conversionRate}%
                   </Td>
                 </Tr>

@@ -96,13 +96,13 @@ export default function NotificationsPage({ token }) {
   return (
     <Box>
       <VStack align="start" spacing={1} mb={6}>
-        <Heading size="lg" color="white">Notifications Automatiques</Heading>
+        <Heading size="lg" color="gray.800">Notifications Automatiques</Heading>
         <Text color="gray.400">Historique des alertes envoyées à vos acheteurs</Text>
       </VStack>
 
       {/* Statistiques globales */}
       <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6} mb={8}>
-        <Card bg="gray.800" borderColor="gray.700">
+        <Card bg="white" borderColor="gray.200">
           <CardBody>
             <Stat>
               <StatLabel>
@@ -111,13 +111,13 @@ export default function NotificationsPage({ token }) {
                   <Text color="gray.400">Total envoyées</Text>
                 </HStack>
               </StatLabel>
-              <StatNumber fontSize="3xl" color="white">{stats?.total || 0}</StatNumber>
+              <StatNumber fontSize="3xl" color="gray.800">{stats?.total || 0}</StatNumber>
               <StatHelpText color="gray.500">Toutes notifications</StatHelpText>
             </Stat>
           </CardBody>
         </Card>
 
-        <Card bg="gray.800" borderColor="gray.700">
+        <Card bg="white" borderColor="gray.200">
           <CardBody>
             <Stat>
               <StatLabel>
@@ -126,7 +126,7 @@ export default function NotificationsPage({ token }) {
                   <Text color="gray.400">Réussies</Text>
                 </HStack>
               </StatLabel>
-              <StatNumber fontSize="3xl" color="white">
+              <StatNumber fontSize="3xl" color="gray.800">
                 {stats?.byStatus?.find(s => s.status === 'SENT')?._count?.id || 0}
               </StatNumber>
               <StatHelpText color="gray.500">Emails délivrés</StatHelpText>
@@ -134,7 +134,7 @@ export default function NotificationsPage({ token }) {
           </CardBody>
         </Card>
 
-        <Card bg="gray.800" borderColor="gray.700">
+        <Card bg="white" borderColor="gray.200">
           <CardBody>
             <Stat>
               <StatLabel>
@@ -143,7 +143,7 @@ export default function NotificationsPage({ token }) {
                   <Text color="gray.400">Échouées</Text>
                 </HStack>
               </StatLabel>
-              <StatNumber fontSize="3xl" color="white">
+              <StatNumber fontSize="3xl" color="gray.800">
                 {stats?.byStatus?.find(s => s.status === 'FAILED')?._count?.id || 0}
               </StatNumber>
               <StatHelpText color="gray.500">Erreurs d'envoi</StatHelpText>
@@ -151,7 +151,7 @@ export default function NotificationsPage({ token }) {
           </CardBody>
         </Card>
 
-        <Card bg="gray.800" borderColor="gray.700">
+        <Card bg="white" borderColor="gray.200">
           <CardBody>
             <Stat>
               <StatLabel>
@@ -160,7 +160,7 @@ export default function NotificationsPage({ token }) {
                   <Text color="gray.400">7 derniers jours</Text>
                 </HStack>
               </StatLabel>
-              <StatNumber fontSize="3xl" color="white">{stats?.recent || 0}</StatNumber>
+              <StatNumber fontSize="3xl" color="gray.800">{stats?.recent || 0}</StatNumber>
               <StatHelpText color="gray.500">Activité récente</StatHelpText>
             </Stat>
           </CardBody>
@@ -168,10 +168,10 @@ export default function NotificationsPage({ token }) {
       </SimpleGrid>
 
       {/* Filtres et Historique */}
-      <Card bg="gray.800" borderColor="gray.700">
+      <Card bg="white" borderColor="gray.200">
         <CardHeader>
           <Flex justify="space-between" align="center" flexWrap="wrap" gap={4}>
-            <Heading size="md" color="white">Historique des notifications</Heading>
+            <Heading size="md" color="gray.800">Historique des notifications</Heading>
 
             <HStack spacing={3}>
               <Select
@@ -317,15 +317,15 @@ export default function NotificationsPage({ token }) {
       {/* Statistiques détaillées */}
       <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={6} mt={8}>
         {/* Par type */}
-        <Card bg="gray.800" borderColor="gray.700">
+        <Card bg="white" borderColor="gray.200">
           <CardHeader>
-            <Heading size="sm" color="white">Par type</Heading>
+            <Heading size="sm" color="gray.800">Par type</Heading>
           </CardHeader>
           <CardBody>
             <VStack align="stretch" spacing={3}>
               {stats?.byType?.map((item) => (
                 <Flex key={item.type} justify="space-between" align="center">
-                  <Text fontSize="sm" color="gray.300">{item.type}</Text>
+                  <Text fontSize="sm" color="gray.600">{item.type}</Text>
                   <Badge colorScheme="blue">{item.count}</Badge>
                 </Flex>
               )) || <Text fontSize="sm" color="gray.500">Aucune donnée</Text>}
@@ -334,9 +334,9 @@ export default function NotificationsPage({ token }) {
         </Card>
 
         {/* Par canal */}
-        <Card bg="gray.800" borderColor="gray.700">
+        <Card bg="white" borderColor="gray.200">
           <CardHeader>
-            <Heading size="sm" color="white">Par canal</Heading>
+            <Heading size="sm" color="gray.800">Par canal</Heading>
           </CardHeader>
           <CardBody>
             <VStack align="stretch" spacing={3}>
@@ -344,7 +344,7 @@ export default function NotificationsPage({ token }) {
                 <Flex key={item.channel} justify="space-between" align="center">
                   <HStack>
                     <Icon as={getChannelIcon(item.channel)} color="gray.400" />
-                    <Text fontSize="sm" color="gray.300">{item.channel}</Text>
+                    <Text fontSize="sm" color="gray.600">{item.channel}</Text>
                   </HStack>
                   <Badge colorScheme="purple">{item.count}</Badge>
                 </Flex>
@@ -354,15 +354,15 @@ export default function NotificationsPage({ token }) {
         </Card>
 
         {/* Par statut */}
-        <Card bg="gray.800" borderColor="gray.700">
+        <Card bg="white" borderColor="gray.200">
           <CardHeader>
-            <Heading size="sm" color="white">Par statut</Heading>
+            <Heading size="sm" color="gray.800">Par statut</Heading>
           </CardHeader>
           <CardBody>
             <VStack align="stretch" spacing={3}>
               {stats?.byStatus?.map((item) => (
                 <Flex key={item.status} justify="space-between" align="center">
-                  <Text fontSize="sm" color="gray.300">{item.status}</Text>
+                  <Text fontSize="sm" color="gray.600">{item.status}</Text>
                   <Badge colorScheme={item.status === 'SENT' ? 'green' : item.status === 'FAILED' ? 'red' : 'yellow'}>
                     {item.count}
                   </Badge>

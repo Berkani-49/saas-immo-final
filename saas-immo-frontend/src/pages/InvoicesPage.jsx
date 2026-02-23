@@ -126,10 +126,10 @@ export default function InvoicesPage({ token }) {
 
   return (
     <Box>
-      <Heading mb={6} color="white">Facturation</Heading>
+      <Heading mb={6} color="gray.800">Facturation</Heading>
 
-      <Box p={5} shadow="md" borderWidth="1px" borderRadius="lg" bg="gray.800" borderColor="gray.700" mb={8}>
-        <Heading size="md" mb={4} color="white">Nouvelle Facture</Heading>
+      <Box p={5} shadow="md" borderWidth="1px" borderRadius="lg" bg="white" borderColor="gray.200" mb={8}>
+        <Heading size="md" mb={4} color="gray.800">Nouvelle Facture</Heading>
         <form onSubmit={handleCreateInvoice}>
             <VStack spacing={4}>
                 <HStack width="full" alignItems="end">
@@ -150,24 +150,24 @@ export default function InvoicesPage({ token }) {
         </form>
       </Box>
 
-      <Heading size="md" mb={4} color="white">Historique ({invoices.length})</Heading>
+      <Heading size="md" mb={4} color="gray.800">Historique ({invoices.length})</Heading>
       
       {isLoading ? ( <Flex justify="center"><Spinner size="xl" /></Flex> ) : (
-        <Box overflowX="auto" bg="gray.800" borderRadius="lg" shadow="sm" borderWidth="1px" borderColor="gray.700">
+        <Box overflowX="auto" bg="white" borderRadius="lg" shadow="sm" borderWidth="1px" borderColor="gray.200">
             <Table variant="simple">
                 <Thead>
-                    <Tr><Th color="gray.400" borderColor="gray.700">Réf</Th><Th color="gray.400" borderColor="gray.700">Client</Th><Th color="gray.400" borderColor="gray.700">Date</Th><Th isNumeric color="gray.400" borderColor="gray.700">Montant</Th><Th color="gray.400" borderColor="gray.700">Statut</Th><Th color="gray.400" borderColor="gray.700">Action</Th></Tr>
+                    <Tr><Th color="gray.400" borderColor="gray.200">Réf</Th><Th color="gray.400" borderColor="gray.200">Client</Th><Th color="gray.400" borderColor="gray.200">Date</Th><Th isNumeric color="gray.400" borderColor="gray.200">Montant</Th><Th color="gray.400" borderColor="gray.200">Statut</Th><Th color="gray.400" borderColor="gray.200">Action</Th></Tr>
                 </Thead>
                 <Tbody>
                     {invoices.map(inv => (
                         <Tr key={inv.id}>
-                            <Td fontWeight="bold" color="white" borderColor="gray.700">{inv.ref}</Td>
-                            <Td color="gray.300" borderColor="gray.700">{inv.contact?.firstName} {inv.contact?.lastName}</Td>
-                            <Td color="gray.300" borderColor="gray.700">{new Date(inv.createdAt).toLocaleDateString()}</Td>
-                            <Td isNumeric fontWeight="bold" color="white" borderColor="gray.700">{inv.amount.toLocaleString()} €</Td>
-                            <Td borderColor="gray.700"><Badge colorScheme={inv.status === 'PAID' ? 'green' : 'orange'}>{inv.status === 'PAID' ? 'Payée' : 'En attente'}</Badge></Td>
-                            <Td borderColor="gray.700">
-                                <Button size="xs" leftIcon={<DownloadIcon />} onClick={() => generatePDF(inv)} bg="gray.700" color="white" _hover={{ bg: 'gray.600' }}>
+                            <Td fontWeight="bold" color="gray.800" borderColor="gray.200">{inv.ref}</Td>
+                            <Td color="gray.600" borderColor="gray.200">{inv.contact?.firstName} {inv.contact?.lastName}</Td>
+                            <Td color="gray.600" borderColor="gray.200">{new Date(inv.createdAt).toLocaleDateString()}</Td>
+                            <Td isNumeric fontWeight="bold" color="gray.800" borderColor="gray.200">{inv.amount.toLocaleString()} €</Td>
+                            <Td borderColor="gray.200"><Badge colorScheme={inv.status === 'PAID' ? 'green' : 'orange'}>{inv.status === 'PAID' ? 'Payée' : 'En attente'}</Badge></Td>
+                            <Td borderColor="gray.200">
+                                <Button size="xs" leftIcon={<DownloadIcon />} onClick={() => generatePDF(inv)} bg="gray.50" color="gray.800" _hover={{ bg: 'gray.600' }}>
                                     PDF
                                 </Button>
                             </Td>

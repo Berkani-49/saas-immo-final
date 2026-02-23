@@ -94,7 +94,7 @@ export default function TeamPage({ token }) {
   return (
     <Box>
       <Flex justify="space-between" align="center" mb={6}>
-        <Heading color="white">L'Équipe</Heading>
+        <Heading color="gray.800">L'Équipe</Heading>
 
         {/* Le bouton vers la page secrète - visible uniquement pour le patron */}
         {isOwner && (
@@ -106,43 +106,43 @@ export default function TeamPage({ token }) {
         )}
       </Flex>
 
-      <Box bg="gray.800" shadow="sm" borderRadius="lg" overflow="hidden" borderWidth="1px" borderColor="gray.700">
+      <Box bg="white" shadow="sm" borderRadius="lg" overflow="hidden" borderWidth="1px" borderColor="gray.200">
         <Table variant="simple">
           <Thead>
             <Tr>
-              <Th color="gray.400" borderColor="gray.700">Agent</Th>
-              <Th color="gray.400" borderColor="gray.700">Email</Th>
-              <Th color="gray.400" borderColor="gray.700">Rôle</Th>
-              <Th color="gray.400" borderColor="gray.700">Membre depuis</Th>
-              <Th color="gray.400" borderColor="gray.700">Statut</Th>
-              {isOwner && <Th color="gray.400" borderColor="gray.700" textAlign="center">Actions</Th>}
+              <Th color="gray.400" borderColor="gray.200">Agent</Th>
+              <Th color="gray.400" borderColor="gray.200">Email</Th>
+              <Th color="gray.400" borderColor="gray.200">Rôle</Th>
+              <Th color="gray.400" borderColor="gray.200">Membre depuis</Th>
+              <Th color="gray.400" borderColor="gray.200">Statut</Th>
+              {isOwner && <Th color="gray.400" borderColor="gray.200" textAlign="center">Actions</Th>}
             </Tr>
           </Thead>
           <Tbody>
             {agents.map((agent) => (
               <Tr key={agent.id}>
-                <Td borderColor="gray.700">
+                <Td borderColor="gray.200">
                   <Flex align="center">
                     <Avatar
                       size="sm"
                       name={`${agent.firstName} ${agent.lastName}`}
                       mr={3}
                       bg={agent.role === 'OWNER' ? 'purple.500' : 'brand.500'}
-                      color="white"
+                      color="gray.800"
                     />
-                    <Text fontWeight="bold" color="white">{agent.firstName} {agent.lastName}</Text>
+                    <Text fontWeight="bold" color="gray.800">{agent.firstName} {agent.lastName}</Text>
                   </Flex>
                 </Td>
-                <Td color="gray.300" borderColor="gray.700">{agent.email}</Td>
-                <Td borderColor="gray.700">
+                <Td color="gray.600" borderColor="gray.200">{agent.email}</Td>
+                <Td borderColor="gray.200">
                   <Badge colorScheme={agent.role === 'OWNER' ? 'purple' : 'blue'}>
                     {agent.role === 'OWNER' ? 'Patron' : 'Employé'}
                   </Badge>
                 </Td>
-                <Td color="gray.300" borderColor="gray.700">{new Date(agent.createdAt).toLocaleDateString()}</Td>
-                <Td borderColor="gray.700"><Badge colorScheme="green">Actif</Badge></Td>
+                <Td color="gray.600" borderColor="gray.200">{new Date(agent.createdAt).toLocaleDateString()}</Td>
+                <Td borderColor="gray.200"><Badge colorScheme="green">Actif</Badge></Td>
                 {isOwner && (
-                  <Td borderColor="gray.700" textAlign="center">
+                  <Td borderColor="gray.200" textAlign="center">
                     {agent.role !== 'OWNER' && (
                       <IconButton
                         icon={<DeleteIcon />}

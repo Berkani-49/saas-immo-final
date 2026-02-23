@@ -126,7 +126,7 @@ export default function RGPDPage({ token }) {
       <VStack align="stretch" spacing={6}>
         {/* Header */}
         <Box>
-          <Heading size="lg" mb={2} color="white">
+          <Heading size="lg" mb={2} color="gray.800">
             <Icon as={FiShield} mr={2} color="brand.500" />
             RGPD & Confidentialité
           </Heading>
@@ -140,18 +140,18 @@ export default function RGPDPage({ token }) {
           <AlertIcon color="blue.300" />
           <Box flex="1">
             <Text fontWeight="bold" color="blue.200">Vos droits RGPD</Text>
-            <Text fontSize="sm" color="gray.300">
+            <Text fontSize="sm" color="gray.600">
               Vous avez le droit d'accéder, rectifier, exporter et supprimer vos données personnelles à tout moment.
             </Text>
           </Box>
         </Alert>
 
         {/* Export des données */}
-        <Card bg="gray.800" borderColor="gray.700">
+        <Card bg="white" borderColor="gray.200">
           <CardHeader>
             <HStack>
               <Icon as={FiDownload} color="blue.500" boxSize={5} />
-              <Heading size="md" color="white">Exporter mes données</Heading>
+              <Heading size="md" color="gray.800">Exporter mes données</Heading>
               <Badge colorScheme="blue">Droit d'accès</Badge>
             </HStack>
           </CardHeader>
@@ -182,7 +182,7 @@ export default function RGPDPage({ token }) {
         <Divider />
 
         {/* Zone danger : Suppression de compte */}
-        <Card bg="gray.800" borderColor="red.700" borderWidth="2px">
+        <Card bg="white" borderColor="red.700" borderWidth="2px">
           <CardHeader bg="red.900">
             <HStack>
               <Icon as={FiAlertTriangle} color="red.400" boxSize={5} />
@@ -196,14 +196,14 @@ export default function RGPDPage({ token }) {
                 <AlertIcon color="orange.300" />
                 <Box>
                   <Text fontWeight="bold" color="orange.200">Action irréversible</Text>
-                  <Text fontSize="sm" color="gray.300">
+                  <Text fontSize="sm" color="gray.600">
                     La suppression de votre compte entraînera la suppression définitive de toutes vos données
                     (profil, biens, contacts, factures, etc.). Cette action ne peut pas être annulée.
                   </Text>
                 </Box>
               </Alert>
 
-              <Text color="gray.300" fontWeight="bold">
+              <Text color="gray.600" fontWeight="bold">
                 Cette action supprimera :
               </Text>
               <VStack align="start" pl={4} spacing={1}>
@@ -229,10 +229,10 @@ export default function RGPDPage({ token }) {
         </Card>
 
         {/* Informations légales */}
-        <Card bg="gray.800" borderColor="gray.700">
+        <Card bg="white" borderColor="gray.200">
           <CardBody>
             <VStack align="stretch" spacing={3}>
-              <Heading size="sm" color="white">Informations légales</Heading>
+              <Heading size="sm" color="gray.800">Informations légales</Heading>
               <Text fontSize="sm" color="gray.400">
                 Conformément au RGPD (Règlement UE 2016/679), vous disposez d'un droit d'accès, de rectification,
                 d'effacement, de limitation du traitement, de portabilité et d'opposition concernant vos données personnelles.
@@ -253,8 +253,8 @@ export default function RGPDPage({ token }) {
         size="xl"
       >
         <AlertDialogOverlay>
-          <AlertDialogContent bg="gray.800">
-            <AlertDialogHeader fontSize="lg" fontWeight="bold" color="white">
+          <AlertDialogContent bg="white">
+            <AlertDialogHeader fontSize="lg" fontWeight="bold" color="gray.800">
               ⚠️ Confirmer la suppression définitive
             </AlertDialogHeader>
 
@@ -262,12 +262,12 @@ export default function RGPDPage({ token }) {
               <VStack align="stretch" spacing={4}>
                 <Alert status="error" bg="red.900" borderWidth="1px" borderColor="red.700">
                   <AlertIcon color="red.300" />
-                  <Text fontSize="sm" color="gray.300">
+                  <Text fontSize="sm" color="gray.600">
                     Cette action est <strong>IRRÉVERSIBLE</strong>. Toutes vos données seront supprimées définitivement.
                   </Text>
                 </Alert>
 
-                <Text fontWeight="bold" color="white">
+                <Text fontWeight="bold" color="gray.800">
                   Pour confirmer, tapez exactement :
                 </Text>
                 <Text fontWeight="bold" color="red.400" fontSize="lg" textAlign="center" bg="red.900" p={3} borderRadius="md">
@@ -275,15 +275,15 @@ export default function RGPDPage({ token }) {
                 </Text>
 
                 <FormControl>
-                  <FormLabel fontSize="sm" color="gray.300">Confirmation</FormLabel>
+                  <FormLabel fontSize="sm" color="gray.600">Confirmation</FormLabel>
                   <Input
                     placeholder="Tapez le texte ci-dessus"
                     value={deleteConfirmation}
                     onChange={(e) => setDeleteConfirmation(e.target.value)}
                     autoFocus
-                    bg="gray.700"
-                    color="white"
-                    borderColor="gray.600"
+                    bg="gray.50"
+                    color="gray.800"
+                    borderColor="gray.300"
                   />
                 </FormControl>
               </VStack>

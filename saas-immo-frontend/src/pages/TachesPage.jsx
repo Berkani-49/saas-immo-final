@@ -61,7 +61,7 @@ export default function TachesPage({ token }) {
   
   return (
     <Box>
-      <Heading mb={6} color="white">Agenda & Tâches</Heading>
+      <Heading mb={6} color="gray.800">Agenda & Tâches</Heading>
 
       {isLoading ? (
         <Flex justify="center"><Spinner size="xl" color="brand.900" /></Flex>

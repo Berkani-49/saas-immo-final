@@ -6,6 +6,7 @@ import {
 } from '@chakra-ui/react';
 import { CheckCircleIcon } from '@chakra-ui/icons';
 import { FiHome, FiUsers, FiTrendingUp } from 'react-icons/fi';
+import { Link as RouterLink } from 'react-router-dom';
 
 export default function LoginPage({
   email, setEmail,
@@ -77,7 +78,7 @@ export default function LoginPage({
         {/* Sous-titre */}
         <Text
           fontSize={{ base: 'sm', md: 'lg' }}
-          color="gray.300"
+          color="gray.600"
           maxW="500px"
           mb={{ base: 4, lg: 8 }}
           textAlign={{ base: 'center', lg: 'left' }}
@@ -90,15 +91,15 @@ export default function LoginPage({
           <HStack spacing={5} justify="center" flexWrap="wrap" mt={2}>
             <HStack spacing={2}>
               <Icon as={FiHome} color="brand.400" boxSize={4} />
-              <Text color="gray.300" fontSize="xs" fontWeight="medium">Biens</Text>
+              <Text color="gray.600" fontSize="xs" fontWeight="medium">Biens</Text>
             </HStack>
             <HStack spacing={2}>
               <Icon as={FiUsers} color="brand.400" boxSize={4} />
-              <Text color="gray.300" fontSize="xs" fontWeight="medium">Clients</Text>
+              <Text color="gray.600" fontSize="xs" fontWeight="medium">Clients</Text>
             </HStack>
             <HStack spacing={2}>
               <Icon as={FiTrendingUp} color="brand.400" boxSize={4} />
-              <Text color="gray.300" fontSize="xs" fontWeight="medium">Analytics</Text>
+              <Text color="gray.600" fontSize="xs" fontWeight="medium">Analytics</Text>
             </HStack>
           </HStack>
         ) : (
@@ -113,7 +114,7 @@ export default function LoginPage({
               >
                 <Icon as={FiHome} color="brand.400" boxSize={5} />
               </Flex>
-              <Text color="gray.300" fontSize="sm">Gestion complète de vos biens</Text>
+              <Text color="gray.600" fontSize="sm">Gestion complète de vos biens</Text>
             </HStack>
             <HStack spacing={3}>
               <Flex
@@ -125,7 +126,7 @@ export default function LoginPage({
               >
                 <Icon as={FiUsers} color="brand.400" boxSize={5} />
               </Flex>
-              <Text color="gray.300" fontSize="sm">Suivi client intelligent</Text>
+              <Text color="gray.600" fontSize="sm">Suivi client intelligent</Text>
             </HStack>
             <HStack spacing={3}>
               <Flex
@@ -137,7 +138,7 @@ export default function LoginPage({
               >
                 <Icon as={FiTrendingUp} color="brand.400" boxSize={5} />
               </Flex>
-              <Text color="gray.300" fontSize="sm">Analytics en temps réel</Text>
+              <Text color="gray.600" fontSize="sm">Analytics en temps réel</Text>
             </HStack>
           </VStack>
         )}
@@ -159,7 +160,7 @@ export default function LoginPage({
           p={{ base: 5, lg: 0 }}
           borderRadius={{ base: '2xl', lg: 'none' }}
           borderWidth={{ base: '1px', lg: '0' }}
-          borderColor="gray.700"
+          borderColor="gray.200"
         >
           {/* Titre du formulaire */}
           <Heading
@@ -209,7 +210,7 @@ export default function LoginPage({
                   size="lg"
                   bg={{ base: '#1a1a24', lg: 'gray.800' }}
                   border="1px solid"
-                  borderColor="gray.700"
+                  borderColor="gray.200"
                   color="white"
                   _placeholder={{ color: 'gray.400' }}
                   _hover={{ borderColor: 'gray.600' }}
@@ -230,7 +231,7 @@ export default function LoginPage({
                   size="lg"
                   bg={{ base: '#1a1a24', lg: 'gray.800' }}
                   border="1px solid"
-                  borderColor="gray.700"
+                  borderColor="gray.200"
                   color="white"
                   _placeholder={{ color: 'gray.400' }}
                   _hover={{ borderColor: 'gray.600' }}
@@ -248,6 +249,18 @@ export default function LoginPage({
                   {message}
                 </Alert>
               )}
+
+              <Text textAlign="right" w="100%">
+                <Text
+                  as={RouterLink}
+                  to="/forgot-password"
+                  color="brand.400"
+                  fontSize="sm"
+                  _hover={{ textDecoration: 'underline' }}
+                >
+                  Mot de passe oublié ?
+                </Text>
+              </Text>
 
               <Button
                 type="submit"

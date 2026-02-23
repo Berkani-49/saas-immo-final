@@ -180,7 +180,7 @@ export default function StagingModal({ isOpen, onClose, property, token, onPrope
               <Text fontSize="sm" fontWeight="bold" color="purple.300" mb={2}>
                 💡 Qu'est-ce que le Home Staging Virtuel ?
               </Text>
-              <Text fontSize="xs" color="gray.300">
+              <Text fontSize="xs" color="gray.600">
                 L'IA va meubler votre pièce vide avec le style de votre choix.
                 Parfait pour aider les clients à se projeter !
               </Text>
@@ -228,7 +228,7 @@ export default function StagingModal({ isOpen, onClose, property, token, onPrope
 
             {property.imageUrl && (
               <Box>
-                <Text fontSize="sm" fontWeight="bold" color="gray.300" mb={2}>
+                <Text fontSize="sm" fontWeight="bold" color="gray.600" mb={2}>
                   Photo actuelle :
                 </Text>
                 <Image

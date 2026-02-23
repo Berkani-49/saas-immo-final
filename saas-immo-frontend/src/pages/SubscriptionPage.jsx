@@ -123,7 +123,7 @@ export default function SubscriptionPage({ token }) {
   return (
     <Box py={10} px={4}>
       <VStack spacing={3} mb={10} textAlign="center">
-        <Heading color="white" size="xl">
+        <Heading color="gray.800" size="xl">
           Choisissez votre plan
         </Heading>
         <Text fontSize="lg" color="gray.400" maxW="600px">
@@ -149,7 +149,7 @@ export default function SubscriptionPage({ token }) {
           return (
             <Box
               key={p.slug}
-              bg="gray.800"
+              bg="white"
               p={8}
               borderRadius="2xl"
               shadow={isPopular ? '0 0 30px rgba(66, 153, 225, 0.15)' : 'xl'}
@@ -207,7 +207,7 @@ export default function SubscriptionPage({ token }) {
 
               {/* Prix */}
               <Flex align="baseline" my={4}>
-                <Text fontSize="5xl" fontWeight="extrabold" color="white">
+                <Text fontSize="5xl" fontWeight="extrabold" color="gray.800">
                   {p.price}€
                 </Text>
                 <Text fontSize="lg" color="gray.500" ml={1}>
@@ -219,7 +219,7 @@ export default function SubscriptionPage({ token }) {
                 {p.description}
               </Text>
 
-              <Divider borderColor="gray.700" mb={6} />
+              <Divider borderColor="gray.200" mb={6} />
 
               {/* Features */}
               <List spacing={3} mb={8}>

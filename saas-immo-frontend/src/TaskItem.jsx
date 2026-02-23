@@ -53,7 +53,7 @@ export default function TaskItem({ task, token, onTaskUpdated, onTaskDeleted }) 
       p={4} mb={3}
       borderWidth="1px" borderRadius="lg"
       bg={isDone ? "gray.900" : "gray.800"}
-      borderColor="gray.700"
+      borderColor="gray.200"
       opacity={isDone ? 0.7 : 1}
       shadow="sm"
       transition="all 0.2s"
@@ -96,7 +96,7 @@ export default function TaskItem({ task, token, onTaskUpdated, onTaskDeleted }) 
             
             {/* Contact + Bouton Appel */}
             {task.contact && (
-              <HStack spacing={0} borderWidth="1px" borderColor="gray.600" borderRadius="full" overflow="hidden">
+              <HStack spacing={0} borderWidth="1px" borderColor="gray.300" borderRadius="full" overflow="hidden">
                 <Link to={`/contact/${task.contact.id}`}>
                   <Box px={3} py={1} bg="blue.900" _hover={{ bg: "blue.800" }} cursor="pointer">
                     <Text fontSize="xs" fontWeight="bold" color="blue.200">
@@ -112,7 +112,7 @@ export default function TaskItem({ task, token, onTaskUpdated, onTaskDeleted }) 
                       as="a" href={`tel:${task.contact.phoneNumber}`}
                       px={2} py={1} bg="green.900" color="green.300"
                       _hover={{ bg: "green.800" }} display="flex" alignItems="center"
-                      borderLeftWidth="1px" borderColor="gray.700"
+                      borderLeftWidth="1px" borderColor="gray.200"
                     >
                       <PhoneIcon w={3} h={3} />
                     </Box>

@@ -19,7 +19,7 @@ export default function UpgradeModal({ isOpen, onClose, requiredPlan = 'pro', fe
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered size="md">
       <ModalOverlay bg="blackAlpha.700" />
-      <ModalContent bg="gray.800" borderColor="gray.700" borderWidth="1px">
+      <ModalContent bg="white" borderColor="gray.200" borderWidth="1px">
         <ModalHeader>
           <HStack>
             <Icon as={FiLock} color={`${planInfo.color}.400`} />
@@ -41,7 +41,7 @@ export default function UpgradeModal({ isOpen, onClose, requiredPlan = 'pro', fe
               Plan {planInfo.name} requis
             </Badge>
 
-            <Text color="gray.300" textAlign="center">
+            <Text color="gray.600" textAlign="center">
               {featureName
                 ? `La fonctionnalité "${featureName}" est réservée au plan ${planInfo.name} (${planInfo.price}€/mois) et supérieur.`
                 : `Cette fonctionnalité nécessite le plan ${planInfo.name} (${planInfo.price}€/mois) ou supérieur.`

@@ -48,17 +48,17 @@ export default function HelpPage() {
         <Box>
           <HStack mb={2}>
             <Icon as={FiHelpCircle} boxSize={6} color="brand.400" />
-            <Heading size="lg" color="white">Aide & Support</Heading>
+            <Heading size="lg" color="gray.800">Aide & Support</Heading>
           </HStack>
           <Text color="gray.400">Trouvez des réponses à vos questions ou contactez-nous.</Text>
         </Box>
 
         {/* Contact rapide */}
         <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
-          <Card bg="gray.800" borderColor="gray.700" borderWidth="1px" _hover={{ borderColor: 'brand.500' }} transition="all 0.2s">
+          <Card bg="white" borderColor="gray.200" borderWidth="1px" _hover={{ borderColor: 'brand.500' }} transition="all 0.2s">
             <CardBody textAlign="center">
               <Icon as={FiMail} boxSize={8} color="brand.400" mb={3} />
-              <Heading size="sm" color="white" mb={2}>Email</Heading>
+              <Heading size="sm" color="gray.800" mb={2}>Email</Heading>
               <Text color="gray.400" fontSize="sm" mb={3}>Réponse sous 24h</Text>
               <Button as="a" href="mailto:support@immopro.com" size="sm" colorScheme="blue" variant="outline">
                 Nous contacter
@@ -66,10 +66,10 @@ export default function HelpPage() {
             </CardBody>
           </Card>
 
-          <Card bg="gray.800" borderColor="gray.700" borderWidth="1px" _hover={{ borderColor: 'brand.500' }} transition="all 0.2s">
+          <Card bg="white" borderColor="gray.200" borderWidth="1px" _hover={{ borderColor: 'brand.500' }} transition="all 0.2s">
             <CardBody textAlign="center">
               <Icon as={FiBook} boxSize={8} color="brand.400" mb={3} />
-              <Heading size="sm" color="white" mb={2}>Documentation</Heading>
+              <Heading size="sm" color="gray.800" mb={2}>Documentation</Heading>
               <Text color="gray.400" fontSize="sm" mb={3}>Guides et tutoriels</Text>
               <Button size="sm" colorScheme="blue" variant="outline" isDisabled>
                 Bientôt disponible
@@ -77,10 +77,10 @@ export default function HelpPage() {
             </CardBody>
           </Card>
 
-          <Card bg="gray.800" borderColor="gray.700" borderWidth="1px" _hover={{ borderColor: 'brand.500' }} transition="all 0.2s">
+          <Card bg="white" borderColor="gray.200" borderWidth="1px" _hover={{ borderColor: 'brand.500' }} transition="all 0.2s">
             <CardBody textAlign="center">
               <Icon as={FiMessageSquare} boxSize={8} color="brand.400" mb={3} />
-              <Heading size="sm" color="white" mb={2}>Chat</Heading>
+              <Heading size="sm" color="gray.800" mb={2}>Chat</Heading>
               <Text color="gray.400" fontSize="sm" mb={3}>Support en direct</Text>
               <Button size="sm" colorScheme="blue" variant="outline" isDisabled>
                 Bientôt disponible
@@ -90,24 +90,24 @@ export default function HelpPage() {
         </SimpleGrid>
 
         {/* FAQ */}
-        <Card bg="gray.800" borderColor="gray.700" borderWidth="1px">
+        <Card bg="white" borderColor="gray.200" borderWidth="1px">
           <CardBody>
-            <Heading size="md" color="white" mb={4}>Questions fréquentes</Heading>
+            <Heading size="md" color="gray.800" mb={4}>Questions fréquentes</Heading>
             <Accordion allowMultiple>
               {FAQ_ITEMS.map((item, index) => (
                 <AccordionItem key={index} border="none" mb={2}>
                   <AccordionButton
-                    bg="gray.700"
+                    bg="gray.50"
                     borderRadius="lg"
                     _hover={{ bg: 'gray.600' }}
                     _expanded={{ bg: 'gray.600', borderBottomRadius: 0 }}
                   >
-                    <Box flex="1" textAlign="left" color="white" fontWeight="medium" fontSize="sm">
+                    <Box flex="1" textAlign="left" color="gray.800" fontWeight="medium" fontSize="sm">
                       {item.question}
                     </Box>
                     <AccordionIcon color="gray.400" />
                   </AccordionButton>
-                  <AccordionPanel bg="gray.700" borderBottomRadius="lg" color="gray.300" fontSize="sm" pb={4}>
+                  <AccordionPanel bg="gray.50" borderBottomRadius="lg" color="gray.600" fontSize="sm" pb={4}>
                     {item.answer}
                   </AccordionPanel>
                 </AccordionItem>

@@ -41,7 +41,7 @@ export default function ForgotPasswordPage() {
       align="center"
       p={5}
     >
-      <Box w="100%" maxW="420px" bg="#13131a" p={8} borderRadius="2xl" borderWidth="1px" borderColor="gray.700">
+      <Box w="100%" maxW="420px" bg="#13131a" p={8} borderRadius="2xl" borderWidth="1px" borderColor="gray.200">
         <HStack as={RouterLink} to="/" spacing={2} mb={6} color="brand.400" _hover={{ textDecoration: 'underline' }}>
           <Icon as={FiArrowLeft} />
           <Text fontSize="sm">Retour à la connexion</Text>
@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
 
         <HStack spacing={3} mb={2}>
           <Icon as={FiMail} color="brand.400" boxSize={6} />
-          <Heading as="h2" fontSize="xl" color="white">Mot de passe oublié</Heading>
+          <Heading as="h2" fontSize="xl" color="gray.800">Mot de passe oublié</Heading>
         </HStack>
         <Text color="gray.400" mb={6} fontSize="sm">
           Entrez votre email et nous vous enverrons un lien de réinitialisation.
@@ -72,8 +72,8 @@ export default function ForgotPasswordPage() {
                   size="lg"
                   bg="#1a1a24"
                   border="1px solid"
-                  borderColor="gray.700"
-                  color="white"
+                  borderColor="gray.200"
+                  color="gray.800"
                   _placeholder={{ color: 'gray.400' }}
                   _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)' }}
                   borderRadius="xl"
@@ -92,7 +92,7 @@ export default function ForgotPasswordPage() {
                 size="lg"
                 width="full"
                 bg="brand.500"
-                color="white"
+                color="gray.800"
                 _hover={{ bg: 'brand.600' }}
                 isLoading={isSubmitting}
                 loadingText="Envoi..."

@@ -107,7 +107,7 @@ export default function MatchingModal({ isOpen, onClose, property, token }) {
                       borderWidth="2px"
                       borderRadius="lg"
                       borderColor={`${scoreColor}.300`}
-                      bg="gray.700"
+                      bg="gray.50"
                       shadow="md"
                       _hover={{ shadow: "xl", transform: "translateY(-2px)" }}
                       transition="all 0.2s"
@@ -146,7 +146,7 @@ export default function MatchingModal({ isOpen, onClose, property, token }) {
                       />
 
                       {/* Coordonnées */}
-                      <VStack align="stretch" spacing={1} fontSize="sm" color="gray.300" mb={3}>
+                      <VStack align="stretch" spacing={1} fontSize="sm" color="gray.600" mb={3}>
                         {contact.email && (
                           <HStack>
                             <Icon as={FiMail} boxSize={4} color="gray.500" />
@@ -167,8 +167,8 @@ export default function MatchingModal({ isOpen, onClose, property, token }) {
                           mt={2}
                           pt={3}
                           borderTopWidth="1px"
-                          borderColor="gray.600"
-                          bg="gray.800"
+                          borderColor="gray.300"
+                          bg="white"
                           p={3}
                           borderRadius="md"
                         >

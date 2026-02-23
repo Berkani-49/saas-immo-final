@@ -347,11 +347,11 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
         <Box
           textAlign="center"
           py={10}
-          bg="gray.800"
+          bg="white"
           borderRadius="lg"
           borderWidth="2px"
           borderStyle="dashed"
-          borderColor="gray.600"
+          borderColor="gray.300"
         >
           <Text fontSize="lg" color="gray.500">
             📸 Aucune photo pour ce bien
@@ -384,13 +384,13 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
             boxShadow="md"
             transition="all 0.3s"
             _hover={{ transform: 'translateY(-5px)', boxShadow: 'xl' }}
-            bg="gray.800"
+            bg="white"
           >
             {/* Image */}
             <Box
               position="relative"
               h="200px"
-              bg="gray.700"
+              bg="gray.50"
               cursor="pointer"
               onClick={() => handleViewImage(img)}
             >
@@ -449,14 +449,14 @@ export default function PropertyImageGallery({ propertyId, token, onImagesChange
                 justifyContent="center"
                 _hover={{ opacity: 1 }}
               >
-                <ViewIcon boxSize={8} color="white" />
+                <ViewIcon boxSize={8} color="gray.800" />
               </Box>
             </Box>
 
             {/* Actions */}
-            <Box p={3} bg="gray.800">
+            <Box p={3} bg="white">
               <HStack spacing={2} justify="space-between">
-                <Text fontSize="sm" fontWeight="medium" color="gray.300" flex={1} noOfLines={1}>
+                <Text fontSize="sm" fontWeight="medium" color="gray.600" flex={1} noOfLines={1}>
                   {img.caption || `Photo ${index + 1}`}
                 </Text>
 

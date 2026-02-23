@@ -64,8 +64,8 @@ export default function AddTaskForm({ token, onTaskAdded, contacts, properties }
   };
 
   return (
-    <Box p={5} shadow="md" borderWidth="1px" borderColor="gray.700" borderRadius="lg" bg="gray.800" mb={6}>
-      <Heading size="md" mb={4} color="white">Nouvelle Tâche</Heading>
+    <Box p={5} shadow="md" borderWidth="1px" borderColor="gray.200" borderRadius="lg" bg="white" mb={6}>
+      <Heading size="md" mb={4} color="gray.800">Nouvelle Tâche</Heading>
       <form onSubmit={handleSubmit}>
         <VStack spacing={4}>
           <FormControl isRequired>

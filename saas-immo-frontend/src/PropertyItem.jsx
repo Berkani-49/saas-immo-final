@@ -139,7 +139,7 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
   // --- MODE ÉDITION ---
   if (isEditing) {
     return (
-      <Box p={4} borderWidth={1} borderColor="gray.700" borderRadius="lg" bg="gray.800" shadow="md">
+      <Box p={4} borderWidth={1} borderColor="gray.200" borderRadius="lg" bg="white" shadow="md">
         <form onSubmit={handleSave}>
           <VStack spacing={3} align="stretch">
             <Text fontWeight="bold" color="brand.400">Modifier le bien</Text>
@@ -178,7 +178,7 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
   // --- MODE VUE (CARTE) ---
   return (
     <Box
-      borderWidth="1px" borderColor="gray.700" borderRadius="2xl" overflow="hidden" bg="gray.800"
+      borderWidth="1px" borderColor="gray.200" borderRadius="2xl" overflow="hidden" bg="white"
       transition="all 0.3s" _hover={{ transform: 'translateY(-5px)', shadow: 'xl' }}
       position="relative"
     >
@@ -237,7 +237,7 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
         </Flex>
 
         <Link to={`/property/${property.id}`}>
-            <Text fontWeight="bold" fontSize="xl" lineHeight="tight" noOfLines={1} mb={2} color="white" _hover={{ color: 'brand.400' }}>
+            <Text fontWeight="bold" fontSize="xl" lineHeight="tight" noOfLines={1} mb={2} color="gray.800" _hover={{ color: 'brand.400' }}>
                 {property.address}
             </Text>
         </Link>
@@ -286,7 +286,7 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
             </Box>
         )}
 
-        <Flex pt={3} borderTopWidth={1} borderColor="gray.700" justify="space-between" align="center">
+        <Flex pt={3} borderTopWidth={1} borderColor="gray.200" justify="space-between" align="center">
             {property.agent ? (
                 <Text fontSize="xs" color="gray.400">Agent: {property.agent.firstName}</Text>
             ) : <Spacer />}

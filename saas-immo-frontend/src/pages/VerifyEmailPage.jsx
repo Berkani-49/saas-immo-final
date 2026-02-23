@@ -42,19 +42,19 @@ export default function VerifyEmailPage() {
       align="center"
       p={5}
     >
-      <Box w="100%" maxW="420px" bg="#13131a" p={8} borderRadius="2xl" borderWidth="1px" borderColor="gray.700" textAlign="center">
+      <Box w="100%" maxW="420px" bg="#13131a" p={8} borderRadius="2xl" borderWidth="1px" borderColor="gray.200" textAlign="center">
 
         {status === 'verifying' && (
           <VStack spacing={4}>
             <Spinner size="xl" color="brand.400" />
-            <Heading fontSize="lg" color="white">Vérification en cours...</Heading>
+            <Heading fontSize="lg" color="gray.800">Vérification en cours...</Heading>
           </VStack>
         )}
 
         {status === 'verified' && (
           <VStack spacing={4}>
             <Icon as={FiCheckCircle} boxSize={12} color="green.400" />
-            <Heading fontSize="xl" color="white">Email vérifié !</Heading>
+            <Heading fontSize="xl" color="gray.800">Email vérifié !</Heading>
             <Text color="gray.400" fontSize="sm">Votre adresse email a été vérifiée avec succès. Vous pouvez maintenant vous connecter.</Text>
             <Button as={RouterLink} to="/" w="100%" bg="brand.500" color="white" _hover={{ bg: 'brand.600' }} borderRadius="xl" size="lg">
               Se connecter
@@ -77,7 +77,7 @@ export default function VerifyEmailPage() {
         {status === 'no-token' && (
           <VStack spacing={4}>
             <Icon as={FiMail} boxSize={12} color="brand.400" />
-            <Heading fontSize="xl" color="white">Vérifiez votre email</Heading>
+            <Heading fontSize="xl" color="gray.800">Vérifiez votre email</Heading>
             <Text color="gray.400" fontSize="sm">
               Un email de vérification a été envoyé à votre adresse. Cliquez sur le lien dans l'email pour activer votre compte.
             </Text>

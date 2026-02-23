@@ -87,17 +87,17 @@ export default function ProfilePage({ token }) {
         <Box>
           <HStack mb={2}>
             <Icon as={FiUser} boxSize={6} color="brand.400" />
-            <Heading size="lg" color="white">Mon Profil</Heading>
+            <Heading size="lg" color="gray.800">Mon Profil</Heading>
           </HStack>
           <Text color="gray.400">Gérez vos informations personnelles et votre mot de passe.</Text>
         </Box>
 
         {/* Infos personnelles */}
-        <Card bg="gray.800" borderColor="gray.700" borderWidth="1px">
+        <Card bg="white" borderColor="gray.200" borderWidth="1px">
           <CardHeader pb={2}>
             <HStack>
               <Icon as={FiUser} color="brand.400" />
-              <Heading size="md" color="white">Informations personnelles</Heading>
+              <Heading size="md" color="gray.800">Informations personnelles</Heading>
             </HStack>
           </CardHeader>
           <CardBody>
@@ -105,16 +105,16 @@ export default function ProfilePage({ token }) {
               <HStack spacing={4} flexDir={{ base: 'column', md: 'row' }}>
                 <FormControl>
                   <FormLabel color="gray.400" fontSize="sm">Prénom</FormLabel>
-                  <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} bg="gray.700" borderColor="gray.600" color="white" />
+                  <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} bg="gray.50" borderColor="gray.300" color="gray.800" />
                 </FormControl>
                 <FormControl>
                   <FormLabel color="gray.400" fontSize="sm">Nom</FormLabel>
-                  <Input value={lastName} onChange={(e) => setLastName(e.target.value)} bg="gray.700" borderColor="gray.600" color="white" />
+                  <Input value={lastName} onChange={(e) => setLastName(e.target.value)} bg="gray.50" borderColor="gray.300" color="gray.800" />
                 </FormControl>
               </HStack>
               <FormControl>
                 <FormLabel color="gray.400" fontSize="sm">Email</FormLabel>
-                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} bg="gray.700" borderColor="gray.600" color="white" />
+                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} bg="gray.50" borderColor="gray.300" color="gray.800" />
               </FormControl>
 
               {user && (
@@ -136,22 +136,22 @@ export default function ProfilePage({ token }) {
         </Card>
 
         {/* Changement de mot de passe */}
-        <Card bg="gray.800" borderColor="gray.700" borderWidth="1px">
+        <Card bg="white" borderColor="gray.200" borderWidth="1px">
           <CardHeader pb={2}>
             <HStack>
               <Icon as={FiLock} color="brand.400" />
-              <Heading size="md" color="white">Changer le mot de passe</Heading>
+              <Heading size="md" color="gray.800">Changer le mot de passe</Heading>
             </HStack>
           </CardHeader>
           <CardBody>
             <VStack spacing={4} align="stretch">
               <FormControl>
                 <FormLabel color="gray.400" fontSize="sm">Mot de passe actuel</FormLabel>
-                <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} bg="gray.700" borderColor="gray.600" color="white" />
+                <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} bg="gray.50" borderColor="gray.300" color="gray.800" />
               </FormControl>
               <FormControl>
                 <FormLabel color="gray.400" fontSize="sm">Nouveau mot de passe</FormLabel>
-                <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} bg="gray.700" borderColor="gray.600" color="white" />
+                <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} bg="gray.50" borderColor="gray.300" color="gray.800" />
               </FormControl>
 
               {newPassword.length > 0 && (
@@ -171,9 +171,9 @@ export default function ProfilePage({ token }) {
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  bg="gray.700"
+                  bg="gray.50"
                   borderColor={confirmPassword.length > 0 ? (passwordsMatch ? 'green.500' : 'red.500') : 'gray.600'}
-                  color="white"
+                  color="gray.800"
                 />
               </FormControl>
 
@@ -191,11 +191,11 @@ export default function ProfilePage({ token }) {
         </Card>
 
         {/* Plan actuel */}
-        <Card bg="gray.800" borderColor="gray.700" borderWidth="1px">
+        <Card bg="white" borderColor="gray.200" borderWidth="1px">
           <CardHeader pb={2}>
             <HStack>
               <Icon as={FiBriefcase} color="brand.400" />
-              <Heading size="md" color="white">Plan actuel</Heading>
+              <Heading size="md" color="gray.800">Plan actuel</Heading>
             </HStack>
           </CardHeader>
           <CardBody>

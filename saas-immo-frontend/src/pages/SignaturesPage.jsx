@@ -135,7 +135,7 @@ export default function SignaturesPage({ token }) {
   return (
     <Box>
       <Flex justify="space-between" align="center" mb={6} flexWrap="wrap" gap={3}>
-        <Heading size="lg" color="white">
+        <Heading size="lg" color="gray.800">
           <Icon as={FiEdit3} mr={3} color="brand.400" />
           Signature électronique
         </Heading>
@@ -153,7 +153,7 @@ export default function SignaturesPage({ token }) {
 
       {/* Liste des documents */}
       {documents.length === 0 ? (
-        <Card bg="gray.800" borderColor="gray.700" borderWidth="1px">
+        <Card bg="white" borderColor="gray.200" borderWidth="1px">
           <CardBody textAlign="center" py={10}>
             <Icon as={FiFileText} boxSize={12} color="gray.600" mb={4} />
             <Text color="gray.400" fontSize="lg">Aucun document</Text>
@@ -162,18 +162,18 @@ export default function SignaturesPage({ token }) {
           </CardBody>
         </Card>
       ) : (
-        <Card bg="gray.800" borderColor="gray.700" borderWidth="1px" overflow="hidden">
+        <Card bg="white" borderColor="gray.200" borderWidth="1px" overflow="hidden">
           <Box overflowX="auto">
             <Table variant="simple" size="sm">
               <Thead>
                 <Tr>
-                  <Th color="gray.400" borderColor="gray.600">Document</Th>
-                  <Th color="gray.400" borderColor="gray.600">Type</Th>
-                  <Th color="gray.400" borderColor="gray.600">Signataire</Th>
-                  <Th color="gray.400" borderColor="gray.600">Bien</Th>
-                  <Th color="gray.400" borderColor="gray.600">Statut</Th>
-                  <Th color="gray.400" borderColor="gray.600">Date</Th>
-                  <Th color="gray.400" borderColor="gray.600" textAlign="center">Actions</Th>
+                  <Th color="gray.400" borderColor="gray.300">Document</Th>
+                  <Th color="gray.400" borderColor="gray.300">Type</Th>
+                  <Th color="gray.400" borderColor="gray.300">Signataire</Th>
+                  <Th color="gray.400" borderColor="gray.300">Bien</Th>
+                  <Th color="gray.400" borderColor="gray.300">Statut</Th>
+                  <Th color="gray.400" borderColor="gray.300">Date</Th>
+                  <Th color="gray.400" borderColor="gray.300" textAlign="center">Actions</Th>
                 </Tr>
               </Thead>
               <Tbody>
@@ -182,34 +182,34 @@ export default function SignaturesPage({ token }) {
                   const typeName = DOCUMENT_TYPES.find((t) => t.id === doc.type)?.name || doc.type;
                   return (
                     <Tr key={doc.id} _hover={{ bg: 'gray.750' }}>
-                      <Td borderColor="gray.600">
-                        <Text color="white" fontSize="sm" fontWeight="medium" noOfLines={1}>{doc.title}</Text>
+                      <Td borderColor="gray.300">
+                        <Text color="gray.800" fontSize="sm" fontWeight="medium" noOfLines={1}>{doc.title}</Text>
                       </Td>
-                      <Td borderColor="gray.600">
-                        <Text color="gray.300" fontSize="sm">{typeName}</Text>
+                      <Td borderColor="gray.300">
+                        <Text color="gray.600" fontSize="sm">{typeName}</Text>
                       </Td>
-                      <Td borderColor="gray.600">
+                      <Td borderColor="gray.300">
                         <Box>
-                          <Text color="white" fontSize="sm">{doc.signerName}</Text>
+                          <Text color="gray.800" fontSize="sm">{doc.signerName}</Text>
                           <Text color="gray.500" fontSize="xs">{doc.signerEmail}</Text>
                         </Box>
                       </Td>
-                      <Td borderColor="gray.600">
+                      <Td borderColor="gray.300">
                         <Text color="gray.400" fontSize="sm" noOfLines={1}>
                           {doc.property ? `${doc.property.address}, ${doc.property.city}` : '—'}
                         </Text>
                       </Td>
-                      <Td borderColor="gray.600">
+                      <Td borderColor="gray.300">
                         <Badge colorScheme={statusCfg.color} fontSize="xs">{statusCfg.label}</Badge>
                       </Td>
-                      <Td borderColor="gray.600">
+                      <Td borderColor="gray.300">
                         <Text color="gray.400" fontSize="xs">
                           {doc.signedAt
                             ? `Signé ${new Date(doc.signedAt).toLocaleDateString('fr-FR')}`
                             : new Date(doc.createdAt).toLocaleDateString('fr-FR')}
                         </Text>
                       </Td>
-                      <Td borderColor="gray.600">
+                      <Td borderColor="gray.300">
                         <HStack spacing={1} justify="center">
                           {(doc.status === 'DRAFT' || doc.status === 'SENT') && (
                             <Tooltip label="Envoyer pour signature">
@@ -253,17 +253,17 @@ export default function SignaturesPage({ token }) {
       {/* Modal création document */}
       <Modal isOpen={isOpen} onClose={onClose} size="lg">
         <ModalOverlay />
-        <ModalContent bg="gray.800" borderColor="gray.600" borderWidth="1px">
-          <ModalHeader color="white">Nouveau document</ModalHeader>
+        <ModalContent bg="white" borderColor="gray.300" borderWidth="1px">
+          <ModalHeader color="gray.800">Nouveau document</ModalHeader>
           <ModalCloseButton color="gray.400" />
           <ModalBody>
             <VStack spacing={4}>
               <FormControl isRequired>
-                <FormLabel color="gray.300" fontSize="sm">Type de document</FormLabel>
+                <FormLabel color="gray.600" fontSize="sm">Type de document</FormLabel>
                 <Select
                   value={form.type}
                   onChange={(e) => setForm({ ...form, type: e.target.value })}
-                  bg="gray.700" borderColor="gray.600" color="white"
+                  bg="gray.50" borderColor="gray.300" color="gray.800"
                 >
                   {DOCUMENT_TYPES.map((t) => (
                     <option key={t.id} value={t.id} style={{ background: '#2D3748' }}>{t.name}</option>
@@ -271,40 +271,40 @@ export default function SignaturesPage({ token }) {
                 </Select>
               </FormControl>
               <FormControl isRequired>
-                <FormLabel color="gray.300" fontSize="sm">Titre</FormLabel>
+                <FormLabel color="gray.600" fontSize="sm">Titre</FormLabel>
                 <Input
                   placeholder="Ex: Mandat de vente - Appartement Paris 15e"
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  bg="gray.700" borderColor="gray.600" color="white"
+                  bg="gray.50" borderColor="gray.300" color="gray.800"
                 />
               </FormControl>
               <FormControl isRequired>
-                <FormLabel color="gray.300" fontSize="sm">Nom du signataire</FormLabel>
+                <FormLabel color="gray.600" fontSize="sm">Nom du signataire</FormLabel>
                 <Input
                   placeholder="Nom et prénom"
                   value={form.signerName}
                   onChange={(e) => setForm({ ...form, signerName: e.target.value })}
-                  bg="gray.700" borderColor="gray.600" color="white"
+                  bg="gray.50" borderColor="gray.300" color="gray.800"
                 />
               </FormControl>
               <FormControl isRequired>
-                <FormLabel color="gray.300" fontSize="sm">Email du signataire</FormLabel>
+                <FormLabel color="gray.600" fontSize="sm">Email du signataire</FormLabel>
                 <Input
                   type="email"
                   placeholder="email@exemple.com"
                   value={form.signerEmail}
                   onChange={(e) => setForm({ ...form, signerEmail: e.target.value })}
-                  bg="gray.700" borderColor="gray.600" color="white"
+                  bg="gray.50" borderColor="gray.300" color="gray.800"
                 />
               </FormControl>
               <FormControl>
-                <FormLabel color="gray.300" fontSize="sm">Bien associé (optionnel)</FormLabel>
+                <FormLabel color="gray.600" fontSize="sm">Bien associé (optionnel)</FormLabel>
                 <Select
                   placeholder="Sélectionner un bien..."
                   value={form.propertyId}
                   onChange={(e) => setForm({ ...form, propertyId: e.target.value })}
-                  bg="gray.700" borderColor="gray.600" color="white"
+                  bg="gray.50" borderColor="gray.300" color="gray.800"
                 >
                   {properties.map((p) => (
                     <option key={p.id} value={p.id} style={{ background: '#2D3748' }}>

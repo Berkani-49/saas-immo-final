@@ -96,7 +96,7 @@ export default function DiffusionPage({ token }) {
   return (
     <Box>
       <Flex justify="space-between" align="center" mb={6}>
-        <Heading size="lg" color="white">
+        <Heading size="lg" color="gray.800">
           <Icon as={FiShare2} mr={3} color="brand.400" />
           Multi-diffusion
         </Heading>
@@ -110,29 +110,29 @@ export default function DiffusionPage({ token }) {
       {/* Statistiques */}
       {stats && (
         <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={6}>
-          <Card bg="gray.800" borderColor="gray.700" borderWidth="1px">
+          <Card bg="white" borderColor="gray.200" borderWidth="1px">
             <CardBody>
               <Stat>
                 <StatLabel color="gray.400">Biens publiés</StatLabel>
-                <StatNumber color="white">{stats.totalPublished}</StatNumber>
+                <StatNumber color="gray.800">{stats.totalPublished}</StatNumber>
                 <Text fontSize="xs" color="gray.500">sur {stats.totalProperties} biens au total</Text>
               </Stat>
             </CardBody>
           </Card>
-          <Card bg="gray.800" borderColor="gray.700" borderWidth="1px">
+          <Card bg="white" borderColor="gray.200" borderWidth="1px">
             <CardBody>
               <Stat>
                 <StatLabel color="gray.400">Portails actifs</StatLabel>
-                <StatNumber color="white">{stats.portals?.filter((p) => p.count > 0).length || 0}</StatNumber>
+                <StatNumber color="gray.800">{stats.portals?.filter((p) => p.count > 0).length || 0}</StatNumber>
                 <Text fontSize="xs" color="gray.500">sur {stats.portals?.length || 0} portails disponibles</Text>
               </Stat>
             </CardBody>
           </Card>
-          <Card bg="gray.800" borderColor="gray.700" borderWidth="1px">
+          <Card bg="white" borderColor="gray.200" borderWidth="1px">
             <CardBody>
               <Stat>
                 <StatLabel color="gray.400">Publications totales</StatLabel>
-                <StatNumber color="white">{stats.portals?.reduce((sum, p) => sum + p.count, 0) || 0}</StatNumber>
+                <StatNumber color="gray.800">{stats.portals?.reduce((sum, p) => sum + p.count, 0) || 0}</StatNumber>
                 <Text fontSize="xs" color="gray.500">annonces sur l'ensemble des portails</Text>
               </Stat>
             </CardBody>
@@ -142,14 +142,14 @@ export default function DiffusionPage({ token }) {
 
       {/* Répartition par portail */}
       {stats?.portals && (
-        <Card bg="gray.800" borderColor="gray.700" borderWidth="1px" mb={6}>
+        <Card bg="white" borderColor="gray.200" borderWidth="1px" mb={6}>
           <CardBody>
-            <Text fontWeight="bold" color="white" mb={3}>Répartition par portail</Text>
+            <Text fontWeight="bold" color="gray.800" mb={3}>Répartition par portail</Text>
             <HStack spacing={4} flexWrap="wrap">
               {stats.portals.map((portal) => (
-                <HStack key={portal.portal} bg="gray.700" px={3} py={2} borderRadius="lg" borderLeft="3px solid" borderLeftColor={portal.portalColor}>
+                <HStack key={portal.portal} bg="gray.50" px={3} py={2} borderRadius="lg" borderLeft="3px solid" borderLeftColor={portal.portalColor}>
                   <Icon as={FiGlobe} color={portal.portalColor} />
-                  <Text color="white" fontSize="sm" fontWeight="medium">{portal.portalName}</Text>
+                  <Text color="gray.800" fontSize="sm" fontWeight="medium">{portal.portalName}</Text>
                   <Badge colorScheme={portal.count > 0 ? 'green' : 'gray'}>{portal.count}</Badge>
                 </HStack>
               ))}
@@ -160,7 +160,7 @@ export default function DiffusionPage({ token }) {
 
       {/* Tableau des biens */}
       {properties.length === 0 ? (
-        <Card bg="gray.800" borderColor="gray.700" borderWidth="1px">
+        <Card bg="white" borderColor="gray.200" borderWidth="1px">
           <CardBody textAlign="center" py={10}>
             <Icon as={FiShare2} boxSize={12} color="gray.600" mb={4} />
             <Text color="gray.400" fontSize="lg">Aucun bien à diffuser</Text>
@@ -168,30 +168,30 @@ export default function DiffusionPage({ token }) {
           </CardBody>
         </Card>
       ) : (
-        <Card bg="gray.800" borderColor="gray.700" borderWidth="1px" overflow="hidden">
+        <Card bg="white" borderColor="gray.200" borderWidth="1px" overflow="hidden">
           <Box overflowX="auto">
             <Table variant="simple" size="sm">
               <Thead>
                 <Tr>
-                  <Th color="gray.400" borderColor="gray.600">Bien</Th>
+                  <Th color="gray.400" borderColor="gray.300">Bien</Th>
                   {properties[0]?.diffusions?.map((d) => (
-                    <Th key={d.portal} color="gray.400" borderColor="gray.600" textAlign="center" fontSize="xs">
+                    <Th key={d.portal} color="gray.400" borderColor="gray.300" textAlign="center" fontSize="xs">
                       {d.portalName}
                     </Th>
                   ))}
-                  <Th color="gray.400" borderColor="gray.600" textAlign="center">Actions</Th>
+                  <Th color="gray.400" borderColor="gray.300" textAlign="center">Actions</Th>
                 </Tr>
               </Thead>
               <Tbody>
                 {properties.map((property) => (
                   <Tr key={property.id} _hover={{ bg: 'gray.750' }}>
-                    <Td borderColor="gray.600" maxW="250px">
+                    <Td borderColor="gray.300" maxW="250px">
                       <HStack spacing={3}>
                         {property.imageUrl && (
                           <Image src={property.imageUrl} alt="" boxSize="40px" borderRadius="md" objectFit="cover" />
                         )}
                         <Box>
-                          <Text color="white" fontSize="sm" fontWeight="medium" noOfLines={1}>{property.address}</Text>
+                          <Text color="gray.800" fontSize="sm" fontWeight="medium" noOfLines={1}>{property.address}</Text>
                           <Text color="gray.400" fontSize="xs">
                             {property.city} · {property.price?.toLocaleString('fr-FR')} € · {property.area} m²
                           </Text>
@@ -202,7 +202,7 @@ export default function DiffusionPage({ token }) {
                       const cfg = STATUS_CONFIG[diff.status];
                       const key = `${property.id}-${diff.portal}`;
                       return (
-                        <Td key={diff.portal} borderColor="gray.600" textAlign="center">
+                        <Td key={diff.portal} borderColor="gray.300" textAlign="center">
                           <Tooltip label={`${diff.portalName}: ${cfg.label}${diff.publishedAt ? ` (${new Date(diff.publishedAt).toLocaleDateString('fr-FR')})` : ''}`}>
                             <Box display="inline-block">
                               <Switch
@@ -217,7 +217,7 @@ export default function DiffusionPage({ token }) {
                         </Td>
                       );
                     })}
-                    <Td borderColor="gray.600" textAlign="center">
+                    <Td borderColor="gray.300" textAlign="center">
                       <HStack spacing={1} justify="center">
                         <Tooltip label="Publier partout">
                           <IconButton

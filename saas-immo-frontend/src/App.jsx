@@ -44,6 +44,11 @@ const NotificationsPage = lazy(() => import('./pages/NotificationsPage.jsx'));
 const DiffusionPage = lazy(() => import('./pages/DiffusionPage.jsx'));
 const SignaturesPage = lazy(() => import('./pages/SignaturesPage.jsx'));
 const PublicSignPage = lazy(() => import('./pages/PublicSignPage.jsx'));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage.jsx'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage.jsx'));
+const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage.jsx'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx'));
+const HelpPage = lazy(() => import('./pages/HelpPage.jsx'));
 
 export default function App() {
   const [email, setEmail] = useState('');
@@ -153,6 +158,9 @@ export default function App() {
           <Route path="/share/:id" element={<PublicPropertyPage />} />
           <Route path="/signer/:token" element={<PublicSignPage />} />
           <Route path="/nouveau-membre-agence" element={<SecretRegister token={token} />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
 
           {token ? (
             <Route path="/" element={<AgencyProvider token={token}><PlanProvider token={token}><Layout onLogout={handleLogout} /></PlanProvider></AgencyProvider>}>
@@ -164,6 +172,8 @@ export default function App() {
               <Route path="taches" element={<TachesPage token={token} />} />
               <Route path="rendez-vous" element={<AppointmentsPage token={token} />} />
               <Route path="rgpd" element={<RGPDPage token={token} />} />
+              <Route path="profil" element={<ProfilePage token={token} />} />
+              <Route path="aide" element={<HelpPage />} />
               <Route path="property/:propertyId" element={<PropertyDetail token={token} />} />
               <Route path="contact/:contactId" element={<ContactDetail token={token} />} />
 

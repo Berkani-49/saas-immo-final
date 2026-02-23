@@ -51,12 +51,12 @@ export default function TaskCalendar({ tasks }) {
   return (
     <Box 
       h={calendarHeight} 
-      bg="gray.800"
+      bg="white"
       p={2}
       borderRadius="lg"
       shadow="sm"
       borderWidth="1px"
-      borderColor="gray.700"
+      borderColor="gray.200"
       fontSize={{ base: "xs", md: "sm" }}
       sx={{
         ".rbc-toolbar button": {

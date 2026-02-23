@@ -128,7 +128,7 @@ export default function PublicPropertyPage() {
   if (!property) return <Center h="100vh"><Text>Ce bien n'est plus disponible.</Text></Center>;
 
   return (
-    <Box bg="gray.900" minH="100vh" pb={10}>
+    <Box bg="gray.50" minH="100vh" pb={10}>
       {/* En-tête Image */}
       <Box h={{ base: "300px", md: "500px" }} w="100%" overflow="hidden" position="relative">
         <Image 
@@ -144,14 +144,14 @@ export default function PublicPropertyPage() {
       </Box>
 
       <Container maxW="900px" mt={-10} position="relative" zIndex={2}>
-        <Box bg="gray.800" p={8} borderRadius="2xl" shadow="xl">
+        <Box bg="white" p={8} borderRadius="2xl" shadow="xl">
             
             <Flex align="center" color="gray.400" fontSize="sm" mb={2}>
                 <Icon as={FaMapMarkerAlt} mr={1} /> {property.postalCode} {property.city}
             </Flex>
-            <Heading mb={6} color="white">{property.address}</Heading>
+            <Heading mb={6} color="gray.800">{property.address}</Heading>
 
-            <Flex justify="space-around" py={4} borderTopWidth={1} borderBottomWidth={1} borderColor="gray.700" mb={8}>
+            <Flex justify="space-around" py={4} borderTopWidth={1} borderBottomWidth={1} borderColor="gray.200" mb={8}>
                 <VStack><Icon as={FaRulerCombined} boxSize={6} color="blue.500" /><Text fontWeight="bold">{property.area} m²</Text></VStack>
                 <VStack><Icon as={FaBed} boxSize={6} color="blue.500" /><Text fontWeight="bold">{property.bedrooms} ch.</Text></VStack>
                 <VStack><Icon as={FaBath} boxSize={6} color="blue.500" /><Text fontWeight="bold">{property.rooms} p.</Text></VStack>
@@ -163,7 +163,7 @@ export default function PublicPropertyPage() {
 
             {/* --- LA CARTE (S'affiche seulement si on a les coordonnées) --- */}
             {property.latitude && property.longitude && (
-                <Box mb={10} h="400px" borderRadius="xl" overflow="hidden" shadow="md" border="1px solid" borderColor="gray.700">
+                <Box mb={10} h="400px" borderRadius="xl" overflow="hidden" shadow="md" border="1px solid" borderColor="gray.200">
                     <Heading size="sm" mb={2} px={2}>Localisation</Heading>
                     <MapContainer 
                         center={[property.latitude, property.longitude]} 
@@ -185,8 +185,8 @@ export default function PublicPropertyPage() {
             )}
 
             {/* ONGLETS : FORMULAIRE DE CONTACT OU PRISE DE RDV */}
-            <Box bg="gray.700" p={6} borderRadius="xl" borderWidth="1px" borderColor="gray.600">
-                <Heading size="md" mb={4} color="white">Ce bien vous intéresse ?</Heading>
+            <Box bg="gray.50" p={6} borderRadius="xl" borderWidth="1px" borderColor="gray.300">
+                <Heading size="md" mb={4} color="gray.800">Ce bien vous intéresse ?</Heading>
 
                 <Tabs colorScheme="purple" variant="enclosed">
                     <TabList>

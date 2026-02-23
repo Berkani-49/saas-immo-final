@@ -43,10 +43,10 @@ export default function OnboardingChecklist({ stats }) {
   };
 
   return (
-    <Box bg="gray.800" borderRadius="lg" borderWidth="1px" borderColor="gray.700" p={4} mb={6}>
+    <Box bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.200" p={4} mb={6}>
       <HStack justify="space-between" mb={collapsed ? 0 : 3}>
         <HStack spacing={3} cursor="pointer" onClick={() => setCollapsed(!collapsed)} flex="1">
-          <Text fontWeight="bold" color="white" fontSize="sm">
+          <Text fontWeight="bold" color="gray.800" fontSize="sm">
             {allDone ? 'Bravo, tout est configuré !' : 'Premiers pas'}
           </Text>
           <Badge colorScheme={allDone ? 'green' : 'blue'} fontSize="xs">

@@ -80,9 +80,9 @@ export default function ContactDetail({ token }) {
         Retour aux contacts
       </Button>
 
-      <Box p={8} shadow="lg" borderWidth="1px" borderColor="gray.700" borderRadius="2xl" bg="gray.800">
+      <Box p={8} shadow="lg" borderWidth="1px" borderColor="gray.200" borderRadius="2xl" bg="white">
         <Flex mb={6} align="center">
-          <Heading as="h2" size="lg" color="white">
+          <Heading as="h2" size="lg" color="gray.800">
             {isEditing ? "Modifier le contact" : `${contact.firstName} ${contact.lastName}`}
           </Heading>
           <Spacer />
@@ -135,15 +135,15 @@ export default function ContactDetail({ token }) {
         ) : (
           // --- VUE ---
           <VStack align="start" spacing={6}>
-            <Box w="full" p={4} bg="gray.700" borderRadius="md">
+            <Box w="full" p={4} bg="gray.50" borderRadius="md">
                 <Text fontWeight="bold" color="gray.400" fontSize="xs" mb={1}>EMAIL</Text>
-                <Text fontSize="lg" color="white">{contact.email || "Non renseigné"}</Text>
+                <Text fontSize="lg" color="gray.800">{contact.email || "Non renseigné"}</Text>
             </Box>
-            <Box w="full" p={4} bg="gray.700" borderRadius="md">
+            <Box w="full" p={4} bg="gray.50" borderRadius="md">
                 <Text fontWeight="bold" color="gray.400" fontSize="xs" mb={1}>TÉLÉPHONE</Text>
-                <Text fontSize="lg" color="white">{contact.phoneNumber || "Non renseigné"}</Text>
+                <Text fontSize="lg" color="gray.800">{contact.phoneNumber || "Non renseigné"}</Text>
             </Box>
-            <Box w="full" p={4} bg="gray.700" borderRadius="md">
+            <Box w="full" p={4} bg="gray.50" borderRadius="md">
                 <Text fontWeight="bold" color="gray.400" fontSize="xs" mb={1}>TYPE</Text>
                 <Badge colorScheme={contact.type === 'BUYER' ? 'blue' : 'green'} fontSize="md" px={3} py={1} borderRadius="full">
                     {contact.type === 'BUYER' ? 'Acheteur' : 'Vendeur'}
@@ -151,7 +151,7 @@ export default function ContactDetail({ token }) {
             </Box>
 
             {/* BIENS POSSÉDÉS */}
-            <Box w="full" p={4} bg="gray.700" borderRadius="md" borderWidth="1px" borderColor="gray.600">
+            <Box w="full" p={4} bg="gray.50" borderRadius="md" borderWidth="1px" borderColor="gray.300">
                 <ContactProperties contactId={contact.id} token={token} />
             </Box>
           </VStack>

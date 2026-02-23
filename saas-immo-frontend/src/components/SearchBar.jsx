@@ -79,7 +79,7 @@ export default function SearchBar({ token }) {
       <Flex
         onClick={onOpen}
         cursor="pointer"
-        bg="gray.700"
+        bg="gray.50"
         borderRadius="lg"
         px={3}
         py={2}
@@ -92,15 +92,15 @@ export default function SearchBar({ token }) {
         <Icon as={FiSearch} color="gray.400" mr={2} />
         <Text color="gray.400" fontSize="sm" flex="1">Rechercher...</Text>
         <HStack spacing={1}>
-          <Kbd fontSize="xs" bg="gray.600" color="gray.300">Ctrl</Kbd>
-          <Kbd fontSize="xs" bg="gray.600" color="gray.300">K</Kbd>
+          <Kbd fontSize="xs" bg="gray.600" color="gray.600">Ctrl</Kbd>
+          <Kbd fontSize="xs" bg="gray.600" color="gray.600">K</Kbd>
         </HStack>
       </Flex>
 
       {/* Modal de recherche */}
       <Modal isOpen={isOpen} onClose={onClose} size="lg">
         <ModalOverlay bg="blackAlpha.700" />
-        <ModalContent bg="gray.800" borderColor="gray.600" borderWidth="1px" mt="15vh">
+        <ModalContent bg="white" borderColor="gray.300" borderWidth="1px" mt="15vh">
           <ModalBody p={0}>
             <InputGroup>
               <InputLeftElement h="50px">
@@ -114,7 +114,7 @@ export default function SearchBar({ token }) {
                 h="50px"
                 border="none"
                 bg="transparent"
-                color="white"
+                color="gray.800"
                 fontSize="md"
                 _focus={{ boxShadow: 'none' }}
                 _placeholder={{ color: 'gray.500' }}
@@ -122,7 +122,7 @@ export default function SearchBar({ token }) {
             </InputGroup>
 
             {totalResults > 0 && (
-              <Box borderTopWidth="1px" borderColor="gray.700" maxH="400px" overflowY="auto">
+              <Box borderTopWidth="1px" borderColor="gray.200" maxH="400px" overflowY="auto">
                 {results.properties.length > 0 && (
                   <Box p={3}>
                     <Text fontSize="xs" color="gray.500" fontWeight="bold" mb={2} px={2}>BIENS</Text>
@@ -136,7 +136,7 @@ export default function SearchBar({ token }) {
                         onClick={() => handleSelect('property', p.id)}
                       >
                         <Icon as={FiHome} color="blue.400" />
-                        <Text color="white" fontSize="sm" flex="1">{p.address}, {p.city}</Text>
+                        <Text color="gray.800" fontSize="sm" flex="1">{p.address}, {p.city}</Text>
                         {p.price && <Badge colorScheme="green">{p.price.toLocaleString()} EUR</Badge>}
                       </HStack>
                     ))}
@@ -144,7 +144,7 @@ export default function SearchBar({ token }) {
                 )}
 
                 {results.contacts.length > 0 && (
-                  <Box p={3} borderTopWidth="1px" borderColor="gray.700">
+                  <Box p={3} borderTopWidth="1px" borderColor="gray.200">
                     <Text fontSize="xs" color="gray.500" fontWeight="bold" mb={2} px={2}>CONTACTS</Text>
                     {results.contacts.map(c => (
                       <HStack
@@ -156,7 +156,7 @@ export default function SearchBar({ token }) {
                         onClick={() => handleSelect('contact', c.id)}
                       >
                         <Icon as={FiUser} color="purple.400" />
-                        <Text color="white" fontSize="sm" flex="1">{c.firstName} {c.lastName}</Text>
+                        <Text color="gray.800" fontSize="sm" flex="1">{c.firstName} {c.lastName}</Text>
                         <Badge colorScheme={c.type === 'BUYER' ? 'blue' : 'orange'} fontSize="xs">{c.type}</Badge>
                       </HStack>
                     ))}
@@ -164,7 +164,7 @@ export default function SearchBar({ token }) {
                 )}
 
                 {results.tasks.length > 0 && (
-                  <Box p={3} borderTopWidth="1px" borderColor="gray.700">
+                  <Box p={3} borderTopWidth="1px" borderColor="gray.200">
                     <Text fontSize="xs" color="gray.500" fontWeight="bold" mb={2} px={2}>TACHES</Text>
                     {results.tasks.map(t => (
                       <HStack
@@ -176,7 +176,7 @@ export default function SearchBar({ token }) {
                         onClick={() => handleSelect('task', t.id)}
                       >
                         <Icon as={FiCheckSquare} color="green.400" />
-                        <Text color="white" fontSize="sm" flex="1">{t.title}</Text>
+                        <Text color="gray.800" fontSize="sm" flex="1">{t.title}</Text>
                         <Badge colorScheme={t.status === 'COMPLETED' ? 'green' : 'orange'} fontSize="xs">{t.status}</Badge>
                       </HStack>
                     ))}
@@ -186,7 +186,7 @@ export default function SearchBar({ token }) {
             )}
 
             {query.trim().length >= 2 && !isSearching && totalResults === 0 && (
-              <Box p={6} textAlign="center" borderTopWidth="1px" borderColor="gray.700">
+              <Box p={6} textAlign="center" borderTopWidth="1px" borderColor="gray.200">
                 <Text color="gray.500" fontSize="sm">Aucun résultat pour "{query}"</Text>
               </Box>
             )}

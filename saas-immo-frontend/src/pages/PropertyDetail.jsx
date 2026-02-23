@@ -116,20 +116,20 @@ export default function PropertyDetail({ token }) {
                 {property.price.toLocaleString()} €
             </Badge>
             
-            <Heading mb={2} color="white">{property.address}</Heading>
+            <Heading mb={2} color="gray.800">{property.address}</Heading>
 
             <Flex align="center" color="gray.400" mb={6}>
                 <Icon as={FaMapMarkerAlt} mr={2} />
                 <Text fontSize="lg">{property.postalCode} {property.city}</Text>
             </Flex>
 
-            <SimpleGrid columns={3} spacing={4} mb={6} p={4} bg="gray.800" borderRadius="lg" shadow="sm" borderWidth="1px" borderColor="gray.700">
-                <VStack><Icon as={FaRulerCombined} color="brand.400" boxSize={5}/><Text fontWeight="bold" color="white">{property.area} m²</Text></VStack>
-                <VStack><Icon as={FaBed} color="brand.400" boxSize={5}/><Text fontWeight="bold" color="white">{property.bedrooms} ch.</Text></VStack>
-                <VStack><Icon as={FaBath} color="brand.400" boxSize={5}/><Text fontWeight="bold" color="white">{property.rooms} p.</Text></VStack>
+            <SimpleGrid columns={3} spacing={4} mb={6} p={4} bg="white" borderRadius="lg" shadow="sm" borderWidth="1px" borderColor="gray.200">
+                <VStack><Icon as={FaRulerCombined} color="brand.400" boxSize={5}/><Text fontWeight="bold" color="gray.800">{property.area} m²</Text></VStack>
+                <VStack><Icon as={FaBed} color="brand.400" boxSize={5}/><Text fontWeight="bold" color="gray.800">{property.bedrooms} ch.</Text></VStack>
+                <VStack><Icon as={FaBath} color="brand.400" boxSize={5}/><Text fontWeight="bold" color="gray.800">{property.rooms} p.</Text></VStack>
             </SimpleGrid>
 
-            <Text color="gray.300" lineHeight="tall" mb={8}>
+            <Text color="gray.600" lineHeight="tall" mb={8}>
                 {property.description || "Pas de description."}
             </Text>
 
@@ -153,7 +153,7 @@ export default function PropertyDetail({ token }) {
             </PDFDownloadLink>
 
             {/* GESTION DES PROPRIÉTAIRES */}
-            <Box p={4} bg="gray.800" borderRadius="lg" borderWidth="1px" borderColor="gray.700">
+            <Box p={4} bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.200">
                 <PropertyOwners propertyId={property.id} token={token} />
             </Box>
 
