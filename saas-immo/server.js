@@ -102,6 +102,10 @@ if (!process.env.RESEND_API_KEY) {
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 
+// En mode test Resend (domaine non vérifié), le from DOIT être onboarding@resend.dev
+const RESEND_TEST_MODE = !process.env.RESEND_DOMAIN_VERIFIED;
+const RESEND_FROM = RESEND_TEST_MODE ? 'onboarding@resend.dev' : (process.env.RESEND_FROM_EMAIL || 'noreply@immopro.com');
+
 // Log au démarrage
 if (resend) {
   console.log('✅ Resend configuré - Notifications email activées');
@@ -893,7 +897,7 @@ app.post('/api/auth/register', registerLimiter, async (req, res) => {
     if (resend) {
       try {
         await resend.emails.send({
-          from: process.env.RESEND_FROM_EMAIL || 'noreply@immopro.com',
+          from: RESEND_FROM,
           to: email,
           subject: 'Vérifiez votre adresse email',
           html: `
@@ -985,7 +989,7 @@ app.post('/api/auth/forgot-password', forgotPasswordLimiter, async (req, res) =>
 
     if (resend) {
       await resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL || 'noreply@immopro.com',
+        from: RESEND_FROM,
         to: email,
         subject: 'Réinitialisation de votre mot de passe',
         html: `
@@ -1133,7 +1137,7 @@ app.post('/api/public/leads', async (req, res) => {
         const agentEmail = property.agent?.email || process.env.NOTIFICATION_EMAIL;
         if (resend && agentEmail) {
           await resend.emails.send({
-            from: process.env.RESEND_FROM_EMAIL || 'noreply@immopro.com',
+            from: RESEND_FROM,
             to: agentEmail,
             subject: `Nouveau lead : ${property.address}`,
             html: `<p>Nouveau client : ${firstName} ${lastName} (${phone})</p><p>Bien : ${property.address}, ${property.city}</p>`
