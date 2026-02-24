@@ -47,6 +47,12 @@ model User {
   role        String   @default("EMPLOYEE") // "OWNER" (patron) ou "EMPLOYEE" (employé)
   createdAt   DateTime @default(now())
 
+  // Sécurité
+  resetToken        String?
+  resetTokenExpiry  DateTime?
+  emailVerified     Boolean  @default(false)
+  verificationToken String?
+
   // Stripe & Subscription
   stripeCustomerId     String?   @unique // ID client Stripe
   subscriptionStatus   String?   @default("inactive") // inactive, active, past_due, canceled, trialing

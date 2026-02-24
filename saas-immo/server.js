@@ -16,6 +16,7 @@ const http = require('http');
 const multer = require('multer');
 const { createClient } = require('@supabase/supabase-js');
 const cron = require('node-cron');
+const crypto = require('crypto');
 const pushNotificationService = require('./services/pushNotificationService');
 const helmet = require('helmet');
 
@@ -223,6 +224,13 @@ const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 heure
   max: 3, // Max 3 inscriptions par heure par IP
   message: { error: "Trop d'inscriptions. Réessayez dans 1 heure." }
+});
+
+// Limiter les demandes de reset mot de passe
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  message: { error: "Trop de demandes de réinitialisation. Réessayez dans 1 heure." }
 });
 
 // Limiter les requêtes générales
@@ -872,9 +880,39 @@ app.post('/api/auth/register', registerLimiter, async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+
     const newUser = await prisma.user.create({
-      data: { email, password: hashedPassword, firstName, lastName },
+      data: { email, password: hashedPassword, firstName, lastName, verificationToken },
     });
+
+    // Envoyer l'email de vérification
+    const frontendUrl = process.env.FRONTEND_URL || 'https://saas-immo-final.vercel.app';
+    const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+
+    if (resend) {
+      try {
+        await resend.emails.send({
+          from: process.env.RESEND_FROM_EMAIL || 'noreply@immopro.com',
+          to: email,
+          subject: 'Vérifiez votre adresse email',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h1 style="color: #2563eb;">Bienvenue ${firstName} !</h1>
+              <p>Merci de vous être inscrit. Veuillez vérifier votre adresse email en cliquant sur le bouton ci-dessous.</p>
+              <div style="margin: 30px 0;">
+                <a href="${verifyUrl}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+                  Vérifier mon email
+                </a>
+              </div>
+              <p style="color: #6b7280; font-size: 14px;">Si vous n'avez pas créé de compte, ignorez cet email.</p>
+            </div>
+          `
+        });
+      } catch (emailError) {
+        console.error('Erreur envoi email vérification:', emailError.message);
+      }
+    }
 
     const { password: _, ...userWithoutPassword } = newUser;
     res.status(201).json(userWithoutPassword);
@@ -915,6 +953,139 @@ app.post('/api/auth/login', loginLimiter, async (req, res) => {
   } catch (e) { res.status(500).json({ error: "Erreur connexion" }); }
 });
 
+// MOT DE PASSE OUBLIÉ
+app.post('/api/auth/forgot-password', forgotPasswordLimiter, async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || !isValidEmail(email)) {
+      return res.status(400).json({ error: 'Email invalide.' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    // Toujours répondre OK pour ne pas révéler si l'email existe
+    if (!user) {
+      return res.json({ message: 'Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.' });
+    }
+
+    // Générer un token sécurisé
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetToken: hashedToken,
+        resetTokenExpiry: new Date(Date.now() + 60 * 60 * 1000) // 1 heure
+      }
+    });
+
+    // Envoyer l'email
+    const frontendUrl = process.env.FRONTEND_URL || 'https://saas-immo-final.vercel.app';
+    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+
+    if (resend) {
+      await resend.emails.send({
+        from: process.env.RESEND_FROM_EMAIL || 'noreply@immopro.com',
+        to: email,
+        subject: 'Réinitialisation de votre mot de passe',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #2563eb;">Réinitialisation de mot de passe</h1>
+            <p>Bonjour ${user.firstName},</p>
+            <p>Vous avez demandé la réinitialisation de votre mot de passe.</p>
+            <div style="margin: 30px 0;">
+              <a href="${resetUrl}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+                Réinitialiser mon mot de passe
+              </a>
+            </div>
+            <p style="color: #6b7280; font-size: 14px;">Ce lien expire dans 1 heure. Si vous n'avez pas fait cette demande, ignorez cet email.</p>
+          </div>
+        `
+      });
+    }
+
+    res.json({ message: 'Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.' });
+  } catch (error) {
+    console.error('Erreur forgot-password:', error);
+    res.status(500).json({ error: 'Erreur serveur.' });
+  }
+});
+
+// RÉINITIALISATION DU MOT DE PASSE
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { token, email, password } = req.body;
+
+    if (!token || !email || !password) {
+      return res.status(400).json({ error: 'Tous les champs sont requis.' });
+    }
+
+    if (!isStrongPassword(password)) {
+      return res.status(400).json({
+        error: 'Le mot de passe doit contenir au moins 12 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial (@$!%*?&).'
+      });
+    }
+
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await prisma.user.findFirst({
+      where: {
+        email,
+        resetToken: hashedToken,
+        resetTokenExpiry: { gt: new Date() }
+      }
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: 'Lien invalide ou expiré. Veuillez refaire une demande.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        resetToken: null,
+        resetTokenExpiry: null
+      }
+    });
+
+    res.json({ message: 'Mot de passe réinitialisé avec succès.' });
+  } catch (error) {
+    console.error('Erreur reset-password:', error);
+    res.status(500).json({ error: 'Erreur serveur.' });
+  }
+});
+
+// VÉRIFICATION EMAIL
+app.get('/api/auth/verify-email', async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) {
+      return res.status(400).json({ error: 'Token manquant.' });
+    }
+
+    const user = await prisma.user.findFirst({
+      where: { verificationToken: token }
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: 'Lien de vérification invalide.' });
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { emailVerified: true, verificationToken: null }
+    });
+
+    res.json({ message: 'Email vérifié avec succès ! Vous pouvez vous connecter.' });
+  } catch (error) {
+    console.error('Erreur verify-email:', error);
+    res.status(500).json({ error: 'Erreur serveur.' });
+  }
+});
+
 // CAPTURE DE LEADS
 app.post('/api/public/leads', async (req, res) => {
   try {
@@ -925,7 +1096,7 @@ app.post('/api/public/leads', async (req, res) => {
       return res.status(400).json({ error: 'Format d\'email invalide.' });
     }
 
-    const property = await prisma.property.findUnique({ where: { id: parseInt(propertyId) } });
+    const property = await prisma.property.findUnique({ where: { id: parseInt(propertyId) }, include: { agent: { select: { email: true, firstName: true } } } });
     if (!property) return res.status(404).json({ error: "Bien introuvable" });
 
     // 1. Créer ou récupérer le contact
@@ -957,15 +1128,18 @@ app.post('/api/public/leads', async (req, res) => {
 
     logActivity(property.agentId, "NOUVEAU_LEAD", `Lead pour ${property.address}`);
 
-    // 4. Envoyer un email de notification
+    // 4. Envoyer un email de notification à l'agent
     try {
-        // Remplace par ton email si besoin
-        await resend.emails.send({
-          from: 'onboarding@resend.dev', to: 'amirelattaoui49@gmail.com',
-          subject: `🔥 Lead: ${property.address}`,
-          html: `<p>Nouveau client : ${firstName} ${lastName} (${phone})</p>`
-        });
-    } catch (e) {}
+        const agentEmail = property.agent?.email || process.env.NOTIFICATION_EMAIL;
+        if (resend && agentEmail) {
+          await resend.emails.send({
+            from: process.env.RESEND_FROM_EMAIL || 'noreply@immopro.com',
+            to: agentEmail,
+            subject: `Nouveau lead : ${property.address}`,
+            html: `<p>Nouveau client : ${firstName} ${lastName} (${phone})</p><p>Bien : ${property.address}, ${property.city}</p>`
+          });
+        }
+    } catch (e) { console.error('Erreur envoi email lead:', e.message); }
 
     // 5. Envoyer notification push à l'agent
     try {
@@ -1039,6 +1213,236 @@ app.get('/api/me', authenticateToken, async (req, res) => {
   res.json(req.user);
 });
 
+// MODIFIER PROFIL
+app.put('/api/me', authenticateToken, async (req, res) => {
+  try {
+    const { firstName, lastName, email } = req.body;
+    const updateData = {};
+
+    if (firstName) updateData.firstName = firstName.trim().replace(/[<>]/g, '');
+    if (lastName) updateData.lastName = lastName.trim().replace(/[<>]/g, '');
+
+    if (email && email !== req.user.email) {
+      if (!isValidEmail(email)) {
+        return res.status(400).json({ error: 'Format d\'email invalide.' });
+      }
+      const existing = await prisma.user.findUnique({ where: { email } });
+      if (existing) {
+        return res.status(400).json({ error: 'Cet email est déjà utilisé.' });
+      }
+      updateData.email = email;
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: req.user.id },
+      data: updateData,
+      select: { id: true, email: true, firstName: true, lastName: true, role: true, agencyId: true, createdAt: true }
+    });
+
+    res.json(updated);
+  } catch (error) {
+    console.error('Erreur update profil:', error);
+    res.status(500).json({ error: 'Erreur serveur.' });
+  }
+});
+
+// CHANGER MOT DE PASSE
+app.put('/api/me/password', authenticateToken, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Tous les champs sont requis.' });
+    }
+
+    if (!isStrongPassword(newPassword)) {
+      return res.status(400).json({
+        error: 'Le mot de passe doit contenir au moins 12 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial (@$!%*?&).'
+      });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    const isValid = await bcrypt.compare(currentPassword, user.password);
+
+    if (!isValid) {
+      return res.status(400).json({ error: 'Mot de passe actuel incorrect.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { password: hashedPassword }
+    });
+
+    res.json({ message: 'Mot de passe modifié avec succès.' });
+  } catch (error) {
+    console.error('Erreur changement mot de passe:', error);
+    res.status(500).json({ error: 'Erreur serveur.' });
+  }
+});
+
+// RECHERCHE GLOBALE
+app.get('/api/search', authenticateToken, async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q || q.trim().length < 2) {
+      return res.json({ properties: [], contacts: [], tasks: [] });
+    }
+
+    const search = q.trim();
+    const agencyId = req.user.agencyId;
+    const whereAgency = agencyId ? { agencyId } : { agentId: req.user.id };
+
+    const [properties, contacts, tasks] = await Promise.all([
+      prisma.property.findMany({
+        where: {
+          ...whereAgency,
+          OR: [
+            { address: { contains: search, mode: 'insensitive' } },
+            { city: { contains: search, mode: 'insensitive' } },
+            { postalCode: { contains: search, mode: 'insensitive' } },
+          ]
+        },
+        take: 5,
+        select: { id: true, address: true, city: true, price: true }
+      }),
+      prisma.contact.findMany({
+        where: {
+          ...whereAgency,
+          OR: [
+            { firstName: { contains: search, mode: 'insensitive' } },
+            { lastName: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
+          ]
+        },
+        take: 5,
+        select: { id: true, firstName: true, lastName: true, email: true, type: true }
+      }),
+      prisma.task.findMany({
+        where: {
+          ...whereAgency,
+          title: { contains: search, mode: 'insensitive' }
+        },
+        take: 5,
+        select: { id: true, title: true, status: true }
+      })
+    ]);
+
+    res.json({ properties, contacts, tasks });
+  } catch (error) {
+    console.error('Erreur recherche:', error);
+    res.status(500).json({ error: 'Erreur serveur.' });
+  }
+});
+
+// EXPORT CSV - PROPRIÉTÉS
+app.get('/api/properties/export/csv', authenticateToken, async (req, res) => {
+  try {
+    const properties = await prisma.property.findMany({
+      where: { agencyId: req.user.agencyId },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const headers = ['ID', 'Adresse', 'Ville', 'Code Postal', 'Prix', 'Surface', 'Pièces', 'Chambres', 'Type', 'Créé le'];
+    const rows = properties.map(p => [
+      p.id, p.address, p.city, p.postalCode, p.price, p.area, p.rooms, p.bedrooms, p.propertyType,
+      new Date(p.createdAt).toLocaleDateString('fr-FR')
+    ]);
+
+    const csv = [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename=biens.csv');
+    res.send('\uFEFF' + csv); // BOM pour Excel
+  } catch (error) {
+    console.error('Erreur export CSV propriétés:', error);
+    res.status(500).json({ error: 'Erreur serveur.' });
+  }
+});
+
+// EXPORT CSV - CONTACTS
+app.get('/api/contacts/export/csv', authenticateToken, async (req, res) => {
+  try {
+    const contacts = await prisma.contact.findMany({
+      where: { agencyId: req.user.agencyId },
+      orderBy: { lastName: 'asc' }
+    });
+
+    const headers = ['ID', 'Prénom', 'Nom', 'Email', 'Téléphone', 'Type', 'Budget Min', 'Budget Max', 'Villes', 'Créé le'];
+    const rows = contacts.map(c => [
+      c.id, c.firstName, c.lastName, c.email, c.phoneNumber, c.type,
+      c.budgetMin, c.budgetMax, c.cityPreferences,
+      new Date(c.createdAt).toLocaleDateString('fr-FR')
+    ]);
+
+    const csv = [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename=contacts.csv');
+    res.send('\uFEFF' + csv);
+  } catch (error) {
+    console.error('Erreur export CSV contacts:', error);
+    res.status(500).json({ error: 'Erreur serveur.' });
+  }
+});
+
+// SUPPRESSION EN MASSE - PROPRIÉTÉS
+app.delete('/api/properties/bulk', authenticateToken, async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'Liste d\'IDs requise.' });
+    }
+
+    await prisma.property.deleteMany({
+      where: { id: { in: ids }, agencyId: req.user.agencyId }
+    });
+
+    logActivity(req.user.id, req.user.agencyId, "SUPPRESSION_MASSE", `${ids.length} bien(s) supprimé(s)`);
+    res.json({ message: `${ids.length} bien(s) supprimé(s).` });
+  } catch (error) {
+    console.error('Erreur suppression masse:', error);
+    res.status(500).json({ error: 'Erreur serveur.' });
+  }
+});
+
+// SUPPRESSION EN MASSE - CONTACTS
+app.delete('/api/contacts/bulk', authenticateToken, async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'Liste d\'IDs requise.' });
+    }
+
+    await prisma.contact.deleteMany({
+      where: { id: { in: ids }, agencyId: req.user.agencyId }
+    });
+
+    logActivity(req.user.id, req.user.agencyId, "SUPPRESSION_MASSE", `${ids.length} contact(s) supprimé(s)`);
+    res.json({ message: `${ids.length} contact(s) supprimé(s).` });
+  } catch (error) {
+    console.error('Erreur suppression masse contacts:', error);
+    res.status(500).json({ error: 'Erreur serveur.' });
+  }
+});
+
+// COMPTEUR NOTIFICATIONS NON LUES
+app.get('/api/notifications/unread-count', authenticateToken, async (req, res) => {
+  try {
+    const count = await prisma.notification.count({
+      where: {
+        agentId: req.user.id,
+        status: 'SENT',
+        createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } // 7 derniers jours
+      }
+    });
+    res.json({ count });
+  } catch (error) {
+    // Si le champ agentId n'existe pas sur Notification, retourner 0
+    res.json({ count: 0 });
+  }
+});
+
 // --- BILLING & SUBSCRIPTION ROUTES (APRÈS authentification) ---
 app.use('/api/billing', authenticateToken, billingRouter);
 app.use('/api/admin/subscriptions', authenticateToken, requireAdmin, adminSubscriptionsRouter);
@@ -1082,6 +1486,14 @@ app.get('/api/properties', authenticateToken, async (req, res) => {
 
 app.post('/api/properties', authenticateToken, checkPropertyLimit, async (req, res) => {
     try {
+        const { address, city, price } = req.body;
+        if (!address || !city) {
+          return res.status(400).json({ error: 'L\'adresse et la ville sont requis.' });
+        }
+        if (price !== undefined && (isNaN(price) || price < 0)) {
+          return res.status(400).json({ error: 'Le prix doit être un nombre positif.' });
+        }
+
         let lat = null, lon = null;
         try {
             const query = `${req.body.address} ${req.body.postalCode} ${req.body.city}`;
@@ -1460,7 +1872,28 @@ app.get('/api/contacts', authenticateToken, async (req, res) => {
 
 app.post('/api/contacts', authenticateToken, checkContactLimit, async (req, res) => {
     try {
-        const newContact = await prisma.contact.create({ data: { ...req.body, agentId: req.user.id, agencyId: req.user.agencyId } });
+        const { firstName, lastName, email, phoneNumber, type } = req.body;
+
+        // Validation des champs requis
+        if (!firstName || !lastName) {
+          return res.status(400).json({ error: 'Le prénom et le nom sont requis.' });
+        }
+        if (email && !isValidEmail(email)) {
+          return res.status(400).json({ error: 'Format d\'email invalide.' });
+        }
+        if (type && !['BUYER', 'SELLER'].includes(type)) {
+          return res.status(400).json({ error: 'Le type doit être BUYER ou SELLER.' });
+        }
+
+        // Sanitize les champs texte
+        const sanitize = (str) => str ? str.trim().replace(/[<>]/g, '') : str;
+
+        const sanitizedData = { ...req.body };
+        if (sanitizedData.firstName) sanitizedData.firstName = sanitize(sanitizedData.firstName);
+        if (sanitizedData.lastName) sanitizedData.lastName = sanitize(sanitizedData.lastName);
+        if (sanitizedData.notes) sanitizedData.notes = sanitize(sanitizedData.notes);
+
+        const newContact = await prisma.contact.create({ data: { ...sanitizedData, agentId: req.user.id, agencyId: req.user.agencyId } });
         logActivity(req.user.id, req.user.agencyId, "CRÉATION_CONTACT", `Nouveau contact : ${req.body.firstName}`);
 
         // Envoyer notification push pour nouveau lead/contact
