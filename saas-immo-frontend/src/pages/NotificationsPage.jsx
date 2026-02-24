@@ -5,8 +5,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Box, Heading, SimpleGrid, Stat, StatLabel, StatNumber, StatHelpText,
   Card, CardBody, CardHeader, Spinner, Text, Table, Thead, Tbody, Tr, Th, Td,
-  Button, Icon, VStack, HStack, Badge, useToast, Flex, Select, Input,
-  Tabs, TabList, TabPanels, Tab, TabPanel
+  Button, Icon, VStack, HStack, Badge, useToast, Flex, Select
 } from '@chakra-ui/react';
 import { FiMail, FiBell, FiCheck, FiX, FiSend } from 'react-icons/fi';
 import axios from 'axios';
@@ -97,7 +96,7 @@ export default function NotificationsPage({ token }) {
     <Box>
       <VStack align="start" spacing={1} mb={6}>
         <Heading size="lg" color="gray.800">Notifications Automatiques</Heading>
-        <Text color="gray.400">Historique des alertes envoyées à vos acheteurs</Text>
+        <Text color="gray.600">Historique des alertes envoyées à vos acheteurs</Text>
       </VStack>
 
       {/* Statistiques globales */}
@@ -108,7 +107,7 @@ export default function NotificationsPage({ token }) {
               <StatLabel>
                 <HStack>
                   <Icon as={FiBell} color="blue.400" />
-                  <Text color="gray.400">Total envoyées</Text>
+                  <Text color="gray.600">Total envoyées</Text>
                 </HStack>
               </StatLabel>
               <StatNumber fontSize="3xl" color="gray.800">{stats?.total || 0}</StatNumber>
@@ -123,7 +122,7 @@ export default function NotificationsPage({ token }) {
               <StatLabel>
                 <HStack>
                   <Icon as={FiCheck} color="green.400" />
-                  <Text color="gray.400">Réussies</Text>
+                  <Text color="gray.600">Réussies</Text>
                 </HStack>
               </StatLabel>
               <StatNumber fontSize="3xl" color="gray.800">
@@ -140,7 +139,7 @@ export default function NotificationsPage({ token }) {
               <StatLabel>
                 <HStack>
                   <Icon as={FiX} color="red.400" />
-                  <Text color="gray.400">Échouées</Text>
+                  <Text color="gray.600">Échouées</Text>
                 </HStack>
               </StatLabel>
               <StatNumber fontSize="3xl" color="gray.800">
@@ -157,7 +156,7 @@ export default function NotificationsPage({ token }) {
               <StatLabel>
                 <HStack>
                   <Icon as={FiMail} color="purple.400" />
-                  <Text color="gray.400">7 derniers jours</Text>
+                  <Text color="gray.600">7 derniers jours</Text>
                 </HStack>
               </StatLabel>
               <StatNumber fontSize="3xl" color="gray.800">{stats?.recent || 0}</StatNumber>
@@ -173,11 +172,11 @@ export default function NotificationsPage({ token }) {
           <Flex justify="space-between" align="center" flexWrap="wrap" gap={4}>
             <Heading size="md" color="gray.800">Historique des notifications</Heading>
 
-            <HStack spacing={3}>
+            <Flex gap={3} flexWrap="wrap">
               <Select
                 placeholder="Tous les types"
                 size="sm"
-                w="200px"
+                minW="160px"
                 value={filters.type}
                 onChange={(e) => handleFilterChange('type', e.target.value)}
               >
@@ -189,7 +188,7 @@ export default function NotificationsPage({ token }) {
               <Select
                 placeholder="Tous les statuts"
                 size="sm"
-                w="150px"
+                minW="140px"
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
               >
@@ -197,7 +196,7 @@ export default function NotificationsPage({ token }) {
                 <option value="FAILED">Échouées</option>
                 <option value="PENDING">En attente</option>
               </Select>
-            </HStack>
+            </Flex>
           </Flex>
         </CardHeader>
 

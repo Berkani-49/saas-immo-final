@@ -34,30 +34,30 @@ export default function ForgotPasswordPage() {
       position="fixed"
       top="0" left="0"
       w="100vw" h="100vh"
-      bg="#0a0a0f"
+      bg="gray.50"
       zIndex="9999"
       direction="column"
       justify="center"
       align="center"
       p={5}
     >
-      <Box w="100%" maxW="420px" bg="#13131a" p={8} borderRadius="2xl" borderWidth="1px" borderColor="gray.200">
-        <HStack as={RouterLink} to="/" spacing={2} mb={6} color="brand.400" _hover={{ textDecoration: 'underline' }}>
+      <Box w="100%" maxW="420px" bg="white" p={8} borderRadius="2xl" borderWidth="1px" borderColor="gray.200" shadow="lg">
+        <HStack as={RouterLink} to="/" spacing={2} mb={6} color="brand.500" _hover={{ textDecoration: 'underline' }}>
           <Icon as={FiArrowLeft} />
           <Text fontSize="sm">Retour à la connexion</Text>
         </HStack>
 
         <HStack spacing={3} mb={2}>
-          <Icon as={FiMail} color="brand.400" boxSize={6} />
+          <Icon as={FiMail} color="brand.500" boxSize={6} />
           <Heading as="h2" fontSize="xl" color="gray.800">Mot de passe oublié</Heading>
         </HStack>
-        <Text color="gray.400" mb={6} fontSize="sm">
+        <Text color="gray.600" mb={6} fontSize="sm">
           Entrez votre email et nous vous enverrons un lien de réinitialisation.
         </Text>
 
         {sent ? (
-          <Alert status="success" borderRadius="xl" bg="green.900" color="white">
-            <AlertIcon color="green.300" />
+          <Alert status="success" borderRadius="xl" bg="green.50" color="green.700">
+            <AlertIcon color="green.500" />
             <Text fontSize="sm">Si un compte existe avec cet email, un lien de réinitialisation a été envoyé. Vérifiez votre boîte mail.</Text>
           </Alert>
         ) : (
@@ -70,9 +70,8 @@ export default function ForgotPasswordPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Votre adresse email"
                   size="lg"
-                  bg="#1a1a24"
-                  border="1px solid"
-                  borderColor="gray.200"
+                  bg="white"
+                  borderColor="gray.300"
                   color="gray.800"
                   _placeholder={{ color: 'gray.400' }}
                   _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)' }}
@@ -81,8 +80,8 @@ export default function ForgotPasswordPage() {
               </FormControl>
 
               {error && (
-                <Alert status="error" borderRadius="xl" bg="red.900" color="white" py={2} fontSize="sm">
-                  <AlertIcon color="red.300" boxSize={4} />
+                <Alert status="error" borderRadius="xl" bg="red.50" color="red.700" py={2} fontSize="sm">
+                  <AlertIcon color="red.400" boxSize={4} />
                   {error}
                 </Alert>
               )}
@@ -91,9 +90,7 @@ export default function ForgotPasswordPage() {
                 type="submit"
                 size="lg"
                 width="full"
-                bg="brand.500"
-                color="gray.800"
-                _hover={{ bg: 'brand.600' }}
+                colorScheme="brand"
                 isLoading={isSubmitting}
                 loadingText="Envoi..."
                 borderRadius="xl"

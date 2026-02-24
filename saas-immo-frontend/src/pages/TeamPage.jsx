@@ -110,12 +110,12 @@ export default function TeamPage({ token }) {
         <Table variant="simple">
           <Thead>
             <Tr>
-              <Th color="gray.400" borderColor="gray.200">Agent</Th>
-              <Th color="gray.400" borderColor="gray.200">Email</Th>
-              <Th color="gray.400" borderColor="gray.200">Rôle</Th>
-              <Th color="gray.400" borderColor="gray.200">Membre depuis</Th>
-              <Th color="gray.400" borderColor="gray.200">Statut</Th>
-              {isOwner && <Th color="gray.400" borderColor="gray.200" textAlign="center">Actions</Th>}
+              <Th color="gray.600" borderColor="gray.200">Agent</Th>
+              <Th color="gray.600" borderColor="gray.200">Email</Th>
+              <Th color="gray.600" borderColor="gray.200">Rôle</Th>
+              <Th color="gray.600" borderColor="gray.200">Membre depuis</Th>
+              <Th color="gray.600" borderColor="gray.200">Statut</Th>
+              {isOwner && <Th color="gray.600" borderColor="gray.200" textAlign="center">Actions</Th>}
             </Tr>
           </Thead>
           <Tbody>
@@ -128,7 +128,7 @@ export default function TeamPage({ token }) {
                       name={`${agent.firstName} ${agent.lastName}`}
                       mr={3}
                       bg={agent.role === 'OWNER' ? 'purple.500' : 'brand.500'}
-                      color="gray.800"
+                      color="white"
                     />
                     <Text fontWeight="bold" color="gray.800">{agent.firstName} {agent.lastName}</Text>
                   </Flex>
@@ -147,7 +147,7 @@ export default function TeamPage({ token }) {
                       <IconButton
                         icon={<DeleteIcon />}
                         colorScheme="red"
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         aria-label="Supprimer le membre"
                         onClick={() => handleDeleteClick(agent)}
