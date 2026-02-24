@@ -116,10 +116,19 @@ router.post('/', async (req, res) => {
     try {
       const frontendUrl = process.env.FRONTEND_URL || 'https://saas-immo-final.vercel.app';
 
+      const RESEND_TEST_MODE = !process.env.RESEND_DOMAIN_VERIFIED;
+      const VERIFIED_EMAIL = process.env.RESEND_VERIFIED_EMAIL || 'amirelattaoui49@gmail.com';
+      const recipientEmail = RESEND_TEST_MODE ? VERIFIED_EMAIL : email;
+      const fromEmail = process.env.RESEND_FROM_EMAIL || (RESEND_TEST_MODE ? 'onboarding@resend.dev' : 'noreply@immopro.com');
+
+      if (RESEND_TEST_MODE) {
+        logger.warn(`MODE TEST RESEND: email pour ${email} redirigé vers ${VERIFIED_EMAIL}`);
+      }
+
       await resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL || 'noreply@immopro.com',
-        to: email,
-        subject: 'Bienvenue dans l\'équipe ImmoPro !',
+        from: fromEmail,
+        to: recipientEmail,
+        subject: RESEND_TEST_MODE ? `[TEST] Identifiants de ${firstName} ${lastName}` : 'Bienvenue dans l\'équipe ImmoPro !',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h1 style="color: #2563eb;">Bienvenue ${firstName} !</h1>
