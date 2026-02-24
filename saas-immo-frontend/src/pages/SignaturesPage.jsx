@@ -162,92 +162,120 @@ export default function SignaturesPage({ token }) {
           </CardBody>
         </Card>
       ) : (
-        <Card bg="white" borderColor="gray.200" borderWidth="1px" overflow="hidden">
-          <Box overflowX="auto">
-            <Table variant="simple" size="sm">
-              <Thead>
-                <Tr>
-                  <Th color="gray.400" borderColor="gray.300">Document</Th>
-                  <Th color="gray.400" borderColor="gray.300">Type</Th>
-                  <Th color="gray.400" borderColor="gray.300">Signataire</Th>
-                  <Th color="gray.400" borderColor="gray.300">Bien</Th>
-                  <Th color="gray.400" borderColor="gray.300">Statut</Th>
-                  <Th color="gray.400" borderColor="gray.300">Date</Th>
-                  <Th color="gray.400" borderColor="gray.300" textAlign="center">Actions</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {documents.map((doc) => {
-                  const statusCfg = STATUS_CONFIG[doc.status];
-                  const typeName = DOCUMENT_TYPES.find((t) => t.id === doc.type)?.name || doc.type;
-                  return (
-                    <Tr key={doc.id} _hover={{ bg: 'gray.100' }}>
-                      <Td borderColor="gray.300">
-                        <Text color="gray.800" fontSize="sm" fontWeight="medium" noOfLines={1}>{doc.title}</Text>
-                      </Td>
-                      <Td borderColor="gray.300">
-                        <Text color="gray.600" fontSize="sm">{typeName}</Text>
-                      </Td>
-                      <Td borderColor="gray.300">
-                        <Box>
+        <>
+          {/* Vue cartes sur mobile */}
+          <VStack display={{ base: 'flex', md: 'none' }} spacing={3}>
+            {documents.map((doc) => {
+              const statusCfg = STATUS_CONFIG[doc.status];
+              const typeName = DOCUMENT_TYPES.find((t) => t.id === doc.type)?.name || doc.type;
+              return (
+                <Box key={doc.id} w="full" bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.200" p={4} shadow="sm">
+                  <Flex justify="space-between" align="flex-start" mb={2}>
+                    <Box flex="1" mr={2}>
+                      <Text fontWeight="semibold" color="gray.800" fontSize="sm" noOfLines={2}>{doc.title}</Text>
+                      <Text fontSize="xs" color="gray.500">{typeName}</Text>
+                    </Box>
+                    <Badge colorScheme={statusCfg.color} fontSize="xs" flexShrink={0}>{statusCfg.label}</Badge>
+                  </Flex>
+                  <Text fontSize="sm" color="gray.700">{doc.signerName}</Text>
+                  <Text fontSize="xs" color="gray.500" mb={1}>{doc.signerEmail}</Text>
+                  {doc.property && (
+                    <Text fontSize="xs" color="gray.400" mb={2}>
+                      {doc.property.address}, {doc.property.city}
+                    </Text>
+                  )}
+                  <Flex justify="space-between" align="center" mt={2} pt={2} borderTopWidth="1px" borderColor="gray.100">
+                    <Text fontSize="xs" color="gray.400">
+                      {doc.signedAt
+                        ? `Signé ${new Date(doc.signedAt).toLocaleDateString('fr-FR')}`
+                        : new Date(doc.createdAt).toLocaleDateString('fr-FR')}
+                    </Text>
+                    <HStack spacing={1}>
+                      {(doc.status === 'DRAFT' || doc.status === 'SENT') && (
+                        <Tooltip label="Envoyer pour signature">
+                          <IconButton icon={<FiSend />} size="xs" colorScheme="blue" variant="ghost"
+                            isLoading={actionLoading[`send-${doc.id}`]} onClick={() => handleSend(doc.id)} aria-label="Envoyer" />
+                        </Tooltip>
+                      )}
+                      <Tooltip label="Télécharger PDF">
+                        <IconButton icon={<FiDownload />} size="xs" colorScheme="green" variant="ghost"
+                          isLoading={actionLoading[`dl-${doc.id}`]} onClick={() => handleDownload(doc.id)} aria-label="Télécharger" />
+                      </Tooltip>
+                      {doc.status !== 'SIGNED' && (
+                        <Tooltip label="Supprimer">
+                          <IconButton icon={<FiTrash2 />} size="xs" colorScheme="red" variant="ghost"
+                            isLoading={actionLoading[`del-${doc.id}`]} onClick={() => handleDelete(doc.id)} aria-label="Supprimer" />
+                        </Tooltip>
+                      )}
+                    </HStack>
+                  </Flex>
+                </Box>
+              );
+            })}
+          </VStack>
+
+          {/* Tableau sur desktop */}
+          <Card display={{ base: 'none', md: 'block' }} bg="white" borderColor="gray.200" borderWidth="1px" overflow="hidden">
+            <Box overflowX="auto">
+              <Table variant="simple" size="sm">
+                <Thead>
+                  <Tr>
+                    <Th color="gray.400" borderColor="gray.300">Document</Th>
+                    <Th color="gray.400" borderColor="gray.300">Type</Th>
+                    <Th color="gray.400" borderColor="gray.300">Signataire</Th>
+                    <Th color="gray.400" borderColor="gray.300">Bien</Th>
+                    <Th color="gray.400" borderColor="gray.300">Statut</Th>
+                    <Th color="gray.400" borderColor="gray.300">Date</Th>
+                    <Th color="gray.400" borderColor="gray.300" textAlign="center">Actions</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {documents.map((doc) => {
+                    const statusCfg = STATUS_CONFIG[doc.status];
+                    const typeName = DOCUMENT_TYPES.find((t) => t.id === doc.type)?.name || doc.type;
+                    return (
+                      <Tr key={doc.id} _hover={{ bg: 'gray.100' }}>
+                        <Td borderColor="gray.300"><Text color="gray.800" fontSize="sm" fontWeight="medium" noOfLines={1}>{doc.title}</Text></Td>
+                        <Td borderColor="gray.300"><Text color="gray.600" fontSize="sm">{typeName}</Text></Td>
+                        <Td borderColor="gray.300">
                           <Text color="gray.800" fontSize="sm">{doc.signerName}</Text>
                           <Text color="gray.500" fontSize="xs">{doc.signerEmail}</Text>
-                        </Box>
-                      </Td>
-                      <Td borderColor="gray.300">
-                        <Text color="gray.400" fontSize="sm" noOfLines={1}>
-                          {doc.property ? `${doc.property.address}, ${doc.property.city}` : '—'}
-                        </Text>
-                      </Td>
-                      <Td borderColor="gray.300">
-                        <Badge colorScheme={statusCfg.color} fontSize="xs">{statusCfg.label}</Badge>
-                      </Td>
-                      <Td borderColor="gray.300">
-                        <Text color="gray.400" fontSize="xs">
-                          {doc.signedAt
-                            ? `Signé ${new Date(doc.signedAt).toLocaleDateString('fr-FR')}`
-                            : new Date(doc.createdAt).toLocaleDateString('fr-FR')}
-                        </Text>
-                      </Td>
-                      <Td borderColor="gray.300">
-                        <HStack spacing={1} justify="center">
-                          {(doc.status === 'DRAFT' || doc.status === 'SENT') && (
-                            <Tooltip label="Envoyer pour signature">
-                              <IconButton
-                                icon={<FiSend />} size="xs" colorScheme="blue" variant="ghost"
-                                isLoading={actionLoading[`send-${doc.id}`]}
-                                onClick={() => handleSend(doc.id)}
-                                aria-label="Envoyer"
-                              />
+                        </Td>
+                        <Td borderColor="gray.300"><Text color="gray.400" fontSize="sm" noOfLines={1}>{doc.property ? `${doc.property.address}, ${doc.property.city}` : '—'}</Text></Td>
+                        <Td borderColor="gray.300"><Badge colorScheme={statusCfg.color} fontSize="xs">{statusCfg.label}</Badge></Td>
+                        <Td borderColor="gray.300">
+                          <Text color="gray.400" fontSize="xs">
+                            {doc.signedAt ? `Signé ${new Date(doc.signedAt).toLocaleDateString('fr-FR')}` : new Date(doc.createdAt).toLocaleDateString('fr-FR')}
+                          </Text>
+                        </Td>
+                        <Td borderColor="gray.300">
+                          <HStack spacing={1} justify="center">
+                            {(doc.status === 'DRAFT' || doc.status === 'SENT') && (
+                              <Tooltip label="Envoyer pour signature">
+                                <IconButton icon={<FiSend />} size="xs" colorScheme="blue" variant="ghost"
+                                  isLoading={actionLoading[`send-${doc.id}`]} onClick={() => handleSend(doc.id)} aria-label="Envoyer" />
+                              </Tooltip>
+                            )}
+                            <Tooltip label="Télécharger PDF">
+                              <IconButton icon={<FiDownload />} size="xs" colorScheme="green" variant="ghost"
+                                isLoading={actionLoading[`dl-${doc.id}`]} onClick={() => handleDownload(doc.id)} aria-label="Télécharger" />
                             </Tooltip>
-                          )}
-                          <Tooltip label="Télécharger PDF">
-                            <IconButton
-                              icon={<FiDownload />} size="xs" colorScheme="green" variant="ghost"
-                              isLoading={actionLoading[`dl-${doc.id}`]}
-                              onClick={() => handleDownload(doc.id)}
-                              aria-label="Télécharger"
-                            />
-                          </Tooltip>
-                          {doc.status !== 'SIGNED' && (
-                            <Tooltip label="Supprimer">
-                              <IconButton
-                                icon={<FiTrash2 />} size="xs" colorScheme="red" variant="ghost"
-                                isLoading={actionLoading[`del-${doc.id}`]}
-                                onClick={() => handleDelete(doc.id)}
-                                aria-label="Supprimer"
-                              />
-                            </Tooltip>
-                          )}
-                        </HStack>
-                      </Td>
-                    </Tr>
-                  );
-                })}
-              </Tbody>
-            </Table>
-          </Box>
-        </Card>
+                            {doc.status !== 'SIGNED' && (
+                              <Tooltip label="Supprimer">
+                                <IconButton icon={<FiTrash2 />} size="xs" colorScheme="red" variant="ghost"
+                                  isLoading={actionLoading[`del-${doc.id}`]} onClick={() => handleDelete(doc.id)} aria-label="Supprimer" />
+                              </Tooltip>
+                            )}
+                          </HStack>
+                        </Td>
+                      </Tr>
+                    );
+                  })}
+                </Tbody>
+              </Table>
+            </Box>
+          </Card>
+        </>
       )}
 
       {/* Modal création document */}

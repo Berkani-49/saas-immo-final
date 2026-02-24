@@ -4,17 +4,18 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
   Box, Heading, Spinner, Flex, Alert, AlertIcon, Table, Thead, Tbody, Tr, Th, Td,
-  Badge, Button, FormControl, FormLabel, Input, Select, VStack, useToast, SimpleGrid
+  Badge, Button, FormControl, FormLabel, Input, Select, VStack, useToast, SimpleGrid, Collapse
 } from '@chakra-ui/react';
 import { AddIcon, DownloadIcon } from '@chakra-ui/icons';
 import jsPDF from 'jspdf';
 import { API_URL } from '../config';
 
 export default function InvoicesPage({ token }) {
+  const [showForm, setShowForm] = useState(false);
   const [invoices, setInvoices] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const [selectedContact, setSelectedContact] = useState('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -126,29 +127,40 @@ export default function InvoicesPage({ token }) {
 
   return (
     <Box>
-      <Heading mb={6} color="gray.800">Facturation</Heading>
+      <Flex justify="space-between" align="center" mb={6} wrap="wrap" gap={3}>
+        <Heading color="gray.800">Facturation</Heading>
+        <Button
+          colorScheme="brand"
+          size="sm"
+          onClick={() => setShowForm(v => !v)}
+          leftIcon={<span>{showForm ? '−' : '+'}</span>}
+        >
+          {showForm ? 'Masquer le formulaire' : 'Nouvelle facture'}
+        </Button>
+      </Flex>
 
-      <Box p={5} shadow="md" borderWidth="1px" borderRadius="lg" bg="white" borderColor="gray.200" mb={8}>
-        <Heading size="md" mb={4} color="gray.800">Nouvelle Facture</Heading>
-        <form onSubmit={handleCreateInvoice}>
-            <VStack spacing={4}>
-                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} width="full">
-                    <FormControl isRequired>
-                        <FormLabel>Client à facturer</FormLabel>
-                        <Select placeholder="Choisir un client" value={selectedContact} onChange={(e) => setSelectedContact(e.target.value)}>
-                            {contacts.map(c => (<option key={c.id} value={c.id}>{c.firstName} {c.lastName}</option>))}
-                        </Select>
-                    </FormControl>
-                    <FormControl isRequired>
-                        <FormLabel>Montant (€)</FormLabel>
-                        <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
-                    </FormControl>
-                </SimpleGrid>
-                <FormControl><FormLabel>Description</FormLabel><Input value={description} onChange={(e) => setDescription(e.target.value)} /></FormControl>
-                <Button type="submit" leftIcon={<AddIcon />} colorScheme="brand" width="full" isLoading={isSubmitting}>Générer la facture</Button>
-            </VStack>
-        </form>
-      </Box>
+      <Collapse in={showForm} animateOpacity>
+        <Box p={5} shadow="md" borderWidth="1px" borderRadius="lg" bg="white" borderColor="gray.200" mb={8}>
+          <form onSubmit={handleCreateInvoice}>
+              <VStack spacing={4}>
+                  <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} width="full">
+                      <FormControl isRequired>
+                          <FormLabel>Client à facturer</FormLabel>
+                          <Select placeholder="Choisir un client" value={selectedContact} onChange={(e) => setSelectedContact(e.target.value)}>
+                              {contacts.map(c => (<option key={c.id} value={c.id}>{c.firstName} {c.lastName}</option>))}
+                          </Select>
+                      </FormControl>
+                      <FormControl isRequired>
+                          <FormLabel>Montant (€)</FormLabel>
+                          <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
+                      </FormControl>
+                  </SimpleGrid>
+                  <FormControl><FormLabel>Description</FormLabel><Input value={description} onChange={(e) => setDescription(e.target.value)} /></FormControl>
+                  <Button type="submit" leftIcon={<AddIcon />} colorScheme="brand" width="full" isLoading={isSubmitting}>Générer la facture</Button>
+              </VStack>
+          </form>
+        </Box>
+      </Collapse>
 
       <Heading size="md" mb={4} color="gray.800">Historique ({invoices.length})</Heading>
       
