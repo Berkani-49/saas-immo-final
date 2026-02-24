@@ -6,7 +6,7 @@ import axios from 'axios';
 import {
   Box, Heading, Text, Button, Spinner, Alert, AlertIcon,
   FormControl, FormLabel, Input, Select, Flex, Spacer,
-  VStack, useToast, Center, Container, Badge
+  VStack, useToast, Center, Container, Badge, SimpleGrid
 } from '@chakra-ui/react';
 import { ArrowBackIcon } from '@chakra-ui/icons';
 import ContactProperties from '../components/ContactProperties.jsx';
@@ -97,7 +97,7 @@ export default function ContactDetail({ token }) {
           // --- FORMULAIRE ---
           <form onSubmit={handleSave}>
             <VStack spacing={4}>
-              <Flex w="full" gap={4}>
+              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} width="full">
                 <FormControl>
                     <FormLabel>Prénom</FormLabel>
                     <Input name="firstName" value={editFormData.firstName} onChange={handleChange} />
@@ -106,7 +106,7 @@ export default function ContactDetail({ token }) {
                     <FormLabel>Nom</FormLabel>
                     <Input name="lastName" value={editFormData.lastName} onChange={handleChange} />
                 </FormControl>
-              </Flex>
+              </SimpleGrid>
               
               <FormControl>
                 <FormLabel>Email</FormLabel>

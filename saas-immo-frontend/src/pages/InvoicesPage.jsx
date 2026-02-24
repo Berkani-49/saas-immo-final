@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
-  Box, Heading, Spinner, Flex, Alert, AlertIcon, Table, Thead, Tbody, Tr, Th, Td, 
-  Badge, Button, FormControl, FormLabel, Input, Select, VStack, HStack, useToast
+  Box, Heading, Spinner, Flex, Alert, AlertIcon, Table, Thead, Tbody, Tr, Th, Td,
+  Badge, Button, FormControl, FormLabel, Input, Select, VStack, useToast, SimpleGrid
 } from '@chakra-ui/react';
 import { AddIcon, DownloadIcon } from '@chakra-ui/icons';
 import jsPDF from 'jspdf';
@@ -132,18 +132,18 @@ export default function InvoicesPage({ token }) {
         <Heading size="md" mb={4} color="gray.800">Nouvelle Facture</Heading>
         <form onSubmit={handleCreateInvoice}>
             <VStack spacing={4}>
-                <HStack width="full" alignItems="end">
-                    <FormControl isRequired flex={2}>
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} width="full">
+                    <FormControl isRequired>
                         <FormLabel>Client à facturer</FormLabel>
                         <Select placeholder="Choisir un client" value={selectedContact} onChange={(e) => setSelectedContact(e.target.value)}>
                             {contacts.map(c => (<option key={c.id} value={c.id}>{c.firstName} {c.lastName}</option>))}
                         </Select>
                     </FormControl>
-                    <FormControl isRequired flex={1}>
+                    <FormControl isRequired>
                         <FormLabel>Montant (€)</FormLabel>
                         <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
                     </FormControl>
-                </HStack>
+                </SimpleGrid>
                 <FormControl><FormLabel>Description</FormLabel><Input value={description} onChange={(e) => setDescription(e.target.value)} /></FormControl>
                 <Button type="submit" leftIcon={<AddIcon />} colorScheme="brand" width="full" isLoading={isSubmitting}>Générer la facture</Button>
             </VStack>

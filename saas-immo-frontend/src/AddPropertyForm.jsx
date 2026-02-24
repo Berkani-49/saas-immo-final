@@ -254,18 +254,18 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
               <FormLabel>Adresse</FormLabel>
               <Input value={address} onChange={(e) => setAddress(e.target.value)} />
             </FormControl>
-            <HStack width="full">
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} width="full">
               <FormControl><FormLabel>Ville</FormLabel><Input value={city} onChange={(e) => setCity(e.target.value)} /></FormControl>
               <FormControl><FormLabel>Code Postal</FormLabel><Input value={postalCode} onChange={(e) => setPostalCode(e.target.value)} /></FormControl>
-            </HStack>
-            <HStack width="full">
+            </SimpleGrid>
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} width="full">
               <FormControl isRequired><FormLabel>Prix (€)</FormLabel><Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} /></FormControl>
               <FormControl isRequired><FormLabel>Surface (m²)</FormLabel><Input type="number" value={area} onChange={(e) => setArea(e.target.value)} /></FormControl>
-            </HStack>
-            <HStack width="full">
+            </SimpleGrid>
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} width="full">
               <FormControl><FormLabel>Pièces</FormLabel><Input type="number" value={rooms} onChange={(e) => setRooms(e.target.value)} /></FormControl>
               <FormControl><FormLabel>Chambres</FormLabel><Input type="number" value={bedrooms} onChange={(e) => setBedrooms(e.target.value)} /></FormControl>
-            </HStack>
+            </SimpleGrid>
 
             {/* TYPE DE BIEN */}
             <FormControl>
@@ -278,7 +278,7 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
             </FormControl>
 
             {/* ÉTAGE */}
-            <HStack width="full">
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} width="full">
               <FormControl>
                 <FormLabel>Étage</FormLabel>
                 <Input type="number" placeholder="0 = RDC" value={floor} onChange={(e) => setFloor(e.target.value)} />
@@ -287,7 +287,7 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
                 <FormLabel>Nb d'étages total</FormLabel>
                 <Input type="number" value={totalFloors} onChange={(e) => setTotalFloors(e.target.value)} />
               </FormControl>
-            </HStack>
+            </SimpleGrid>
 
             {/* ÉQUIPEMENTS */}
             <Box width="full" p={4} borderWidth="1px" borderColor="gray.300" borderRadius="md" bg="gray.50">
