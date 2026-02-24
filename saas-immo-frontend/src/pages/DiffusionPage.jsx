@@ -109,31 +109,31 @@ export default function DiffusionPage({ token }) {
 
       {/* Statistiques */}
       {stats && (
-        <SimpleGrid columns={{ base: 3, md: 3 }} spacing={4} mb={6}>
+        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={6}>
           <Card bg="white" borderColor="gray.200" borderWidth="1px">
             <CardBody>
               <Stat>
-                <StatLabel color="gray.400">Biens publiés</StatLabel>
+                <StatLabel color="gray.600">Biens publiés</StatLabel>
                 <StatNumber color="gray.800">{stats.totalPublished}</StatNumber>
-                <Text fontSize="xs" color="gray.500">sur {stats.totalProperties} biens au total</Text>
+                <Text fontSize="xs" color="gray.600">sur {stats.totalProperties} biens au total</Text>
               </Stat>
             </CardBody>
           </Card>
           <Card bg="white" borderColor="gray.200" borderWidth="1px">
             <CardBody>
               <Stat>
-                <StatLabel color="gray.400">Portails actifs</StatLabel>
+                <StatLabel color="gray.600">Portails actifs</StatLabel>
                 <StatNumber color="gray.800">{stats.portals?.filter((p) => p.count > 0).length || 0}</StatNumber>
-                <Text fontSize="xs" color="gray.500">sur {stats.portals?.length || 0} portails disponibles</Text>
+                <Text fontSize="xs" color="gray.600">sur {stats.portals?.length || 0} portails disponibles</Text>
               </Stat>
             </CardBody>
           </Card>
           <Card bg="white" borderColor="gray.200" borderWidth="1px">
             <CardBody>
               <Stat>
-                <StatLabel color="gray.400">Publications totales</StatLabel>
+                <StatLabel color="gray.600">Publications totales</StatLabel>
                 <StatNumber color="gray.800">{stats.portals?.reduce((sum, p) => sum + p.count, 0) || 0}</StatNumber>
-                <Text fontSize="xs" color="gray.500">annonces sur l'ensemble des portails</Text>
+                <Text fontSize="xs" color="gray.600">annonces sur l'ensemble des portails</Text>
               </Stat>
             </CardBody>
           </Card>
@@ -147,7 +147,7 @@ export default function DiffusionPage({ token }) {
             <Text fontWeight="bold" color="gray.800" mb={3}>Répartition par portail</Text>
             <HStack spacing={4} flexWrap="wrap">
               {stats.portals.map((portal) => (
-                <HStack key={portal.portal} bg="gray.50" px={3} py={2} borderRadius="lg" borderLeft="3px solid" borderLeftColor={portal.portalColor}>
+                <HStack key={portal.portal} bg="gray.100" px={3} py={2} borderRadius="lg" borderLeft="3px solid" borderLeftColor={portal.portalColor}>
                   <Icon as={FiGlobe} color={portal.portalColor} />
                   <Text color="gray.800" fontSize="sm" fontWeight="medium">{portal.portalName}</Text>
                   <Badge colorScheme={portal.count > 0 ? 'green' : 'gray'}>{portal.count}</Badge>
@@ -279,11 +279,11 @@ export default function DiffusionPage({ token }) {
                       <Td borderColor="gray.300" textAlign="center">
                         <HStack spacing={1} justify="center">
                           <Tooltip label="Publier partout">
-                            <IconButton icon={<FiZap />} size="xs" colorScheme="green" variant="ghost"
+                            <IconButton icon={<FiZap />} size="xs" colorScheme="green" variant="outline"
                               isLoading={publishing[property.id]} onClick={() => handlePublishAll(property.id)} aria-label="Publier partout" />
                           </Tooltip>
                           <Tooltip label="Tout retirer">
-                            <IconButton icon={<FiX />} size="xs" colorScheme="red" variant="ghost"
+                            <IconButton icon={<FiX />} size="xs" colorScheme="red" variant="outline"
                               isLoading={publishing[`unpub-${property.id}`]} onClick={() => handleUnpublishAll(property.id)} aria-label="Tout retirer" />
                           </Tooltip>
                         </HStack>
