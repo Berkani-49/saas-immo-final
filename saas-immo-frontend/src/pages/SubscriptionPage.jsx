@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import {
   Box, Heading, Text, Button, VStack, Icon, Badge, Flex, useToast,
-  SimpleGrid, List, ListItem, ListIcon, Divider
+  List, ListItem, ListIcon, Divider
 } from '@chakra-ui/react';
 import { FiCheck, FiX, FiZap, FiArrowRight } from 'react-icons/fi';
 import { usePlan } from '../contexts/PlanContext';
@@ -141,7 +141,22 @@ export default function SubscriptionPage({ token }) {
         )}
       </VStack>
 
-      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} maxW="1100px" mx="auto">
+      {/* Scroll horizontal sur mobile, grille 3 colonnes sur desktop */}
+      <Box
+        overflowX={{ base: 'auto', md: 'visible' }}
+        mx={{ base: -4, md: 'auto' }}
+        px={{ base: 4, md: 0 }}
+        pb={{ base: 4, md: 0 }}
+        sx={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}
+      >
+      <Flex
+        direction="row"
+        gap={6}
+        flexWrap={{ base: 'nowrap', md: 'wrap' }}
+        maxW={{ base: 'none', md: '1100px' }}
+        mx={{ base: 0, md: 'auto' }}
+        justifyContent={{ base: 'flex-start', md: 'center' }}
+      >
         {plans.map((p) => {
           const isCurrent = currentPlan === p.slug;
           const isPopular = p.badge === 'POPULAIRE';
@@ -156,8 +171,10 @@ export default function SubscriptionPage({ token }) {
               borderWidth="2px"
               borderColor={isCurrent ? 'green.500' : p.borderColor}
               position="relative"
-              transform={isPopular ? { md: 'scale(1.05)' } : undefined}
-              zIndex={isPopular ? 1 : 0}
+              flex={{ base: '0 0 82vw', md: '1' }}
+              minW={{ base: '280px', md: '0' }}
+              maxW={{ base: '340px', md: 'none' }}
+              sx={{ scrollSnapAlign: 'start' }}
             >
               {/* Badge plan */}
               {p.badge && (
@@ -278,7 +295,8 @@ export default function SubscriptionPage({ token }) {
             </Box>
           );
         })}
-      </SimpleGrid>
+      </Flex>
+      </Box>
 
       <Text textAlign="center" fontSize="xs" color="gray.500" mt={8}>
         Paiement sécurisé via Stripe. Annulable à tout moment. TVA non incluse.

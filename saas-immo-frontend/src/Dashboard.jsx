@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API_URL } from './config';
 import {
-  Box, Heading, Spinner, Flex, Input, InputGroup, InputLeftElement, SimpleGrid, Text, Button, HStack, IconButton
+  Box, Heading, Spinner, Flex, Input, InputGroup, InputLeftElement, SimpleGrid, Text, Button, HStack, IconButton, Collapse
 } from '@chakra-ui/react';
 import { SearchIcon, RepeatIcon } from '@chakra-ui/icons';
 
@@ -12,6 +12,7 @@ import AddPropertyForm from './AddPropertyForm.jsx';
 import PropertyItem from './PropertyItem.jsx';
 
 export default function Dashboard({ token }) {
+  const [showAddForm, setShowAddForm] = useState(false);
   const [properties, setProperties] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -55,9 +56,21 @@ export default function Dashboard({ token }) {
   return (
     <Box w="100%" maxW="100%" overflowX="hidden">
 
-      <Heading mb={6} color="gray.800">Gestion des Biens</Heading>
+      <Flex justify="space-between" align="center" mb={6} wrap="wrap" gap={3}>
+        <Heading color="gray.800">Gestion des Biens</Heading>
+        <Button
+          colorScheme="blue"
+          size="sm"
+          onClick={() => setShowAddForm(v => !v)}
+          leftIcon={<Text as="span">{showAddForm ? '−' : '+'}</Text>}
+        >
+          {showAddForm ? 'Masquer le formulaire' : 'Ajouter un bien'}
+        </Button>
+      </Flex>
 
-      <AddPropertyForm token={token} onPropertyAdded={handlePropertyAdded} />
+      <Collapse in={showAddForm} animateOpacity>
+        <AddPropertyForm token={token} onPropertyAdded={(p) => { handlePropertyAdded(p); setShowAddForm(false); }} />
+      </Collapse>
 
       <Heading as="h3" size="md" mt={10} mb={4} pt={4} borderTopWidth={1} borderColor="gray.200" color="gray.800">
         Rechercher un bien
