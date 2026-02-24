@@ -144,7 +144,7 @@ export default function AnalyticsPage({ token }) {
       <HStack justify="space-between" mb={6}>
         <VStack align="start" spacing={1}>
           <Heading size="lg" color="gray.800">📈 Tableau de Bord Avancé</Heading>
-          <Text color="gray.400">Statistiques des 30 derniers jours</Text>
+          <Text color="gray.600">Statistiques des 30 derniers jours</Text>
         </VStack>
         <Button
           leftIcon={<Icon as={FiDownload} />}
@@ -163,7 +163,7 @@ export default function AnalyticsPage({ token }) {
               <StatLabel>
                 <HStack>
                   <Icon as={FiEye} color="blue.400" />
-                  <Text color="gray.400">Total des vues</Text>
+                  <Text color="gray.600">Total des vues</Text>
                 </HStack>
               </StatLabel>
               <StatNumber fontSize="3xl" color="gray.800">{overview?.totalViews || 0}</StatNumber>
@@ -181,7 +181,7 @@ export default function AnalyticsPage({ token }) {
               <StatLabel>
                 <HStack>
                   <Icon as={FiTrendingUp} color="green.400" />
-                  <Text color="gray.400">Taux de conversion</Text>
+                  <Text color="gray.600">Taux de conversion</Text>
                 </HStack>
               </StatLabel>
               <StatNumber fontSize="3xl" color="gray.800">{overview?.conversionRate || 0}%</StatNumber>
@@ -198,7 +198,7 @@ export default function AnalyticsPage({ token }) {
               <StatLabel>
                 <HStack>
                   <Icon as={FiClock} color="orange.400" />
-                  <Text color="gray.400">Temps moyen</Text>
+                  <Text color="gray.600">Temps moyen</Text>
                 </HStack>
               </StatLabel>
               <StatNumber fontSize="3xl" color="gray.800">{overview?.avgDuration || 0}s</StatNumber>
@@ -213,7 +213,7 @@ export default function AnalyticsPage({ token }) {
               <StatLabel>
                 <HStack>
                   <Icon as={FiUsers} color="purple.400" />
-                  <Text color="gray.400">Biens actifs</Text>
+                  <Text color="gray.600">Biens actifs</Text>
                 </HStack>
               </StatLabel>
               <StatNumber fontSize="3xl" color="gray.800">{properties.length}</StatNumber>
@@ -240,8 +240,8 @@ export default function AnalyticsPage({ token }) {
                     legend: { display: false }
                   },
                   scales: {
-                    y: { beginAtZero: true, ticks: { color: '#A0AEC0' }, grid: { color: '#2D3748' } },
-                    x: { ticks: { color: '#A0AEC0' }, grid: { color: '#2D3748' } }
+                    y: { beginAtZero: true, ticks: { color: '#718096' }, grid: { color: '#E2E8F0' } },
+                    x: { ticks: { color: '#718096' }, grid: { color: '#E2E8F0' } }
                   }
                 }}
               />
@@ -266,8 +266,8 @@ export default function AnalyticsPage({ token }) {
                     legend: { display: false }
                   },
                   scales: {
-                    y: { ticks: { color: '#A0AEC0' }, grid: { color: '#2D3748' } },
-                    x: { ticks: { color: '#A0AEC0' }, grid: { color: '#2D3748' } }
+                    y: { ticks: { color: '#718096' }, grid: { color: '#E2E8F0' } },
+                    x: { ticks: { color: '#718096' }, grid: { color: '#E2E8F0' } }
                   }
                 }}
               />
@@ -293,7 +293,7 @@ export default function AnalyticsPage({ token }) {
                   options={{
                     responsive: true,
                     plugins: {
-                      legend: { position: 'bottom', labels: { color: '#A0AEC0' } }
+                      legend: { position: 'bottom', labels: { color: '#4A5568' } }
                     }
                   }}
                 />
@@ -318,11 +318,11 @@ export default function AnalyticsPage({ token }) {
                       <Badge colorScheme="brand" fontSize="lg">{index + 1}</Badge>
                       <VStack align="start" spacing={0}>
                         <Text fontWeight="bold" fontSize="sm" color="gray.800">{property.address}</Text>
-                        <Text fontSize="xs" color="gray.400">{property.city}</Text>
+                        <Text fontSize="xs" color="gray.500">{property.city}</Text>
                       </VStack>
                     </HStack>
                     <VStack align="end" spacing={0}>
-                      <Text fontWeight="bold" color="brand.400">{property.recentViews}</Text>
+                      <Text fontWeight="bold" color="brand.500">{property.recentViews}</Text>
                       <Text fontSize="xs" color="gray.500">vues</Text>
                     </VStack>
                   </HStack>
@@ -344,12 +344,12 @@ export default function AnalyticsPage({ token }) {
           <Table variant="simple" size="sm">
             <Thead>
               <Tr>
-                <Th color="gray.400" borderColor="gray.200">Bien</Th>
-                <Th isNumeric color="gray.400" borderColor="gray.200">Prix</Th>
-                <Th isNumeric color="gray.400" borderColor="gray.200">Vues (30j)</Th>
-                <Th isNumeric color="gray.400" borderColor="gray.200">Temps moyen</Th>
-                <Th isNumeric color="gray.400" borderColor="gray.200">Conversions</Th>
-                <Th isNumeric color="gray.400" borderColor="gray.200">Taux</Th>
+                <Th color="gray.600" borderColor="gray.200">Bien</Th>
+                <Th isNumeric color="gray.600" borderColor="gray.200">Prix</Th>
+                <Th isNumeric color="gray.600" borderColor="gray.200">Vues (30j)</Th>
+                <Th isNumeric color="gray.600" borderColor="gray.200">Temps moyen</Th>
+                <Th isNumeric color="gray.600" borderColor="gray.200">Conversions</Th>
+                <Th isNumeric color="gray.600" borderColor="gray.200">Taux</Th>
               </Tr>
             </Thead>
             <Tbody>
@@ -369,7 +369,7 @@ export default function AnalyticsPage({ token }) {
                   <Td isNumeric borderColor="gray.200">
                     <Badge colorScheme="green">{property.conversions}</Badge>
                   </Td>
-                  <Td isNumeric fontWeight="bold" borderColor="gray.200" color={parseFloat(property.conversionRate) > 5 ? 'green.400' : 'gray.400'}>
+                  <Td isNumeric fontWeight="bold" borderColor="gray.200" color={parseFloat(property.conversionRate) > 5 ? 'green.600' : 'gray.500'}>
                     {property.conversionRate}%
                   </Td>
                 </Tr>
