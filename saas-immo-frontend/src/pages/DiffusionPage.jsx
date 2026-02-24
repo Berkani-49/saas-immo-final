@@ -215,14 +215,14 @@ export default function DiffusionPage({ token }) {
                 {/* Boutons d'action */}
                 <HStack spacing={2} pt={2} borderTopWidth="1px" borderColor="gray.100">
                   <Button
-                    size="xs" colorScheme="green" variant="outline" leftIcon={<FiZap />}
+                    size="sm" colorScheme="green" variant="solid" leftIcon={<FiZap />}
                     isLoading={publishing[property.id]} onClick={() => handlePublishAll(property.id)}
                     flex={1}
                   >
                     Publier partout
                   </Button>
                   <Button
-                    size="xs" colorScheme="red" variant="outline" leftIcon={<FiX />}
+                    size="sm" colorScheme="red" variant="outline" leftIcon={<FiX />}
                     isLoading={publishing[`unpub-${property.id}`]} onClick={() => handleUnpublishAll(property.id)}
                     flex={1}
                   >
@@ -239,13 +239,13 @@ export default function DiffusionPage({ token }) {
               <Table variant="simple" size="sm">
                 <Thead>
                   <Tr>
-                    <Th color="gray.400" borderColor="gray.300">Bien</Th>
+                    <Th color="gray.600" borderColor="gray.300">Bien</Th>
                     {properties[0]?.diffusions?.map((d) => (
-                      <Th key={d.portal} color="gray.400" borderColor="gray.300" textAlign="center" fontSize="xs">
+                      <Th key={d.portal} color="gray.600" borderColor="gray.300" textAlign="center" fontSize="xs">
                         {d.portalName}
                       </Th>
                     ))}
-                    <Th color="gray.400" borderColor="gray.300" textAlign="center">Actions</Th>
+                    <Th color="gray.600" borderColor="gray.300" textAlign="center">Actions</Th>
                   </Tr>
                 </Thead>
                 <Tbody>
@@ -258,7 +258,7 @@ export default function DiffusionPage({ token }) {
                           )}
                           <Box>
                             <Text color="gray.800" fontSize="sm" fontWeight="medium" noOfLines={1}>{property.address}</Text>
-                            <Text color="gray.400" fontSize="xs">{property.city} · {property.price?.toLocaleString('fr-FR')} € · {property.area} m²</Text>
+                            <Text color="gray.500" fontSize="xs">{property.city} · {property.price?.toLocaleString('fr-FR')} € · {property.area} m²</Text>
                           </Box>
                         </HStack>
                       </Td>
