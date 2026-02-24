@@ -3,7 +3,7 @@ import {
   Box, Heading, SimpleGrid, Stat, StatLabel, StatNumber,
   Card, CardBody, Spinner, Text, Table, Thead, Tbody, Tr, Th, Td,
   Button, Icon, HStack, Badge, useToast, Flex, IconButton,
-  Tooltip, Image, Switch
+  Tooltip, Image, Switch, VStack, Divider
 } from '@chakra-ui/react';
 import { FiShare2, FiGlobe, FiCheck, FiX, FiAlertTriangle, FiZap } from 'react-icons/fi';
 import axios from 'axios';
@@ -109,7 +109,7 @@ export default function DiffusionPage({ token }) {
 
       {/* Statistiques */}
       {stats && (
-        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={6}>
+        <SimpleGrid columns={{ base: 3, md: 3 }} spacing={4} mb={6}>
           <Card bg="white" borderColor="gray.200" borderWidth="1px">
             <CardBody>
               <Stat>
@@ -168,87 +168,133 @@ export default function DiffusionPage({ token }) {
           </CardBody>
         </Card>
       ) : (
-        <Card bg="white" borderColor="gray.200" borderWidth="1px" overflow="hidden">
-          <Box overflowX="auto">
-            <Table variant="simple" size="sm">
-              <Thead>
-                <Tr>
-                  <Th color="gray.400" borderColor="gray.300">Bien</Th>
-                  {properties[0]?.diffusions?.map((d) => (
-                    <Th key={d.portal} color="gray.400" borderColor="gray.300" textAlign="center" fontSize="xs">
-                      {d.portalName}
-                    </Th>
-                  ))}
-                  <Th color="gray.400" borderColor="gray.300" textAlign="center">Actions</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {properties.map((property) => (
-                  <Tr key={property.id} _hover={{ bg: 'gray.100' }}>
-                    <Td borderColor="gray.300" maxW="250px">
-                      <HStack spacing={3}>
-                        {property.imageUrl && (
-                          <Image src={property.imageUrl} alt="" boxSize="40px" borderRadius="md" objectFit="cover" />
-                        )}
-                        <Box>
-                          <Text color="gray.800" fontSize="sm" fontWeight="medium" noOfLines={1}>{property.address}</Text>
-                          <Text color="gray.400" fontSize="xs">
-                            {property.city} · {property.price?.toLocaleString('fr-FR')} € · {property.area} m²
-                          </Text>
-                        </Box>
-                      </HStack>
-                    </Td>
-                    {property.diffusions.map((diff) => {
-                      const cfg = STATUS_CONFIG[diff.status];
-                      const key = `${property.id}-${diff.portal}`;
-                      return (
-                        <Td key={diff.portal} borderColor="gray.300" textAlign="center">
-                          <Tooltip label={`${diff.portalName}: ${cfg.label}${diff.publishedAt ? ` (${new Date(diff.publishedAt).toLocaleDateString('fr-FR')})` : ''}`}>
-                            <Box display="inline-block">
-                              <Switch
-                                size="sm"
-                                colorScheme="green"
-                                isChecked={diff.status === 'PUBLISHED'}
-                                isDisabled={publishing[key]}
-                                onChange={() => handleTogglePortal(property.id, diff.portal, diff.status)}
-                              />
-                            </Box>
-                          </Tooltip>
-                        </Td>
-                      );
-                    })}
-                    <Td borderColor="gray.300" textAlign="center">
-                      <HStack spacing={1} justify="center">
-                        <Tooltip label="Publier partout">
-                          <IconButton
-                            icon={<FiZap />}
-                            size="xs"
+        <>
+          {/* Vue cartes sur mobile */}
+          <VStack display={{ base: 'flex', md: 'none' }} spacing={4}>
+            {properties.map((property) => (
+              <Box key={property.id} w="full" bg="white" borderRadius="lg" borderWidth="1px" borderColor="gray.200" p={4} shadow="sm">
+                {/* Entête bien */}
+                <HStack spacing={3} mb={3}>
+                  {property.imageUrl && (
+                    <Image src={property.imageUrl} alt="" boxSize="48px" borderRadius="md" objectFit="cover" flexShrink={0} />
+                  )}
+                  <Box flex="1" minW={0}>
+                    <Text color="gray.800" fontSize="sm" fontWeight="semibold" noOfLines={1}>{property.address}</Text>
+                    <Text color="gray.500" fontSize="xs">{property.city} · {property.price?.toLocaleString('fr-FR')} € · {property.area} m²</Text>
+                  </Box>
+                </HStack>
+
+                <Divider mb={3} />
+
+                {/* Portails en lignes */}
+                <VStack spacing={2} align="stretch" mb={3}>
+                  {property.diffusions.map((diff) => {
+                    const cfg = STATUS_CONFIG[diff.status];
+                    const key = `${property.id}-${diff.portal}`;
+                    return (
+                      <Flex key={diff.portal} justify="space-between" align="center">
+                        <HStack spacing={2}>
+                          <Icon as={FiGlobe} color="gray.400" w={3} h={3} />
+                          <Text fontSize="sm" color="gray.700">{diff.portalName}</Text>
+                        </HStack>
+                        <HStack spacing={2}>
+                          <Badge colorScheme={cfg.color} fontSize="xs">{cfg.label}</Badge>
+                          <Switch
+                            size="sm"
                             colorScheme="green"
-                            variant="ghost"
-                            isLoading={publishing[property.id]}
-                            onClick={() => handlePublishAll(property.id)}
-                            aria-label="Publier partout"
+                            isChecked={diff.status === 'PUBLISHED'}
+                            isDisabled={publishing[key]}
+                            onChange={() => handleTogglePortal(property.id, diff.portal, diff.status)}
                           />
-                        </Tooltip>
-                        <Tooltip label="Tout retirer">
-                          <IconButton
-                            icon={<FiX />}
-                            size="xs"
-                            colorScheme="red"
-                            variant="ghost"
-                            isLoading={publishing[`unpub-${property.id}`]}
-                            onClick={() => handleUnpublishAll(property.id)}
-                            aria-label="Tout retirer"
-                          />
-                        </Tooltip>
-                      </HStack>
-                    </Td>
+                        </HStack>
+                      </Flex>
+                    );
+                  })}
+                </VStack>
+
+                {/* Boutons d'action */}
+                <HStack spacing={2} pt={2} borderTopWidth="1px" borderColor="gray.100">
+                  <Button
+                    size="xs" colorScheme="green" variant="outline" leftIcon={<FiZap />}
+                    isLoading={publishing[property.id]} onClick={() => handlePublishAll(property.id)}
+                    flex={1}
+                  >
+                    Publier partout
+                  </Button>
+                  <Button
+                    size="xs" colorScheme="red" variant="ghost" leftIcon={<FiX />}
+                    isLoading={publishing[`unpub-${property.id}`]} onClick={() => handleUnpublishAll(property.id)}
+                    flex={1}
+                  >
+                    Tout retirer
+                  </Button>
+                </HStack>
+              </Box>
+            ))}
+          </VStack>
+
+          {/* Tableau sur desktop */}
+          <Card display={{ base: 'none', md: 'block' }} bg="white" borderColor="gray.200" borderWidth="1px" overflow="hidden">
+            <Box overflowX="auto">
+              <Table variant="simple" size="sm">
+                <Thead>
+                  <Tr>
+                    <Th color="gray.400" borderColor="gray.300">Bien</Th>
+                    {properties[0]?.diffusions?.map((d) => (
+                      <Th key={d.portal} color="gray.400" borderColor="gray.300" textAlign="center" fontSize="xs">
+                        {d.portalName}
+                      </Th>
+                    ))}
+                    <Th color="gray.400" borderColor="gray.300" textAlign="center">Actions</Th>
                   </Tr>
-                ))}
-              </Tbody>
-            </Table>
-          </Box>
-        </Card>
+                </Thead>
+                <Tbody>
+                  {properties.map((property) => (
+                    <Tr key={property.id} _hover={{ bg: 'gray.100' }}>
+                      <Td borderColor="gray.300" maxW="250px">
+                        <HStack spacing={3}>
+                          {property.imageUrl && (
+                            <Image src={property.imageUrl} alt="" boxSize="40px" borderRadius="md" objectFit="cover" />
+                          )}
+                          <Box>
+                            <Text color="gray.800" fontSize="sm" fontWeight="medium" noOfLines={1}>{property.address}</Text>
+                            <Text color="gray.400" fontSize="xs">{property.city} · {property.price?.toLocaleString('fr-FR')} € · {property.area} m²</Text>
+                          </Box>
+                        </HStack>
+                      </Td>
+                      {property.diffusions.map((diff) => {
+                        const cfg = STATUS_CONFIG[diff.status];
+                        const key = `${property.id}-${diff.portal}`;
+                        return (
+                          <Td key={diff.portal} borderColor="gray.300" textAlign="center">
+                            <Tooltip label={`${diff.portalName}: ${cfg.label}${diff.publishedAt ? ` (${new Date(diff.publishedAt).toLocaleDateString('fr-FR')})` : ''}`}>
+                              <Box display="inline-block">
+                                <Switch size="sm" colorScheme="green" isChecked={diff.status === 'PUBLISHED'}
+                                  isDisabled={publishing[key]} onChange={() => handleTogglePortal(property.id, diff.portal, diff.status)} />
+                              </Box>
+                            </Tooltip>
+                          </Td>
+                        );
+                      })}
+                      <Td borderColor="gray.300" textAlign="center">
+                        <HStack spacing={1} justify="center">
+                          <Tooltip label="Publier partout">
+                            <IconButton icon={<FiZap />} size="xs" colorScheme="green" variant="ghost"
+                              isLoading={publishing[property.id]} onClick={() => handlePublishAll(property.id)} aria-label="Publier partout" />
+                          </Tooltip>
+                          <Tooltip label="Tout retirer">
+                            <IconButton icon={<FiX />} size="xs" colorScheme="red" variant="ghost"
+                              isLoading={publishing[`unpub-${property.id}`]} onClick={() => handleUnpublishAll(property.id)} aria-label="Tout retirer" />
+                          </Tooltip>
+                        </HStack>
+                      </Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            </Box>
+          </Card>
+        </>
       )}
     </Box>
   );
