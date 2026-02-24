@@ -222,7 +222,7 @@ export default function DiffusionPage({ token }) {
                     Publier partout
                   </Button>
                   <Button
-                    size="xs" colorScheme="red" variant="ghost" leftIcon={<FiX />}
+                    size="xs" colorScheme="red" variant="outline" leftIcon={<FiX />}
                     isLoading={publishing[`unpub-${property.id}`]} onClick={() => handleUnpublishAll(property.id)}
                     flex={1}
                   >

@@ -249,7 +249,7 @@ export default function SubscriptionPage({ token }) {
                     />
                     <Text
                       fontSize="sm"
-                      color={feat.included ? 'gray.300' : 'gray.600'}
+                      color={feat.included ? 'gray.700' : 'gray.400'}
                     >
                       {feat.text}
                     </Text>
