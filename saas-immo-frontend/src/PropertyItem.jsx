@@ -165,9 +165,7 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
             <PropertyImageGallery
               propertyId={property.id}
               token={token}
-              onImagesChange={(images) => {
-                console.log(`${images.length} photo(s) mise(s) à jour`);
-              }}
+              onImagesChange={() => {}}
             />
           </VStack>
         </form>
@@ -286,12 +284,12 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
             </Box>
         )}
 
-        <Flex pt={3} borderTopWidth={1} borderColor="gray.200" justify="space-between" align="center">
+        <Flex pt={3} borderTopWidth={1} borderColor="gray.200" justify="space-between" align="center" flexWrap="wrap" gap={2}>
             {property.agent ? (
                 <Text fontSize="xs" color="gray.400">Agent: {property.agent.firstName}</Text>
             ) : <Spacer />}
 
-            <HStack spacing={1}>
+            <HStack spacing={1} flexWrap="wrap">
                 {/* BOUTON HOME STAGING 🛋️ */}
                 {!property.imageUrlStaged && property.imageUrl && (
                   <IconButton
