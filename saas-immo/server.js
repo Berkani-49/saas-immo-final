@@ -46,7 +46,7 @@ const PORT = process.env.PORT || 3000;
 initSentry(app);
 
 // Trust proxy (nécessaire pour Render/Heroku/Vercel pour que rate-limit fonctionne correctement)
-app.set('trust proxy', true);
+app.set('trust proxy', 1); // Faire confiance uniquement au premier proxy (load balancer Render)
 
 // ========================================
 // SÉCURITÉ - Security Headers & HTTPS
