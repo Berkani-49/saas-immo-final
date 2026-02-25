@@ -308,9 +308,13 @@ router.post('/:employeeId/reset-password', async (req, res) => {
     try {
       const frontendUrl = process.env.FRONTEND_URL || 'https://saas-immo-final.vercel.app';
 
+      const RESEND_TEST_MODE_RESET = !process.env.RESEND_DOMAIN_VERIFIED;
+      const VERIFIED_EMAIL_RESET = process.env.RESEND_VERIFIED_EMAIL || 'amirelattaoui49@gmail.com';
+      const fromEmailReset = RESEND_TEST_MODE_RESET ? 'onboarding@resend.dev' : (process.env.RESEND_FROM_EMAIL || 'noreply@immopro.com');
+
       await resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL || 'noreply@immopro.com',
-        to: employee.email,
+        from: fromEmailReset,
+        to: RESEND_TEST_MODE_RESET ? VERIFIED_EMAIL_RESET : employee.email,
         subject: 'Réinitialisation de votre mot de passe ImmoPro',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

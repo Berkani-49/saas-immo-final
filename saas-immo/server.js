@@ -105,6 +105,7 @@ const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPE
 // En mode test Resend (domaine non vérifié), le from DOIT être onboarding@resend.dev
 const RESEND_TEST_MODE = !process.env.RESEND_DOMAIN_VERIFIED;
 const RESEND_FROM = RESEND_TEST_MODE ? 'onboarding@resend.dev' : (process.env.RESEND_FROM_EMAIL || 'noreply@immopro.com');
+const RESEND_VERIFIED_EMAIL = process.env.RESEND_VERIFIED_EMAIL || 'amirelattaoui49@gmail.com';
 
 // Log au démarrage
 if (resend) {
@@ -898,7 +899,7 @@ app.post('/api/auth/register', registerLimiter, async (req, res) => {
       try {
         await resend.emails.send({
           from: RESEND_FROM,
-          to: email,
+          to: RESEND_TEST_MODE ? RESEND_VERIFIED_EMAIL : email,
           subject: 'Vérifiez votre adresse email',
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -990,7 +991,7 @@ app.post('/api/auth/forgot-password', forgotPasswordLimiter, async (req, res) =>
     if (resend) {
       await resend.emails.send({
         from: RESEND_FROM,
-        to: email,
+        to: RESEND_TEST_MODE ? RESEND_VERIFIED_EMAIL : email,
         subject: 'Réinitialisation de votre mot de passe',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -1138,7 +1139,7 @@ app.post('/api/public/leads', async (req, res) => {
         if (resend && agentEmail) {
           await resend.emails.send({
             from: RESEND_FROM,
-            to: agentEmail,
+            to: RESEND_TEST_MODE ? RESEND_VERIFIED_EMAIL : agentEmail,
             subject: `Nouveau lead : ${property.address}`,
             html: `<p>Nouveau client : ${firstName} ${lastName} (${phone})</p><p>Bien : ${property.address}, ${property.city}</p>`
           });
