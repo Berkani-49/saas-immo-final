@@ -30,8 +30,8 @@ export default function StatCard({ title, value, icon, colorScheme = "blue" }) {
       />
 
       <Stat
-        px={{ base: 4, md: 6 }}
-        py={5}
+        px={{ base: 3, md: 6 }}
+        py={{ base: 4, md: 5 }}
         shadow="sm"
         borderWidth="1px"
         borderColor="gray.200"
@@ -43,21 +43,28 @@ export default function StatCard({ title, value, icon, colorScheme = "blue" }) {
           shadow: 'md',
         }}
       >
-        <Flex justifyContent="space-between" alignItems="center">
-          <Box pl={{ base: 2, md: 2 }}>
-            <StatLabel fontWeight="medium" color="gray.500" isTruncated fontSize="sm" mb={1}>
+        <Flex justifyContent="space-between" alignItems="center" gap={2}>
+          <Box minW={0}>
+            <StatLabel
+              fontWeight="medium"
+              color="gray.500"
+              fontSize={{ base: 'xs', md: 'sm' }}
+              mb={1}
+              noOfLines={2}
+              whiteSpace="normal"
+            >
               {title}
             </StatLabel>
-            <StatNumber fontSize="3xl" fontWeight="bold" color="gray.800">
+            <StatNumber fontSize={{ base: '2xl', md: '3xl' }} fontWeight="bold" color="gray.800">
               {value}
             </StatNumber>
           </Box>
 
           <Box
-            my="auto"
+            flexShrink={0}
             color={accent.icon.color}
             bg={accent.icon.bg}
-            p={3}
+            p={{ base: 2, md: 3 }}
             borderRadius="xl"
             display="flex"
             alignItems="center"

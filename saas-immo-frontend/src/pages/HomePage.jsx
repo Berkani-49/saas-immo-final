@@ -60,14 +60,14 @@ export default function HomePage({ token }) {
         <StatCard
           title="Biens en Portefeuille"
           value={stats.properties.total}
-          icon={<Icon as={MdHomeWork} w={8} h={8} />}
+          icon={<Icon as={MdHomeWork} w={{ base: 5, md: 8 }} h={{ base: 5, md: 8 }} />}
           colorScheme="blue"
         />
         
         <StatCard
           title="Contacts Totaux"
           value={stats.contacts.total}
-          icon={<Icon as={MdPerson} w={8} h={8} />}
+          icon={<Icon as={MdPerson} w={{ base: 5, md: 8 }} h={{ base: 5, md: 8 }} />}
           colorScheme="green"
         />
         
@@ -75,7 +75,7 @@ export default function HomePage({ token }) {
           <StatCard
             title="Tâches à faire"
             value={stats.tasks.pending}
-            icon={<Icon as={MdCheckCircle} w={8} h={8} />}
+            icon={<Icon as={MdCheckCircle} w={{ base: 5, md: 8 }} h={{ base: 5, md: 8 }} />}
             colorScheme="purple"
           />
         </Box>
