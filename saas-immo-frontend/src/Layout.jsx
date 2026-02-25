@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import { Box, Flex, Text, Icon, SimpleGrid, IconButton, useDisclosure, Drawer, DrawerOverlay, DrawerContent } from '@chakra-ui/react';
 import { Outlet, NavLink as RouterNavLink, useLocation } from 'react-router-dom';
-import { FiHome, FiList, FiUsers, FiCheckSquare, FiCalendar, FiMenu, FiLogOut } from 'react-icons/fi';
+import { FiHome, FiList, FiUsers, FiCheckSquare, FiCalendar, FiMenu } from 'react-icons/fi';
 import Sidebar from './Sidebar.jsx';
 
 // Navigation mobile - Fonctions essentielles
@@ -58,14 +58,7 @@ export default function Layout({ onLogout }) {
           aria-label="Menu"
         />
         <Text fontSize="lg" fontWeight="bold" color="gray.800">IMMO<Text as="span" color="brand.500">FLOW</Text></Text>
-        <IconButton
-          icon={<Icon as={FiLogOut} />}
-          size="sm"
-          variant="ghost"
-          colorScheme="red"
-          onClick={onLogout}
-          aria-label="Déconnexion"
-        />
+        <Box w="32px" />
       </Flex>
 
       {/* --- DRAWER MOBILE (menu complet) --- */}
@@ -107,9 +100,18 @@ export default function Layout({ onLogout }) {
                   direction="column" align="center" justify="center" h="100%"
                   color={isActive ? 'brand.500' : 'gray.400'}
                   transition="all 0.2s"
-                  _active={{ bg: 'gray.100' }}
+                  _active={{ bg: 'gray.50' }}
                 >
-                  <Icon as={item.icon} w={6} h={6} mb={1} />
+                  <Flex
+                    align="center" justify="center"
+                    bg={isActive ? 'brand.50' : 'transparent'}
+                    borderRadius="full"
+                    w="40px" h="26px"
+                    mb="2px"
+                    transition="all 0.2s"
+                  >
+                    <Icon as={item.icon} w={5} h={5} />
+                  </Flex>
                   <Text fontSize="10px" fontWeight={isActive ? 'semibold' : 'normal'}>
                     {item.name}
                   </Text>

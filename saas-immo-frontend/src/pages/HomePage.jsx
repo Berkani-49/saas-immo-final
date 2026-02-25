@@ -54,7 +54,7 @@ export default function HomePage({ token }) {
 
       {/* GRILLE PRINCIPALE : Cartes KPI */}
       {/* spacing={6} ajoute de l'espace entre les cartes sur mobile */}
-      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} mb={10}>
+      <SimpleGrid columns={{ base: 2, md: 3 }} spacing={4} mb={10}>
         
         <StatCard
           title="Biens en Portefeuille"
