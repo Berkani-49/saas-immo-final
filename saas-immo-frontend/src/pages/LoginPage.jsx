@@ -78,7 +78,7 @@ export default function LoginPage({
         {/* Sous-titre */}
         <Text
           fontSize={{ base: 'sm', md: 'lg' }}
-          color="gray.600"
+          color="gray.400"
           maxW="500px"
           mb={{ base: 4, lg: 8 }}
           textAlign={{ base: 'center', lg: 'left' }}

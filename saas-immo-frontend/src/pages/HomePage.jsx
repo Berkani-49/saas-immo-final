@@ -5,6 +5,7 @@ import axios from 'axios';
 import {
   Box, Heading, Spinner, Flex, Alert, AlertIcon, SimpleGrid, Text, Icon, Container
 } from '@chakra-ui/react';
+
 import { MdHomeWork, MdPerson, MdCheckCircle, MdTrendingUp } from 'react-icons/md';
 import StatCard from '../StatCard.jsx';
 import OnboardingChecklist from '../components/OnboardingChecklist.jsx';
@@ -70,12 +71,14 @@ export default function HomePage({ token }) {
           colorScheme="green"
         />
         
-        <StatCard
-          title="Tâches à faire"
-          value={stats.tasks.pending}
-          icon={<Icon as={MdCheckCircle} w={8} h={8} />}
-          colorScheme="purple"
-        />
+        <Box gridColumn={{ base: "span 2", md: "auto" }}>
+          <StatCard
+            title="Tâches à faire"
+            value={stats.tasks.pending}
+            icon={<Icon as={MdCheckCircle} w={8} h={8} />}
+            colorScheme="purple"
+          />
+        </Box>
       </SimpleGrid>
 
       {/* GRILLE SECONDAIRE : Détails */}
