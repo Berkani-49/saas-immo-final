@@ -4,9 +4,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const bcrypt = require('bcryptjs');
 const logger = require('../utils/logger');
-const { Resend } = require('resend');
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+const { sendEmail } = require('../utils/email');
 
 /**
  * Générer un mot de passe fort aléatoire
@@ -116,54 +114,26 @@ router.post('/', async (req, res) => {
     try {
       const frontendUrl = process.env.FRONTEND_URL || 'https://saas-immo-final.vercel.app';
 
-      const RESEND_TEST_MODE = !process.env.RESEND_DOMAIN_VERIFIED;
-      const VERIFIED_EMAIL = process.env.RESEND_VERIFIED_EMAIL || 'amirelattaoui49@gmail.com';
-      const recipientEmail = RESEND_TEST_MODE ? VERIFIED_EMAIL : email;
-      const fromEmail = RESEND_TEST_MODE ? 'onboarding@resend.dev' : (process.env.RESEND_FROM_EMAIL || 'noreply@immopro.com');
-
-      if (RESEND_TEST_MODE) {
-        logger.warn(`MODE TEST RESEND: email pour ${email} redirigé vers ${VERIFIED_EMAIL}`);
-      }
-
-      await resend.emails.send({
-        from: fromEmail,
-        to: recipientEmail,
-        subject: RESEND_TEST_MODE ? `[TEST] Identifiants de ${firstName} ${lastName}` : 'Bienvenue dans l\'équipe ImmoPro !',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #2563eb;">Bienvenue ${firstName} !</h1>
-
-            <p>Vous avez été ajouté(e) à l'équipe ImmoPro par ${owner.firstName} ${owner.lastName}.</p>
-
-            <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h2 style="margin-top: 0;">Vos identifiants de connexion :</h2>
-              <p style="margin: 5px 0;"><strong>Email :</strong> ${email}</p>
-              <p style="margin: 5px 0;"><strong>Mot de passe :</strong> <code style="background-color: #fff; padding: 5px 10px; border-radius: 4px;">${generatedPassword}</code></p>
-            </div>
-
-            <p><strong>⚠️ Important :</strong> Pour des raisons de sécurité, veuillez changer ce mot de passe dès votre première connexion.</p>
-
-            <div style="margin: 30px 0;">
-              <a href="${frontendUrl}/login" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-                Se connecter
-              </a>
-            </div>
-
-            <p>Si vous avez des questions, n'hésitez pas à contacter votre administrateur.</p>
-
-            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-
-            <p style="color: #6b7280; font-size: 14px;">
-              ImmoPro - Votre plateforme de gestion immobilière
-            </p>
+      await sendEmail(email, `Bienvenue dans l'équipe ImmoFlow !`, `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #2563eb;">Bienvenue ${firstName} !</h1>
+          <p>Vous avez été ajouté(e) à l'équipe par ${owner.firstName} ${owner.lastName}.</p>
+          <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h2 style="margin-top: 0;">Vos identifiants de connexion :</h2>
+            <p style="margin: 5px 0;"><strong>Email :</strong> ${email}</p>
+            <p style="margin: 5px 0;"><strong>Mot de passe :</strong> <code style="background-color: #fff; padding: 5px 10px; border-radius: 4px;">${generatedPassword}</code></p>
           </div>
-        `,
-      });
-
+          <p><strong>⚠️ Important :</strong> Veuillez changer ce mot de passe dès votre première connexion.</p>
+          <div style="margin: 30px 0;">
+            <a href="${frontendUrl}/login" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+              Se connecter
+            </a>
+          </div>
+        </div>
+      `);
       logger.info('Welcome email sent to employee', { email });
     } catch (emailError) {
       logger.error('Error sending welcome email', { error: emailError.message, email });
-      // Ne pas faire échouer la création si l'email échoue
     }
 
     // Retourner l'employé créé (sans le mot de passe)
@@ -308,43 +278,23 @@ router.post('/:employeeId/reset-password', async (req, res) => {
     try {
       const frontendUrl = process.env.FRONTEND_URL || 'https://saas-immo-final.vercel.app';
 
-      const RESEND_TEST_MODE_RESET = !process.env.RESEND_DOMAIN_VERIFIED;
-      const VERIFIED_EMAIL_RESET = process.env.RESEND_VERIFIED_EMAIL || 'amirelattaoui49@gmail.com';
-      const fromEmailReset = RESEND_TEST_MODE_RESET ? 'onboarding@resend.dev' : (process.env.RESEND_FROM_EMAIL || 'noreply@immopro.com');
-
-      await resend.emails.send({
-        from: fromEmailReset,
-        to: RESEND_TEST_MODE_RESET ? VERIFIED_EMAIL_RESET : employee.email,
-        subject: 'Réinitialisation de votre mot de passe ImmoPro',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #2563eb;">Réinitialisation de mot de passe</h1>
-
-            <p>Bonjour ${employee.firstName},</p>
-
-            <p>Votre mot de passe a été réinitialisé par votre administrateur.</p>
-
-            <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h2 style="margin-top: 0;">Votre nouveau mot de passe :</h2>
-              <p style="margin: 0;"><code style="background-color: #fff; padding: 5px 10px; border-radius: 4px; font-size: 16px;">${newPassword}</code></p>
-            </div>
-
-            <p><strong>⚠️ Important :</strong> Pour des raisons de sécurité, veuillez changer ce mot de passe dès votre prochaine connexion.</p>
-
-            <div style="margin: 30px 0;">
-              <a href="${frontendUrl}/login" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-                Se connecter
-              </a>
-            </div>
-
-            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-
-            <p style="color: #6b7280; font-size: 14px;">
-              ImmoPro - Votre plateforme de gestion immobilière
-            </p>
+      await sendEmail(employee.email, 'Réinitialisation de votre mot de passe ImmoFlow', `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #2563eb;">Réinitialisation de mot de passe</h1>
+          <p>Bonjour ${employee.firstName},</p>
+          <p>Votre mot de passe a été réinitialisé par votre administrateur.</p>
+          <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h2 style="margin-top: 0;">Votre nouveau mot de passe :</h2>
+            <p style="margin: 0;"><code style="background-color: #fff; padding: 5px 10px; border-radius: 4px; font-size: 16px;">${newPassword}</code></p>
           </div>
-        `,
-      });
+          <p><strong>⚠️ Important :</strong> Veuillez changer ce mot de passe dès votre prochaine connexion.</p>
+          <div style="margin: 30px 0;">
+            <a href="${frontendUrl}/login" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+              Se connecter
+            </a>
+          </div>
+        </div>
+      `);
 
       logger.info('Password reset email sent', { employeeId });
     } catch (emailError) {

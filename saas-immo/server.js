@@ -6,7 +6,7 @@ const { PrismaClient, Prisma } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { OpenAI } = require('openai');
-const { Resend } = require('resend');
+const { sendEmail } = require('./utils/email');
 const axios = require('axios');
 const rateLimit = require('express-rate-limit');
 const PDFDocument = require('pdfkit');
@@ -92,26 +92,13 @@ if (!process.env.OPENAI_API_KEY) {
   console.warn('⚠️  ATTENTION : OPENAI_API_KEY manquant - La génération IA sera désactivée');
 }
 
-// Vérification et initialisation de Resend
-if (!process.env.RESEND_API_KEY) {
-  console.error('❌ ERREUR : RESEND_API_KEY manquant dans les variables d\'environnement');
-  console.error('📝 Les notifications par email seront désactivées');
-  console.error('📝 Ajoutez RESEND_API_KEY sur Render pour activer les emails');
-}
-
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 
-// En mode test Resend (domaine non vérifié), le from DOIT être onboarding@resend.dev
-const RESEND_TEST_MODE = !process.env.RESEND_DOMAIN_VERIFIED;
-const RESEND_FROM = RESEND_TEST_MODE ? 'onboarding@resend.dev' : (process.env.RESEND_FROM_EMAIL || 'noreply@immopro.com');
-const RESEND_VERIFIED_EMAIL = process.env.RESEND_VERIFIED_EMAIL || 'amirelattaoui49@gmail.com';
-
 // Log au démarrage
-if (resend) {
-  console.log('✅ Resend configuré - Notifications email activées');
+if (process.env.BREVO_API_KEY) {
+  console.log('✅ Brevo configuré - Notifications email activées');
 } else {
-  console.warn('⚠️  Resend NON configuré - Notifications email désactivées');
+  console.warn('⚠️  Brevo NON configuré - Notifications email désactivées (ajoutez BREVO_API_KEY sur Render)');
 }
 
 // Vérification des variables Supabase
@@ -480,22 +467,12 @@ async function sendEmailNotification(buyer, property, matchScore) {
 
     console.log(`📧 Tentative d'envoi email à ${buyer.email} pour bien ${property.address}`);
 
-    // Vérifier que Resend est configuré
-    if (!resend) {
-      console.error('❌ Resend non configuré - RESEND_API_KEY manquante');
-      return { success: false, error: 'RESEND_NOT_CONFIGURED' };
+    if (!process.env.BREVO_API_KEY) {
+      console.error('❌ Brevo non configuré - BREVO_API_KEY manquante');
+      return { success: false, error: 'BREVO_NOT_CONFIGURED' };
     }
 
-    // MODE TEST RESEND : En mode test, remplacer l'email du destinataire par l'email vérifié
-    // Pour activer le mode production : vérifier un domaine sur https://resend.com/domains
-    const RESEND_TEST_MODE = !process.env.RESEND_DOMAIN_VERIFIED;
-    const VERIFIED_EMAIL = process.env.RESEND_VERIFIED_EMAIL || 'amirelattaoui49@gmail.com';
-
-    const recipientEmail = RESEND_TEST_MODE ? VERIFIED_EMAIL : buyer.email;
-
-    if (RESEND_TEST_MODE && buyer.email !== VERIFIED_EMAIL) {
-      console.warn(`⚠️  MODE TEST : Email redirigé de ${buyer.email} vers ${VERIFIED_EMAIL}`);
-    }
+    const recipientEmail = buyer.email;
 
     const subject = `🏡 Nouveau bien correspondant à vos critères (${matchScore}% de correspondance)`;
 
@@ -603,24 +580,10 @@ Visitez ${process.env.FRONTEND_URL || 'https://saas-immo-frontend.vercel.app'} p
 © ${new Date().getFullYear()} SaaS Immo
     `;
 
-    // Envoyer avec Resend
-    console.log(`📤 Appel API Resend pour ${recipientEmail}...`);
-
-    const { data, error } = await resend.emails.send({
-      from: 'SaaS Immo <onboarding@resend.dev>',
-      to: recipientEmail,
-      subject: subject,
-      html: htmlBody,
-      text: textBody
-    });
-
-    if (error) {
-      console.error(`❌ Erreur Resend API pour ${buyer.email}:`, JSON.stringify(error, null, 2));
-      return { success: false, error: error.message || JSON.stringify(error) };
-    }
-
-    console.log(`✅ Email envoyé avec succès à ${buyer.email} (ID: ${data?.id})`);
-    return { success: true, messageId: data?.id };
+    console.log(`📤 Envoi email Brevo pour ${recipientEmail}...`);
+    await sendEmail(recipientEmail, subject, htmlBody);
+    console.log(`✅ Email envoyé avec succès à ${buyer.email}`);
+    return { success: true };
 
   } catch (error) {
     console.error(`❌ Exception lors de l'envoi email à ${buyer.email}:`, error);
@@ -895,28 +858,21 @@ app.post('/api/auth/register', registerLimiter, async (req, res) => {
     const frontendUrl = process.env.FRONTEND_URL || 'https://saas-immo-final.vercel.app';
     const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
 
-    if (resend) {
-      try {
-        await resend.emails.send({
-          from: RESEND_FROM,
-          to: RESEND_TEST_MODE ? RESEND_VERIFIED_EMAIL : email,
-          subject: 'Vérifiez votre adresse email',
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h1 style="color: #2563eb;">Bienvenue ${firstName} !</h1>
-              <p>Merci de vous être inscrit. Veuillez vérifier votre adresse email en cliquant sur le bouton ci-dessous.</p>
-              <div style="margin: 30px 0;">
-                <a href="${verifyUrl}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-                  Vérifier mon email
-                </a>
-              </div>
-              <p style="color: #6b7280; font-size: 14px;">Si vous n'avez pas créé de compte, ignorez cet email.</p>
-            </div>
-          `
-        });
-      } catch (emailError) {
-        console.error('Erreur envoi email vérification:', emailError.message);
-      }
+    try {
+      await sendEmail(email, 'Vérifiez votre adresse email', `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #2563eb;">Bienvenue ${firstName} !</h1>
+          <p>Merci de vous être inscrit. Veuillez vérifier votre adresse email en cliquant sur le bouton ci-dessous.</p>
+          <div style="margin: 30px 0;">
+            <a href="${verifyUrl}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+              Vérifier mon email
+            </a>
+          </div>
+          <p style="color: #6b7280; font-size: 14px;">Si vous n'avez pas créé de compte, ignorez cet email.</p>
+        </div>
+      `);
+    } catch (emailError) {
+      console.error('Erreur envoi email vérification:', emailError.message);
     }
 
     const { password: _, ...userWithoutPassword } = newUser;
@@ -988,26 +944,19 @@ app.post('/api/auth/forgot-password', forgotPasswordLimiter, async (req, res) =>
     const frontendUrl = process.env.FRONTEND_URL || 'https://saas-immo-final.vercel.app';
     const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
 
-    if (resend) {
-      await resend.emails.send({
-        from: RESEND_FROM,
-        to: RESEND_TEST_MODE ? RESEND_VERIFIED_EMAIL : email,
-        subject: 'Réinitialisation de votre mot de passe',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #2563eb;">Réinitialisation de mot de passe</h1>
-            <p>Bonjour ${user.firstName},</p>
-            <p>Vous avez demandé la réinitialisation de votre mot de passe.</p>
-            <div style="margin: 30px 0;">
-              <a href="${resetUrl}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-                Réinitialiser mon mot de passe
-              </a>
-            </div>
-            <p style="color: #6b7280; font-size: 14px;">Ce lien expire dans 1 heure. Si vous n'avez pas fait cette demande, ignorez cet email.</p>
-          </div>
-        `
-      });
-    }
+    await sendEmail(email, 'Réinitialisation de votre mot de passe', `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #2563eb;">Réinitialisation de mot de passe</h1>
+        <p>Bonjour ${user.firstName},</p>
+        <p>Vous avez demandé la réinitialisation de votre mot de passe.</p>
+        <div style="margin: 30px 0;">
+          <a href="${resetUrl}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            Réinitialiser mon mot de passe
+          </a>
+        </div>
+        <p style="color: #6b7280; font-size: 14px;">Ce lien expire dans 1 heure. Si vous n'avez pas fait cette demande, ignorez cet email.</p>
+      </div>
+    `);
 
     res.json({ message: 'Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.' });
   } catch (error) {
@@ -1136,13 +1085,10 @@ app.post('/api/public/leads', async (req, res) => {
     // 4. Envoyer un email de notification à l'agent
     try {
         const agentEmail = property.agent?.email || process.env.NOTIFICATION_EMAIL;
-        if (resend && agentEmail) {
-          await resend.emails.send({
-            from: RESEND_FROM,
-            to: RESEND_TEST_MODE ? RESEND_VERIFIED_EMAIL : agentEmail,
-            subject: `Nouveau lead : ${property.address}`,
-            html: `<p>Nouveau client : ${firstName} ${lastName} (${phone})</p><p>Bien : ${property.address}, ${property.city}</p>`
-          });
+        if (agentEmail) {
+          await sendEmail(agentEmail, `Nouveau lead : ${property.address}`,
+            `<p>Nouveau client : ${firstName} ${lastName} (${phone})</p><p>Bien : ${property.address}, ${property.city}</p>`
+          );
         }
     } catch (e) { console.error('Erreur envoi email lead:', e.message); }
 
@@ -4199,48 +4145,26 @@ app.post('/api/notifications/test-matching/:propertyId', authenticateToken, requ
   }
 });
 
-// GET /api/notifications/test-email - Tester l'envoi d'email avec Resend
+// GET /api/notifications/test-email - Tester l'envoi d'email avec Brevo
 app.get('/api/notifications/test-email', authenticateToken, requirePlan(['pro', 'premium']), async (req, res) => {
   try {
     const testEmail = req.query.email || req.user.email || 'test@example.com';
 
-    console.log('🧪 Test envoi email Resend vers:', testEmail);
-
-    // Vérifier que Resend est configuré
-    if (!resend) {
+    if (!process.env.BREVO_API_KEY) {
       return res.status(503).json({
-        error: 'Resend non configuré',
-        message: 'RESEND_API_KEY manquante dans les variables d\'environnement'
+        error: 'Brevo non configuré',
+        message: 'BREVO_API_KEY manquante dans les variables d\'environnement'
       });
     }
 
-    console.log('✅ Resend client initialisé');
-
-    // Envoyer un email de test simple
-    const { data, error } = await resend.emails.send({
-      from: 'SaaS Immo <onboarding@resend.dev>',
-      to: testEmail,
-      subject: '🧪 Test email - SaaS Immo',
-      html: '<h1>Test réussi !</h1><p>Ce message confirme que Resend fonctionne correctement.</p>',
-      text: 'Test réussi ! Ce message confirme que Resend fonctionne correctement.'
-    });
-
-    if (error) {
-      console.error('❌ Erreur Resend:', error);
-      return res.status(500).json({
-        success: false,
-        error: error.message || 'Erreur inconnue',
-        details: error
-      });
-    }
-
-    console.log('✅ Email de test envoyé, ID:', data?.id);
+    await sendEmail(testEmail, '🧪 Test email - ImmoFlow',
+      '<h1>Test réussi !</h1><p>Ce message confirme que Brevo fonctionne correctement.</p>'
+    );
 
     res.json({
       success: true,
       message: `Email de test envoyé à ${testEmail}`,
-      emailId: data?.id,
-      resendConfigured: true
+      brevoConfigured: true
     });
 
   } catch (error) {
