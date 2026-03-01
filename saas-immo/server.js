@@ -4387,15 +4387,10 @@ app.listen(PORT, () => {
   console.log(`✅ CORS Manuel activé - Version Dec 11 2025`);
   console.log(`✅ Middleware OPTIONS configuré`);
   console.log(`✅ Replicate API: ${process.env.REPLICATE_API_TOKEN ? 'Configurée ✓' : 'NON configurée ✗'}`);
-  console.log(`✅ Resend Email: ${resend ? 'Configuré ✓' : 'NON configuré ✗'}`);
+  console.log(`✅ Brevo Email: ${process.env.BREVO_API_KEY ? 'Configuré ✓' : 'NON configuré ✗'}`);
   console.log(`✅ Routes RGPD activées (Export + Suppression)`);
   console.log(`✅ Routes Analytics activées (Tableau de bord avancé)`);
   console.log(`✅ Routes Notifications activées (Matching automatique)`);
   console.log(`✅ Notifications Push Web activées (VAPID configuré)`);
   console.log(`✅ Cron Jobs activés (Rappels automatiques toutes les heures)`);
-
-  if (resend && !process.env.RESEND_DOMAIN_VERIFIED) {
-    console.warn('⚠️  MODE TEST RESEND : Emails envoyés uniquement à votre adresse vérifiée');
-    console.warn('📝 Pour envoyer à tous les contacts : https://resend.com/domains');
-  }
 });
