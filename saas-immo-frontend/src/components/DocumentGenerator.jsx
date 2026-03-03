@@ -3,8 +3,24 @@ import React, { useState } from 'react';
 import {
   Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalCloseButton,
   ModalFooter, Button, VStack, HStack, Text, FormControl, FormLabel, Input,
-  useToast, Icon, Tabs, TabList, Tab, TabPanels, TabPanel, Badge
+  useToast, Icon, Tabs, TabList, Tab, TabPanels, TabPanel, Badge, Select
 } from '@chakra-ui/react';
+
+const PHONE_PREFIXES = [
+  { code: '+33', label: '🇫🇷 +33' },
+  { code: '+32', label: '🇧🇪 +32' },
+  { code: '+41', label: '🇨🇭 +41' },
+  { code: '+352', label: '🇱🇺 +352' },
+  { code: '+212', label: '🇲🇦 +212' },
+  { code: '+213', label: '🇩🇿 +213' },
+  { code: '+216', label: '🇹🇳 +216' },
+  { code: '+44', label: '🇬🇧 +44' },
+  { code: '+49', label: '🇩🇪 +49' },
+  { code: '+34', label: '🇪🇸 +34' },
+  { code: '+31', label: '🇳🇱 +31' },
+  { code: '+351', label: '🇵🇹 +351' },
+  { code: '+1', label: '🇺🇸 +1' },
+];
 import { FiFileText, FiDownload } from 'react-icons/fi';
 import { API_URL } from '../config';
 
@@ -19,6 +35,7 @@ export default function DocumentGenerator({ isOpen, onClose, property, token }) 
   // États pour Offre d'Achat
   const [buyerName, setBuyerName] = useState('');
   const [buyerEmail, setBuyerEmail] = useState('');
+  const [buyerPhonePrefix, setBuyerPhonePrefix] = useState('+33');
   const [buyerPhone, setBuyerPhone] = useState('');
   const [offerAmount, setOfferAmount] = useState(property?.price || '');
 
@@ -37,7 +54,7 @@ export default function DocumentGenerator({ isOpen, onClose, property, token }) 
       if (type === 'bon-visite') {
         url = `${API_URL}/api/properties/${property.id}/documents/bon-de-visite?clientName=${encodeURIComponent(clientName)}&visitDate=${visitDate}`;
       } else if (type === 'offre-achat') {
-        url = `${API_URL}/api/properties/${property.id}/documents/offre-achat?buyerName=${encodeURIComponent(buyerName)}&buyerEmail=${encodeURIComponent(buyerEmail)}&buyerPhone=${encodeURIComponent(buyerPhone)}&offerAmount=${offerAmount}`;
+        url = `${API_URL}/api/properties/${property.id}/documents/offre-achat?buyerName=${encodeURIComponent(buyerName)}&buyerEmail=${encodeURIComponent(buyerEmail)}&buyerPhone=${encodeURIComponent(buyerPhonePrefix + buyerPhone)}&offerAmount=${offerAmount}`;
       }
 
       const response = await fetch(url, {
@@ -80,6 +97,7 @@ export default function DocumentGenerator({ isOpen, onClose, property, token }) 
       } else {
         setBuyerName('');
         setBuyerEmail('');
+        setBuyerPhonePrefix('+33');
         setBuyerPhone('');
         setOfferAmount(property.price);
       }
@@ -191,12 +209,26 @@ export default function DocumentGenerator({ isOpen, onClose, property, token }) 
 
                       <FormControl>
                         <FormLabel>Téléphone</FormLabel>
-                        <Input
-                          type="tel"
-                          placeholder="06 12 34 56 78"
-                          value={buyerPhone}
-                          onChange={(e) => setBuyerPhone(e.target.value)}
-                        />
+                        <HStack spacing={0}>
+                          <Select
+                            value={buyerPhonePrefix}
+                            onChange={(e) => setBuyerPhonePrefix(e.target.value)}
+                            w="120px"
+                            borderRightRadius={0}
+                            flexShrink={0}
+                          >
+                            {PHONE_PREFIXES.map(p => (
+                              <option key={p.code} value={p.code}>{p.label}</option>
+                            ))}
+                          </Select>
+                          <Input
+                            type="tel"
+                            placeholder="6 12 34 56 78"
+                            value={buyerPhone}
+                            onChange={(e) => setBuyerPhone(e.target.value)}
+                            borderLeftRadius={0}
+                          />
+                        </HStack>
                       </FormControl>
                     </HStack>
 

@@ -6,11 +6,36 @@ import axios from 'axios';
 import {
   Box, Heading, Text, Button, Spinner, Alert, AlertIcon,
   FormControl, FormLabel, Input, Select, Flex, Spacer,
-  VStack, useToast, Center, Container, Badge, SimpleGrid
+  VStack, useToast, Center, Container, Badge, SimpleGrid, HStack
 } from '@chakra-ui/react';
 import { ArrowBackIcon } from '@chakra-ui/icons';
 import ContactProperties from '../components/ContactProperties.jsx';
 import { API_URL } from '../config';
+
+const PHONE_PREFIXES = [
+  { code: '+33', label: '🇫🇷 +33' },
+  { code: '+32', label: '🇧🇪 +32' },
+  { code: '+41', label: '🇨🇭 +41' },
+  { code: '+352', label: '🇱🇺 +352' },
+  { code: '+212', label: '🇲🇦 +212' },
+  { code: '+213', label: '🇩🇿 +213' },
+  { code: '+216', label: '🇹🇳 +216' },
+  { code: '+44', label: '🇬🇧 +44' },
+  { code: '+49', label: '🇩🇪 +49' },
+  { code: '+34', label: '🇪🇸 +34' },
+  { code: '+31', label: '🇳🇱 +31' },
+  { code: '+351', label: '🇵🇹 +351' },
+  { code: '+1', label: '🇺🇸 +1' },
+];
+
+function parsePhone(phone) {
+  if (!phone) return { prefix: '+33', local: '' };
+  const sorted = [...PHONE_PREFIXES].sort((a, b) => b.code.length - a.code.length);
+  for (const p of sorted) {
+    if (phone.startsWith(p.code)) return { prefix: p.code, local: phone.slice(p.code.length).trim() };
+  }
+  return { prefix: '+33', local: phone };
+}
 
 export default function ContactDetail({ token }) {
   const { contactId } = useParams();
@@ -24,6 +49,8 @@ export default function ContactDetail({ token }) {
   // Mode Édition
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState(null);
+  const [phonePrefix, setPhonePrefix] = useState('+33');
+  const [phoneLocal, setPhoneLocal] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   // --- Chargement ---
@@ -36,6 +63,9 @@ export default function ContactDetail({ token }) {
         const response = await axios.get(`${API_URL}/api/contacts/${contactId}`, config);
         setContact(response.data);
         setEditFormData(response.data);
+        const parsed = parsePhone(response.data.phoneNumber);
+        setPhonePrefix(parsed.prefix);
+        setPhoneLocal(parsed.local);
       } catch (err) {
         console.error("Erreur chargement:", err);
         setError("Impossible de charger ce contact.");
@@ -52,8 +82,9 @@ export default function ContactDetail({ token }) {
     setIsSaving(true);
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      const response = await axios.put(`${API_URL}/api/contacts/${contactId}`, editFormData, config);
-      
+      const payload = { ...editFormData, phoneNumber: phonePrefix + phoneLocal };
+      const response = await axios.put(`${API_URL}/api/contacts/${contactId}`, payload, config);
+
       setContact(response.data);
       setEditFormData(response.data);
       setIsEditing(false);
@@ -115,7 +146,26 @@ export default function ContactDetail({ token }) {
               
               <FormControl>
                 <FormLabel>Téléphone</FormLabel>
-                <Input name="phoneNumber" value={editFormData.phoneNumber} onChange={handleChange} />
+                <HStack spacing={0}>
+                  <Select
+                    value={phonePrefix}
+                    onChange={(e) => setPhonePrefix(e.target.value)}
+                    w="120px"
+                    borderRightRadius={0}
+                    flexShrink={0}
+                  >
+                    {PHONE_PREFIXES.map(p => (
+                      <option key={p.code} value={p.code}>{p.label}</option>
+                    ))}
+                  </Select>
+                  <Input
+                    type="tel"
+                    value={phoneLocal}
+                    onChange={(e) => setPhoneLocal(e.target.value)}
+                    placeholder="6 12 34 56 78"
+                    borderLeftRadius={0}
+                  />
+                </HStack>
               </FormControl>
 
               <FormControl>

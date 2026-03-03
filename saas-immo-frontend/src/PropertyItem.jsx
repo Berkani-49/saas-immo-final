@@ -8,69 +8,20 @@ import {
 } from '@chakra-ui/react';
 import { EditIcon, DeleteIcon } from '@chakra-ui/icons';
 import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaShareAlt } from 'react-icons/fa';
-import { FiFileText, FiZap, FiHome } from 'react-icons/fi';
+import { FiFileText } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
-import { supabase } from './supabaseClient';
 import DocumentGenerator from './components/DocumentGenerator';
-import StagingModal from './components/StagingModal';
 import PropertyImageGallery from './components/PropertyImageGallery';
 import { API_URL } from './config';
 
 export default function PropertyItem({ property, token, onPropertyDeleted, onPropertyUpdated }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({ ...property });
-  const [newImageFile, setNewImageFile] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isEnhancing, setIsEnhancing] = useState(false);
-  const [showEnhanced, setShowEnhanced] = useState(false);
-  const [showStaged, setShowStaged] = useState(false);
   const toast = useToast();
 
   // Modal de génération de documents
   const { isOpen: isDocGenOpen, onOpen: onDocGenOpen, onClose: onDocGenClose } = useDisclosure();
-
-  // Modal de home staging virtuel
-  const { isOpen: isStagingOpen, onOpen: onStagingOpen, onClose: onStagingClose } = useDisclosure();
-
-  // --- ENHANCE PHOTO (Nouvelle fonction IA) ---
-  const handleEnhancePhoto = async () => {
-    if (!property.imageUrl) {
-      toast({ title: "Pas de photo", description: "Ce bien n'a pas de photo à améliorer.", status: "warning" });
-      return;
-    }
-
-    setIsEnhancing(true);
-    try {
-      const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      const response = await axios.post(
-        `${API_URL}/api/properties/${property.id}/enhance-photo`,
-        {},
-        config
-      );
-
-      // Mettre à jour le bien avec la nouvelle photo améliorée
-      onPropertyUpdated({ ...property, imageUrlEnhanced: response.data.enhancedUrl });
-      setShowEnhanced(true);
-
-      toast({
-        title: "✨ Photo améliorée !",
-        description: response.data.improvements.join(' • '),
-        status: "success",
-        duration: 5000,
-        isClosable: true
-      });
-    } catch (error) {
-      console.error("Erreur amélioration photo:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'améliorer la photo.",
-        status: "error"
-      });
-    } finally {
-      setIsEnhancing(false);
-    }
-  };
 
   // --- SHARE (Nouvelle fonction) ---
   const handleShare = () => {
@@ -103,31 +54,18 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
     let finalImageUrl = editData.imageUrl;
 
     try {
-      if (newImageFile) {
-        setIsUploading(true);
-        const fileExt = newImageFile.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `${fileName}`;
-        const { error: uploadError } = await supabase.storage.from('properties').upload(filePath, newImageFile);
-        if (uploadError) throw uploadError;
-        const { data } = supabase.storage.from('properties').getPublicUrl(filePath);
-        finalImageUrl = data.publicUrl;
-      }
-
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
       const payload = { ...editData, imageUrl: finalImageUrl };
       const response = await axios.put(`${API_URL}/api/properties/${property.id}`, payload, config);
-      
+
       onPropertyUpdated(response.data);
       setIsEditing(false);
-      setNewImageFile(null);
       toast({ title: "Bien mis à jour.", status: "success" });
     } catch (err) {
       console.error(err);
       toast({ title: "Erreur modification", status: "error" });
     } finally {
       setIsLoading(false);
-      setIsUploading(false);
     }
   };
 
@@ -143,7 +81,6 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
         <form onSubmit={handleSave}>
           <VStack spacing={3} align="stretch">
             <Text fontWeight="bold" color="brand.400">Modifier le bien</Text>
-            <FormControl><FormLabel fontSize="sm">Nouvelle photo (ancienne méthode)</FormLabel><Input type="file" accept="image/*" p={1} onChange={(e) => setNewImageFile(e.target.files[0])} /></FormControl>
             <Input name="address" value={editData.address} onChange={handleChange} placeholder="Adresse" />
             <HStack>
                 <Input name="city" value={editData.city} onChange={handleChange} placeholder="Ville" />
@@ -165,7 +102,10 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
             <PropertyImageGallery
               propertyId={property.id}
               token={token}
-              onImagesChange={() => {}}
+              onImagesChange={(imgs) => {
+                const primary = imgs.find(i => i.isPrimary) || imgs[0];
+                if (primary) setEditData(prev => ({ ...prev, imageUrl: primary.url }));
+              }}
             />
           </VStack>
         </form>
@@ -182,11 +122,7 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
     >
       <Box h="200px" w="100%" position="relative" overflow="hidden">
         <Image
-          src={
-            (showStaged && property.imageUrlStaged) ? property.imageUrlStaged :
-            (showEnhanced && property.imageUrlEnhanced) ? property.imageUrlEnhanced :
-            (property.imageUrl || "https://via.placeholder.com/400x300?text=Pas+de+photo")
-          }
+          src={property.imageUrl || "https://via.placeholder.com/400x300?text=Pas+de+photo"}
           alt="Bien"
           w="100%" h="100%" objectFit="cover"
           transition="0.3s"
@@ -198,32 +134,6 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
         >
             {property.price.toLocaleString()} €
         </Badge>
-
-        {/* Badge Home Staging Virtuel */}
-        {property.imageUrlStaged && (
-          <Badge
-            position="absolute" top={3} left={3}
-            colorScheme="purple" fontSize="0.8em" px={2} py={1} borderRadius="md" shadow="md"
-            cursor="pointer"
-            onClick={() => setShowStaged(!showStaged)}
-            title={showStaged ? "Voir photo originale" : `Voir version ${property.stagingStyle}`}
-          >
-            🛋️ {showStaged ? property.stagingStyle : "Original"}
-          </Badge>
-        )}
-
-        {/* Badge Photo Améliorée */}
-        {property.imageUrlEnhanced && !property.imageUrlStaged && (
-          <Badge
-            position="absolute" top={3} left={3}
-            colorScheme="yellow" fontSize="0.8em" px={2} py={1} borderRadius="md" shadow="md"
-            cursor="pointer"
-            onClick={() => setShowEnhanced(!showEnhanced)}
-            title={showEnhanced ? "Voir photo originale" : "Voir photo améliorée"}
-          >
-            ✨ {showEnhanced ? "Améliorée" : "Original"}
-          </Badge>
-        )}
       </Box>
 
       <Box p={5}>
@@ -290,33 +200,6 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
             ) : <Spacer />}
 
             <HStack spacing={1} flexWrap="wrap">
-                {/* BOUTON HOME STAGING 🛋️ */}
-                {!property.imageUrlStaged && property.imageUrl && (
-                  <IconButton
-                    icon={<FiHome />}
-                    size="sm"
-                    variant="ghost"
-                    colorScheme="purple"
-                    onClick={onStagingOpen}
-                    aria-label="Home Staging Virtuel"
-                    title="Meubler la pièce avec IA"
-                  />
-                )}
-
-                {/* BOUTON AMÉLIORER PHOTO ✨ */}
-                {!property.imageUrlEnhanced && property.imageUrl && (
-                  <IconButton
-                    icon={<FiZap />}
-                    size="sm"
-                    variant="ghost"
-                    colorScheme="yellow"
-                    onClick={handleEnhancePhoto}
-                    isLoading={isEnhancing}
-                    aria-label="Améliorer la photo"
-                    title="Améliorer la photo avec IA"
-                  />
-                )}
-
                 {/* BOUTON DOCUMENTS PDF 📄 */}
                 <IconButton
                   icon={<FiFileText />}
@@ -345,14 +228,6 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
         token={token}
       />
 
-      {/* MODAL DE HOME STAGING VIRTUEL */}
-      <StagingModal
-        isOpen={isStagingOpen}
-        onClose={onStagingClose}
-        property={property}
-        token={token}
-        onPropertyUpdated={onPropertyUpdated}
-      />
     </Box>
   );
 }

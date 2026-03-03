@@ -90,41 +90,6 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
     setSelectedOwners(selectedOwners.filter((_, i) => i !== index));
   };
 
-  // Générer la description avec l'IA
-  const handleGenerateDescription = async () => {
-    // Fonctionnalité temporairement désactivée (quota OpenAI dépassé)
-    toast({
-      title: "Fonctionnalité IA temporairement désactivée",
-      description: "La génération automatique de descriptions nécessite un abonnement OpenAI actif. Vous pouvez rédiger la description manuellement.",
-      status: "info",
-      duration: 5000
-    });
-    return;
-
-    /* CODE DÉSACTIVÉ - Réactiver quand OpenAI sera rechargé
-    if (!address && !city && !price && !area) {
-      toast({ title: "Informations manquantes", description: "Remplissez au moins quelques champs (adresse, ville, prix, surface) pour générer une description.", status: "warning" });
-      return;
-    }
-
-    setIsGenerating(true);
-    try {
-      const config = { headers: { 'Authorization': `Bearer ${token}` } };
-      const response = await axios.post(`${API_URL}/api/generate-description`, {
-        address, city, price, area, rooms, bedrooms
-      }, config);
-
-      setDescription(response.data.description);
-      toast({ title: "Description générée ✨", description: "La description a été générée par l'IA !", status: "success", duration: 3000 });
-    } catch (error) {
-      console.error("Erreur génération:", error);
-      toast({ title: "Erreur", description: "Impossible de générer la description. Vérifiez votre clé API OpenAI.", status: "error" });
-    } finally {
-      setIsGenerating(false);
-    }
-    */
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!address || !price || !area) {
@@ -360,16 +325,6 @@ export default function AddPropertyForm({ token, onPropertyAdded }) {
               placeholder="Décrivez le bien..."
               rows={5}
             />
-            <Button
-              mt={2}
-              size="sm"
-              colorScheme="gray"
-              variant="outline"
-              onClick={handleGenerateDescription}
-              leftIcon={<Text>🔒</Text>}
-            >
-              Générer avec l'IA (désactivé)
-            </Button>
           </FormControl>
 
           {/* SÉLECTION DES PROPRIÉTAIRES/INTÉRESSÉS */}

@@ -3,14 +3,31 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import {
-  Box, Button, FormControl, FormLabel, Input, Select, VStack, SimpleGrid, useToast, Heading
+  Box, Button, FormControl, FormLabel, Input, Select, VStack, SimpleGrid, useToast, Heading, HStack
 } from '@chakra-ui/react';
+
+const PHONE_PREFIXES = [
+  { code: '+33', label: '🇫🇷 +33' },
+  { code: '+32', label: '🇧🇪 +32' },
+  { code: '+41', label: '🇨🇭 +41' },
+  { code: '+352', label: '🇱🇺 +352' },
+  { code: '+212', label: '🇲🇦 +212' },
+  { code: '+213', label: '🇩🇿 +213' },
+  { code: '+216', label: '🇹🇳 +216' },
+  { code: '+44', label: '🇬🇧 +44' },
+  { code: '+49', label: '🇩🇪 +49' },
+  { code: '+34', label: '🇪🇸 +34' },
+  { code: '+31', label: '🇳🇱 +31' },
+  { code: '+351', label: '🇵🇹 +351' },
+  { code: '+1', label: '🇺🇸 +1' },
+];
 import { API_URL } from './config';
 
 export default function AddContactForm({ token, onContactAdded }) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [phonePrefix, setPhonePrefix] = useState('+33');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [type, setType] = useState('BUYER');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,12 +44,12 @@ export default function AddContactForm({ token, onContactAdded }) {
     try {
       const config = { headers: { 'Authorization': `Bearer ${token}` } };
       const response = await axios.post(`${API_URL}/api/contacts`, {
-        firstName, lastName, email, phoneNumber, type
+        firstName, lastName, email, phoneNumber: phonePrefix + phoneNumber, type
       }, config);
 
       if (onContactAdded) onContactAdded(response.data);
 
-      setFirstName(''); setLastName(''); setEmail(''); setPhoneNumber(''); setType('BUYER');
+      setFirstName(''); setLastName(''); setEmail(''); setPhonePrefix('+33'); setPhoneNumber(''); setType('BUYER');
       toast({ title: "Contact ajouté !", status: "success", duration: 2000 });
 
     } catch (error) {
@@ -66,7 +83,26 @@ export default function AddContactForm({ token, onContactAdded }) {
             </FormControl>
             <FormControl>
               <FormLabel>Téléphone</FormLabel>
-              <Input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
+              <HStack spacing={0}>
+                <Select
+                  value={phonePrefix}
+                  onChange={(e) => setPhonePrefix(e.target.value)}
+                  w="120px"
+                  borderRightRadius={0}
+                  flexShrink={0}
+                >
+                  {PHONE_PREFIXES.map(p => (
+                    <option key={p.code} value={p.code}>{p.label}</option>
+                  ))}
+                </Select>
+                <Input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="6 12 34 56 78"
+                  borderLeftRadius={0}
+                />
+              </HStack>
             </FormControl>
           </SimpleGrid>
 

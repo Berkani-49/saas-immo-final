@@ -3,8 +3,24 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Box, VStack, HStack, Button, Grid, Text, Heading, FormControl, FormLabel, Input, Textarea,
-  useToast, Badge, Spinner, Center, Icon
+  useToast, Badge, Spinner, Center, Icon, Select
 } from '@chakra-ui/react';
+
+const PHONE_PREFIXES = [
+  { code: '+33', label: '🇫🇷 +33' },
+  { code: '+32', label: '🇧🇪 +32' },
+  { code: '+41', label: '🇨🇭 +41' },
+  { code: '+352', label: '🇱🇺 +352' },
+  { code: '+212', label: '🇲🇦 +212' },
+  { code: '+213', label: '🇩🇿 +213' },
+  { code: '+216', label: '🇹🇳 +216' },
+  { code: '+44', label: '🇬🇧 +44' },
+  { code: '+49', label: '🇩🇪 +49' },
+  { code: '+34', label: '🇪🇸 +34' },
+  { code: '+31', label: '🇳🇱 +31' },
+  { code: '+351', label: '🇵🇹 +351' },
+  { code: '+1', label: '🇺🇸 +1' },
+];
 import { FiCalendar, FiClock, FiCheck, FiDownload } from 'react-icons/fi';
 import { API_URL } from '../config';
 
@@ -17,6 +33,7 @@ export default function AppointmentCalendar({ agentId }) {
   // Form data
   const [clientName, setClientName] = useState('');
   const [clientEmail, setClientEmail] = useState('');
+  const [clientPhonePrefix, setClientPhonePrefix] = useState('+33');
   const [clientPhone, setClientPhone] = useState('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -92,7 +109,7 @@ export default function AppointmentCalendar({ agentId }) {
         {
           clientName,
           clientEmail,
-          clientPhone,
+          clientPhone: clientPhonePrefix + clientPhone,
           date: selectedDate,
           time: selectedSlot,
           notes
@@ -120,6 +137,7 @@ export default function AppointmentCalendar({ agentId }) {
       // Reset
       setClientName('');
       setClientEmail('');
+      setClientPhonePrefix('+33');
       setClientPhone('');
       setNotes('');
       setSelectedSlot(null);
@@ -281,13 +299,28 @@ export default function AppointmentCalendar({ agentId }) {
 
                   <FormControl>
                     <FormLabel fontSize="sm">Téléphone</FormLabel>
-                    <Input
-                      type="tel"
-                      bg="white"
-                      placeholder="06 12 34 56 78"
-                      value={clientPhone}
-                      onChange={(e) => setClientPhone(e.target.value)}
-                    />
+                    <HStack spacing={0}>
+                      <Select
+                        value={clientPhonePrefix}
+                        onChange={(e) => setClientPhonePrefix(e.target.value)}
+                        w="120px"
+                        borderRightRadius={0}
+                        flexShrink={0}
+                        bg="white"
+                      >
+                        {PHONE_PREFIXES.map(p => (
+                          <option key={p.code} value={p.code}>{p.label}</option>
+                        ))}
+                      </Select>
+                      <Input
+                        type="tel"
+                        bg="white"
+                        placeholder="6 12 34 56 78"
+                        value={clientPhone}
+                        onChange={(e) => setClientPhone(e.target.value)}
+                        borderLeftRadius={0}
+                      />
+                    </HStack>
                   </FormControl>
                 </HStack>
 
