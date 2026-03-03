@@ -1,10 +1,57 @@
 // Script : create-agency.js
-// Crée une nouvelle agence avec son propriétaire (OWNER)
+// Crée une nouvelle agence avec son propriétaire (OWNER) et ajoute le sous-domaine sur Vercel automatiquement
 // Usage : node scripts/create-agency.js --name "Agence Dupont" --slug "agence-dupont" --owner-email "dupont@email.com" --owner-password "motdepasse" [--owner-first "Jean"] [--owner-last "Dupont"] [--plan "pro"]
+// Variables d'env requises pour Vercel auto : VERCEL_TOKEN, VERCEL_PROJECT_ID, APP_DOMAIN
 
+require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
+const https = require('https');
 const prisma = new PrismaClient();
+
+// Ajoute un domaine au projet Vercel via leur API
+async function addVercelDomain(subdomain) {
+  const token = process.env.VERCEL_TOKEN;
+  const projectId = process.env.VERCEL_PROJECT_ID;
+  const appDomain = process.env.APP_DOMAIN;
+
+  if (!token || !projectId || !appDomain) {
+    console.log('   ⚠️  VERCEL_TOKEN / VERCEL_PROJECT_ID / APP_DOMAIN non configurés → sous-domaine à ajouter manuellement sur Vercel');
+    return null;
+  }
+
+  const fullDomain = `${subdomain}.${appDomain}`;
+  const body = JSON.stringify({ name: fullDomain });
+
+  return new Promise((resolve, reject) => {
+    const req = https.request({
+      hostname: 'api.vercel.com',
+      path: `/v10/projects/${projectId}/domains`,
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(body),
+      },
+    }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        const json = JSON.parse(data);
+        if (res.statusCode === 200 || res.statusCode === 201) {
+          resolve(fullDomain);
+        } else if (json.error?.code === 'domain_already_in_use') {
+          resolve(fullDomain); // déjà configuré, pas grave
+        } else {
+          reject(new Error(json.error?.message || `Vercel API error ${res.statusCode}`));
+        }
+      });
+    });
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
 
 function parseArgs() {
   const args = {};
@@ -97,11 +144,21 @@ async function main() {
     console.log(`✅ Abonnement ${plan} activé`);
   }
 
+  // 4. Ajouter le sous-domaine sur Vercel automatiquement
+  let fullDomain = null;
+  try {
+    fullDomain = await addVercelDomain(slug);
+    if (fullDomain) console.log(`✅ Sous-domaine Vercel ajouté : https://${fullDomain}`);
+  } catch (err) {
+    console.warn(`⚠️  Vercel : impossible d'ajouter le sous-domaine automatiquement (${err.message})`);
+    console.warn(`   → Ajoutez manuellement "${slug}.${process.env.APP_DOMAIN || 'votre-domaine.com'}" dans votre projet Vercel`);
+  }
+
   console.log(`\n🎉 Agence "${name}" prête !`);
-  console.log(`   Slug : ${slug}`);
-  console.log(`   Owner : ${ownerEmail}`);
-  console.log(`   Sous-domaine : ${slug}.\${APP_DOMAIN}`);
-  if (plan) console.log(`   Plan : ${plan}`);
+  console.log(`   Slug    : ${slug}`);
+  console.log(`   Owner   : ${ownerEmail}`);
+  console.log(`   URL     : https://${fullDomain || `${slug}.${process.env.APP_DOMAIN || 'votre-domaine.com'}`}`);
+  if (plan) console.log(`   Plan    : ${plan}`);
   console.log('');
 }
 
