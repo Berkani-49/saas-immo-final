@@ -62,9 +62,23 @@ export default function ContactItem({ contact, token, onContactDeleted }) {
             <EmailIcon mr={2} color="gray.400" />
             <Text>{contact.email || "Pas d'email"}</Text>
         </Flex>
-        <Flex align="center">
-            <PhoneIcon mr={2} color="gray.400" />
-            <Text>{contact.phoneNumber || "Pas de numéro"}</Text>
+        <Flex align="center" justify="space-between" w="full">
+            <Flex align="center">
+                <PhoneIcon mr={2} color="gray.400" />
+                <Text>{contact.phoneNumber || "Pas de numéro"}</Text>
+            </Flex>
+            {contact.phoneNumber && (
+                <a href={`tel:${contact.phoneNumber}`}>
+                    <IconButton
+                        icon={<PhoneIcon />}
+                        size="xs"
+                        colorScheme="green"
+                        variant="solid"
+                        aria-label="Appeler"
+                        borderRadius="full"
+                    />
+                </a>
+            )}
         </Flex>
       </VStack>
 

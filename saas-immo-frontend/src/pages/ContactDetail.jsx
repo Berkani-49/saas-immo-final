@@ -6,9 +6,9 @@ import axios from 'axios';
 import {
   Box, Heading, Text, Button, Spinner, Alert, AlertIcon,
   FormControl, FormLabel, Input, Select, Flex, Spacer,
-  VStack, useToast, Center, Container, Badge, SimpleGrid, HStack
+  VStack, useToast, Center, Container, Badge, SimpleGrid, HStack, IconButton
 } from '@chakra-ui/react';
-import { ArrowBackIcon } from '@chakra-ui/icons';
+import { ArrowBackIcon, PhoneIcon } from '@chakra-ui/icons';
 import ContactProperties from '../components/ContactProperties.jsx';
 import { API_URL } from '../config';
 
@@ -191,7 +191,21 @@ export default function ContactDetail({ token }) {
             </Box>
             <Box w="full" p={4} bg="gray.50" borderRadius="md">
                 <Text fontWeight="bold" color="gray.400" fontSize="xs" mb={1}>TÉLÉPHONE</Text>
-                <Text fontSize="lg" color="gray.800">{contact.phoneNumber || "Non renseigné"}</Text>
+                <Flex align="center" justify="space-between">
+                    <Text fontSize="lg" color="gray.800">{contact.phoneNumber || "Non renseigné"}</Text>
+                    {contact.phoneNumber && (
+                        <a href={`tel:${contact.phoneNumber}`}>
+                            <IconButton
+                                icon={<PhoneIcon />}
+                                colorScheme="green"
+                                variant="solid"
+                                size="sm"
+                                borderRadius="full"
+                                aria-label="Appeler"
+                            />
+                        </a>
+                    )}
+                </Flex>
             </Box>
             <Box w="full" p={4} bg="gray.50" borderRadius="md">
                 <Text fontWeight="bold" color="gray.400" fontSize="xs" mb={1}>TYPE</Text>
