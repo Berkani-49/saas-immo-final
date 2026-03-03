@@ -74,12 +74,12 @@ export default function PWAPrompt({ token }) {
       // 1. Demander la permission
       const granted = await requestNotificationPermission();
 
-      if (!granted) {
-        throw new Error('Notifications désactivées. Veuillez les autoriser dans les paramètres de votre navigateur.');
-      }
-
-      // Fermer le prompt dès que la permission est accordée
       setShowNotificationPrompt(false);
+
+      if (!granted) {
+        // Refus silencieux, pas de toast d'erreur
+        return;
+      }
 
       // 2. S'abonner aux notifications push via le serveur (en arrière-plan)
       if (token) {
@@ -87,7 +87,6 @@ export default function PWAPrompt({ token }) {
           await subscribeToPushNotifications(token);
         } catch (pushError) {
           console.error('Erreur abonnement push:', pushError);
-          // On ne bloque pas si l'abonnement push échoue
         }
       }
 
@@ -100,13 +99,7 @@ export default function PWAPrompt({ token }) {
 
     } catch (error) {
       console.error('Erreur activation notifications:', error);
-      setShowNotificationPrompt(false); // Fermer aussi en cas d'erreur
-      toast({
-        title: 'Erreur',
-        description: error.message || 'Impossible d\'activer les notifications',
-        status: 'error',
-        duration: 5000
-      });
+      setShowNotificationPrompt(false); // Fermer silencieusement
     }
   };
 
