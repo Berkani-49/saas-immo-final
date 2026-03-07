@@ -22,9 +22,13 @@ function initSentry(app) {
     // Profiling (optionnel)
     profilesSampleRate: 0.1,
     integrations: [
-      // Intégration Express automatique
-      new Sentry.Integrations.Http({ tracing: true }),
-      new Sentry.Integrations.Express({ app }),
+      // Intégrations automatiques pour Node.js
+      Sentry.httpIntegration({ tracing: true }),
+      Sentry.nativeNodeFetchIntegration(),
+      Sentry.graphqlIntegration(),
+      Sentry.mongoIntegration(),
+      Sentry.postgresIntegration(),
+      Sentry.redisIntegration(),
       nodeProfilingIntegration()
     ],
 
