@@ -111,10 +111,11 @@ router.post('/', async (req, res) => {
     logger.info('Employee created', { employeeId: newEmployee.id, email, createdBy: ownerId });
 
     // Envoyer l'email avec les identifiants
+    let emailSent = false;
     try {
       const frontendUrl = process.env.FRONTEND_URL || 'https://saas-immo-final.vercel.app';
 
-      await sendEmail(email, `Bienvenue dans l'équipe ImmoFlow !`, `
+      const emailResult = await sendEmail(email, `Bienvenue dans l'équipe ImmoFlow !`, `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #2563eb;">Bienvenue ${firstName} !</h1>
           <p>Vous avez été ajouté(e) à l'équipe par ${owner.firstName} ${owner.lastName}.</p>
@@ -131,7 +132,8 @@ router.post('/', async (req, res) => {
           </div>
         </div>
       `);
-      logger.info('Welcome email sent to employee', { email });
+      emailSent = emailResult?.success !== false;
+      logger.info('Welcome email sent to employee', { email, emailSent });
     } catch (emailError) {
       logger.error('Error sending welcome email', { error: emailError.message, email });
     }
@@ -140,8 +142,13 @@ router.post('/', async (req, res) => {
     const { password: _, ...employeeWithoutPassword } = newEmployee;
 
     res.status(201).json({
-      message: 'Employé ajouté avec succès. Un email avec les identifiants a été envoyé.',
+      message: emailSent
+        ? 'Employé ajouté avec succès. Un email avec les identifiants a été envoyé.'
+        : 'Employé ajouté avec succès. L\'email n\'a pas pu être envoyé — transmettez ces identifiants manuellement.',
       employee: employeeWithoutPassword,
+      emailSent,
+      // Retourné uniquement si l'email a échoué, pour que l'owner puisse transmettre les identifiants
+      ...((!emailSent) && { temporaryPassword: generatedPassword }),
     });
 
   } catch (error) {
