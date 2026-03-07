@@ -10,9 +10,9 @@ import {
 } from '@chakra-ui/react';
 
 const accentColors = {
-  blue:   { bar: 'linear(to-r, blue.400, brand.500)', icon: { bg: 'blue.50', color: 'brand.500' } },
-  green:  { bar: 'linear(to-r, green.400, teal.500)', icon: { bg: 'green.50', color: 'green.600' } },
-  purple: { bar: 'linear(to-r, purple.400, pink.400)', icon: { bg: 'purple.50', color: 'purple.600' } },
+  blue:   { bar: 'linear(to-r, brand.400, brand.600)', icon: { bg: 'brand.50', color: 'brand.600' } },
+  green:  { bar: 'linear(to-r, #10B981, #059669)', icon: { bg: '#ECFDF5', color: '#059669' } },
+  purple: { bar: 'linear(to-r, #A78BFA, #7C3AED)', icon: { bg: '#F5F3FF', color: '#7C3AED' } },
 };
 
 export default function StatCard({ title, value, icon, colorScheme = "blue" }) {

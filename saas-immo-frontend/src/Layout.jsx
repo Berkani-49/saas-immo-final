@@ -43,28 +43,28 @@ export default function Layout({ onLogout }) {
       <Flex
         display={{ base: 'flex', md: 'none' }}
         h="60px" alignItems="center" justifyContent="space-between"
-        bg="white"
+        bg="#0F172A"
         borderBottom="1px solid"
-        borderBottomColor="gray.200"
+        borderBottomColor="rgba(255,255,255,0.06)"
         px={4} position="sticky" top="0" zIndex="90"
-        boxShadow="sm"
       >
         <IconButton
           icon={<Icon as={FiMenu} />}
           size="sm"
           variant="ghost"
-          color="gray.600"
+          color="rgba(255,255,255,0.6)"
+          _hover={{ bg: 'rgba(255,255,255,0.08)', color: 'white' }}
           onClick={onDrawerOpen}
           aria-label="Menu"
         />
-        <Text fontSize="lg" fontWeight="bold" color="gray.800">IMMO<Text as="span" color="brand.500">FLOW</Text></Text>
+        <Text fontSize="lg" fontWeight="bold" color="white">IMMO<Text as="span" color="brand.400">FLOW</Text></Text>
         <Box w="32px" />
       </Flex>
 
       {/* --- DRAWER MOBILE (menu complet) --- */}
       <Drawer isOpen={isDrawerOpen} placement="left" onClose={onDrawerClose} size="xs" motionPreset="none">
         <DrawerOverlay />
-        <DrawerContent bg="white" maxW="280px">
+        <DrawerContent bg="#0F172A" maxW="280px">
           <Sidebar onLogout={onLogout} onClose={onDrawerClose} token={token} />
         </DrawerContent>
       </Drawer>
@@ -85,11 +85,10 @@ export default function Layout({ onLogout }) {
       <Box
         display={{ base: 'block', md: 'none' }}
         position="fixed" bottom="0" left="0" w="100%"
-        bg="white"
+        bg="#0F172A"
         borderTop="1px solid"
-        borderTopColor="gray.200"
+        borderTopColor="rgba(255,255,255,0.06)"
         zIndex="999" pb="env(safe-area-inset-bottom)"
-        boxShadow="0px -2px 10px rgba(0,0,0,0.06)"
       >
         <SimpleGrid columns={5} h="70px">
           {MobileNavItems.map((item) => {
@@ -98,21 +97,20 @@ export default function Layout({ onLogout }) {
               <RouterNavLink key={item.name} to={item.path} style={{ textDecoration: 'none' }}>
                 <Flex
                   direction="column" align="center" justify="center" h="100%"
-                  color={isActive ? 'brand.500' : 'gray.400'}
-                  transition="all 0.2s"
-                  _active={{ bg: 'gray.50' }}
+                  color={isActive ? 'white' : 'rgba(255,255,255,0.35)'}
+                  transition="all 0.15s"
                 >
                   <Flex
                     align="center" justify="center"
-                    bg={isActive ? 'brand.50' : 'transparent'}
-                    borderRadius="full"
+                    bg={isActive ? 'rgba(99,102,241,0.2)' : 'transparent'}
+                    borderRadius="lg"
                     w="40px" h="26px"
                     mb="2px"
-                    transition="all 0.2s"
+                    transition="all 0.15s"
                   >
                     <Icon as={item.icon} w={5} h={5} />
                   </Flex>
-                  <Text fontSize="10px" fontWeight={isActive ? 'semibold' : 'normal'}>
+                  <Text fontSize="10px" fontWeight={isActive ? 'semibold' : 'normal'} color="inherit">
                     {item.name}
                   </Text>
                 </Flex>

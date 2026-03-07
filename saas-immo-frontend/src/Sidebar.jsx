@@ -129,16 +129,16 @@ export default function Sidebar({ onLogout, onClose, token }) {
           borderRadius="lg"
           role="group"
           cursor="pointer"
-          color="gray.400"
-          _hover={{ bg: 'gray.100' }}
+          color="rgba(255,255,255,0.25)"
+          _hover={{ bg: 'rgba(255,255,255,0.05)' }}
           transition="all 0.2s"
           onClick={() => handleLockedClick({ requiredPlan: itemPlan, name: itemName })}
           {...rest}
         >
           {icon && (
-            <Icon mr="3" fontSize="16" as={icon} color="gray.400" />
+            <Icon mr="3" fontSize="16" as={icon} color="rgba(255,255,255,0.25)" />
           )}
-          <Text fontSize="sm" fontWeight="medium" flex={1} color="gray.400">{children}</Text>
+          <Text fontSize="sm" fontWeight="medium" flex={1} color="rgba(255,255,255,0.25)">{children}</Text>
           <Badge
             colorScheme={itemPlan === 'premium' ? 'purple' : 'blue'}
             fontSize="2xs"
@@ -147,7 +147,7 @@ export default function Sidebar({ onLogout, onClose, token }) {
           >
             {itemPlan === 'premium' ? 'PREMIUM' : 'PRO'}
           </Badge>
-          <Icon as={FiLock} fontSize="12" color="gray.400" />
+          <Icon as={FiLock} fontSize="12" color="rgba(255,255,255,0.25)" />
         </Flex>
       );
     }
@@ -162,15 +162,15 @@ export default function Sidebar({ onLogout, onClose, token }) {
             borderRadius="lg"
             role="group"
             cursor="pointer"
-            bg={isActive ? 'brand.50' : 'transparent'}
-            color={isActive ? 'brand.600' : 'gray.600'}
-            borderLeft={isActive ? '3px solid' : '3px solid transparent'}
-            borderLeftColor={isActive ? 'brand.500' : 'transparent'}
+            bg={isActive ? 'rgba(99,102,241,0.15)' : 'transparent'}
+            color={isActive ? 'white' : 'rgba(255,255,255,0.55)'}
+            borderLeft={isActive ? '2px solid' : '2px solid transparent'}
+            borderLeftColor={isActive ? 'brand.400' : 'transparent'}
             _hover={{
-              bg: isActive ? 'brand.50' : 'gray.100',
-              color: isActive ? 'brand.600' : 'gray.800',
+              bg: isActive ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.07)',
+              color: 'white',
             }}
-            transition="all 0.2s"
+            transition="all 0.15s"
             {...rest}
           >
             {icon && (
@@ -178,8 +178,8 @@ export default function Sidebar({ onLogout, onClose, token }) {
                 mr="3"
                 fontSize="16"
                 as={icon}
-                color={isActive ? 'brand.500' : 'gray.400'}
-                _groupHover={{ color: isActive ? 'brand.500' : 'gray.600' }}
+                color={isActive ? 'brand.400' : 'rgba(255,255,255,0.4)'}
+                _groupHover={{ color: 'white' }}
               />
             )}
             <Text fontSize="sm" fontWeight={isActive ? 'semibold' : 'medium'} flex="1" color="inherit">{children}</Text>
@@ -202,17 +202,17 @@ export default function Sidebar({ onLogout, onClose, token }) {
       py="2"
       cursor="pointer"
       onClick={onToggle}
-      _hover={{ bg: 'gray.100' }}
+      _hover={{ bg: 'rgba(255,255,255,0.04)' }}
       borderRadius="md"
       mx="2"
       mt="2"
     >
-      <Text fontSize="xs" fontWeight="bold" color="gray.400" textTransform="uppercase" letterSpacing="widest">
+      <Text fontSize="10px" fontWeight="600" color="rgba(255,255,255,0.3)" textTransform="uppercase" letterSpacing="widest">
         {title}
       </Text>
       <Icon
         as={isOpen ? FiChevronDown : FiChevronRight}
-        color="gray.400"
+        color="rgba(255,255,255,0.25)"
         w={3}
         h={3}
       />
@@ -221,16 +221,14 @@ export default function Sidebar({ onLogout, onClose, token }) {
 
   return (
     <Box
-      bg="white"
-      color="gray.700"
+      bg="#0F172A"
+      color="gray.300"
       h="100vh"
       w="100%"
       pos="relative"
       display="flex"
       flexDirection="column"
-      borderRight="1px solid"
-      borderRightColor="gray.200"
-      boxShadow="sm"
+      borderRight="none"
     >
       {/* Partie scrollable */}
       <Box flex="1" overflowY="auto" pb={32}>
@@ -241,10 +239,10 @@ export default function Sidebar({ onLogout, onClose, token }) {
           px={6}
           justifyContent="space-between"
           borderBottom="1px solid"
-          borderBottomColor="gray.100"
+          borderBottomColor="rgba(255,255,255,0.06)"
         >
           {agency ? (
-            <Heading fontSize="lg" fontWeight="bold" letterSpacing="tight" color="gray.800" noOfLines={1}>
+            <Heading fontSize="lg" fontWeight="bold" letterSpacing="tight" color="white" noOfLines={1}>
               {agency.logoUrl ? (
                 <img src={agency.logoUrl} alt={agency.name} style={{ maxHeight: '32px' }} />
               ) : (
@@ -252,14 +250,14 @@ export default function Sidebar({ onLogout, onClose, token }) {
               )}
             </Heading>
           ) : (
-            <Heading fontSize="xl" fontWeight="bold" letterSpacing="tight" color="gray.800">
-              IMMO<Text as="span" color="brand.500">FLOW</Text>
+            <Heading fontSize="xl" fontWeight="bold" letterSpacing="tight" color="white">
+              IMMO<Text as="span" color="brand.400">FLOW</Text>
             </Heading>
           )}
-          {onClose && <CloseButton display={{ base: 'flex', md: 'none' }} onClick={onClose} color="gray.500" />}
+          {onClose && <CloseButton display={{ base: 'flex', md: 'none' }} onClick={onClose} color="rgba(255,255,255,0.5)" />}
         </Flex>
 
-        <Divider borderColor="gray.100" mb={2} />
+        <Divider borderColor="rgba(255,255,255,0.06)" mb={2} />
 
         {/* Barre de recherche */}
         {token && <SearchBar token={token} />}
@@ -303,17 +301,17 @@ export default function Sidebar({ onLogout, onClose, token }) {
         position="sticky"
         bottom="0"
         p={4}
-        bg="white"
+        bg="#0F172A"
         borderTop="1px solid"
-        borderTopColor="gray.100"
+        borderTopColor="rgba(255,255,255,0.06)"
       >
         <Button
           onClick={onLogout}
           width="full"
           variant="ghost"
-          color="gray.500"
+          color="rgba(255,255,255,0.4)"
           leftIcon={<Icon as={FiLogOut} />}
-          _hover={{ bg: 'red.50', color: 'red.500' }}
+          _hover={{ bg: 'rgba(239,68,68,0.1)', color: '#F87171' }}
           fontSize="sm"
           fontWeight="medium"
           borderRadius="lg"

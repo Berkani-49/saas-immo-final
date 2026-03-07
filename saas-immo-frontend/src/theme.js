@@ -1,4 +1,4 @@
-// Fichier : src/theme.js (Version Light Mode - Style Agence Immobilière)
+// Fichier : src/theme.js (Version SaaS Moderne - Style Linear/Notion)
 
 import { extendTheme } from '@chakra-ui/react';
 
@@ -7,33 +7,37 @@ const theme = extendTheme({
     initialColorMode: 'light',
     useSystemColorMode: false,
   },
+  fonts: {
+    heading: `'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`,
+    body: `'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`,
+  },
   styles: {
     global: {
       body: {
-        bg: 'gray.50',
+        bg: '#F8FAFC',
         color: 'gray.800',
       },
     },
   },
   colors: {
-    // Bleu navy professionnel - style agence immobilière
+    // Indigo moderne - style SaaS premium
     brand: {
-      50: '#EFF6FF',
-      100: '#DBEAFE',
-      200: '#BFDBFE',
-      300: '#93C5FD',
-      400: '#60A5FA',
-      500: '#1D4ED8',  // COULEUR PRINCIPALE - bleu navy
-      600: '#1E40AF',  // Hover
-      700: '#1E3A8A',
-      800: '#1E3060',
-      900: '#172554',
+      50: '#EEF2FF',
+      100: '#E0E7FF',
+      200: '#C7D2FE',
+      300: '#A5B4FC',
+      400: '#818CF8',
+      500: '#6366F1',  // COULEUR PRINCIPALE - indigo
+      600: '#4F46E5',  // Hover
+      700: '#4338CA',
+      800: '#3730A3',
+      900: '#312E81',
     },
     blue: {
-      50: '#EFF6FF',
-      100: '#DBEAFE',
-      500: '#1D4ED8',
-      600: '#1E40AF',
+      50: '#EEF2FF',
+      100: '#E0E7FF',
+      500: '#6366F1',
+      600: '#4F46E5',
     }
   },
   components: {
@@ -51,6 +55,7 @@ const theme = extendTheme({
     Heading: {
       baseStyle: {
         color: 'gray.800',
+        letterSpacing: 'tight',
       }
     },
     Text: {
@@ -62,8 +67,8 @@ const theme = extendTheme({
       baseStyle: {
         container: {
           bg: 'white',
-          borderColor: 'gray.200',
-          boxShadow: 'sm',
+          borderColor: 'gray.100',
+          boxShadow: '0 1px 3px 0 rgba(0,0,0,0.06), 0 1px 2px -1px rgba(0,0,0,0.04)',
         }
       }
     },
@@ -75,11 +80,12 @@ const theme = extendTheme({
         outline: {
           field: {
             bg: 'white',
-            borderColor: 'gray.300',
+            borderColor: 'gray.200',
             color: 'gray.800',
+            borderRadius: 'lg',
             _placeholder: { color: 'gray.400' },
-            _hover: { borderColor: 'gray.400' },
-            _focus: { borderColor: 'brand.500', bg: 'white' },
+            _hover: { borderColor: 'gray.300' },
+            _focus: { borderColor: 'brand.500', bg: 'white', boxShadow: '0 0 0 3px rgba(99,102,241,0.1)' },
           }
         }
       }
@@ -89,9 +95,10 @@ const theme = extendTheme({
         outline: {
           field: {
             bg: 'white',
-            borderColor: 'gray.300',
+            borderColor: 'gray.200',
             color: 'gray.800',
-            _hover: { borderColor: 'gray.400' },
+            borderRadius: 'lg',
+            _hover: { borderColor: 'gray.300' },
           }
         }
       }
@@ -100,11 +107,12 @@ const theme = extendTheme({
       variants: {
         outline: {
           bg: 'white',
-          borderColor: 'gray.300',
+          borderColor: 'gray.200',
           color: 'gray.800',
+          borderRadius: 'lg',
           _placeholder: { color: 'gray.400' },
-          _hover: { borderColor: 'gray.400' },
-          _focus: { borderColor: 'brand.500' },
+          _hover: { borderColor: 'gray.300' },
+          _focus: { borderColor: 'brand.500', boxShadow: '0 0 0 3px rgba(99,102,241,0.1)' },
         }
       }
     },
@@ -112,6 +120,8 @@ const theme = extendTheme({
       baseStyle: {
         dialog: {
           bg: 'white',
+          borderRadius: 'xl',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
         },
         header: {
           color: 'gray.800',
@@ -125,15 +135,16 @@ const theme = extendTheme({
       variants: {
         simple: {
           th: {
-            color: 'gray.600',
-            borderColor: 'gray.200',
-            bg: 'gray.50',
+            color: 'gray.500',
+            borderColor: 'gray.100',
+            bg: '#F8FAFC',
             fontSize: 'xs',
             textTransform: 'uppercase',
             letterSpacing: 'wider',
+            fontWeight: '600',
           },
           td: {
-            borderColor: 'gray.100',
+            borderColor: 'gray.50',
             color: 'gray.700',
           }
         }
@@ -145,7 +156,7 @@ const theme = extendTheme({
           tab: {
             color: 'gray.500',
             _selected: {
-              color: 'brand.500',
+              color: 'brand.600',
               bg: 'white',
               borderColor: 'gray.200',
             }
@@ -158,7 +169,7 @@ const theme = extendTheme({
     },
     Divider: {
       baseStyle: {
-        borderColor: 'gray.200',
+        borderColor: 'gray.100',
       }
     },
   },
