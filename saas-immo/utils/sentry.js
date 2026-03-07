@@ -57,38 +57,32 @@ function initSentry(app) {
 
 /**
  * Middleware de request handler Sentry
- * À placer AVANT toutes les routes
+ * En Sentry v8, httpIntegration() gère le tracing automatiquement — middleware noop
  */
 const sentryRequestHandler = () => {
-  // Si Sentry n'est pas initialisé, retourner un middleware vide
-  if (process.env.NODE_ENV !== 'production' || !process.env.SENTRY_DSN) {
-    return (req, res, next) => next();
-  }
-  return Sentry.Handlers.requestHandler();
+  return (req, res, next) => next();
 };
 
 /**
  * Middleware de tracing Sentry
- * À placer AVANT toutes les routes
+ * En Sentry v8, supprimé — middleware noop
  */
 const sentryTracingHandler = () => {
-  // Si Sentry n'est pas initialisé, retourner un middleware vide
-  if (process.env.NODE_ENV !== 'production' || !process.env.SENTRY_DSN) {
-    return (req, res, next) => next();
-  }
-  return Sentry.Handlers.tracingHandler();
+  return (req, res, next) => next();
 };
 
 /**
  * Middleware d'error handler Sentry
- * À placer APRÈS toutes les routes mais AVANT votre error handler custom
+ * En Sentry v8, Sentry.Handlers a été supprimé — on capture manuellement
  */
 const sentryErrorHandler = () => {
-  // Si Sentry n'est pas initialisé, retourner un middleware vide
   if (process.env.NODE_ENV !== 'production' || !process.env.SENTRY_DSN) {
     return (err, req, res, next) => next(err);
   }
-  return Sentry.Handlers.errorHandler();
+  return (err, req, res, next) => {
+    Sentry.captureException(err);
+    next(err);
+  };
 };
 
 module.exports = {
