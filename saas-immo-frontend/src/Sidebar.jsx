@@ -27,7 +27,8 @@ import {
   FiShare2,
   FiEdit3,
   FiUser,
-  FiHelpCircle
+  FiHelpCircle,
+  FiPieChart
 } from 'react-icons/fi';
 import SearchBar from './components/SearchBar';
 
@@ -64,6 +65,7 @@ const navSections = [
   {
     title: 'Outils',
     items: [
+      { name: 'Insights CRM', icon: FiPieChart, path: '/crm-insights' },
       { name: 'Analytics', icon: FiBarChart2, path: '/analytics', requiredPlan: 'pro' },
       { name: 'Notifications', icon: FiBell, path: '/notifications', requiredPlan: 'pro' },
       { name: 'Abonnement', icon: FiCreditCard, path: '/abonnement' },

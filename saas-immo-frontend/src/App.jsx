@@ -40,6 +40,7 @@ const SecretRegister = lazy(() => import('./pages/SecretRegister.jsx'));
 const AppointmentsPage = lazy(() => import('./pages/AppointmentsPage.jsx'));
 const RGPDPage = lazy(() => import('./pages/RGPDPage.jsx'));
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage.jsx'));
+const CrmInsightsPage = lazy(() => import('./pages/CrmInsightsPage.jsx'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage.jsx'));
 const DiffusionPage = lazy(() => import('./pages/DiffusionPage.jsx'));
 const SignaturesPage = lazy(() => import('./pages/SignaturesPage.jsx'));
@@ -182,6 +183,7 @@ export default function App() {
               <Route path="activites" element={<PlanGate requiredPlan="pro"><ActivitiesPage token={token} /></PlanGate>} />
               <Route path="equipe" element={<PlanGate requiredPlan="pro"><TeamPage token={token} /></PlanGate>} />
               <Route path="analytics" element={<PlanGate requiredPlan="pro"><AnalyticsPage token={token} /></PlanGate>} />
+              <Route path="crm-insights" element={<CrmInsightsPage token={token} />} />
               <Route path="notifications" element={<PlanGate requiredPlan="pro"><NotificationsPage token={token} /></PlanGate>} />
               <Route path="diffusion" element={<PlanGate requiredPlan="pro"><DiffusionPage token={token} /></PlanGate>} />
               <Route path="signatures" element={<PlanGate requiredPlan="pro"><SignaturesPage token={token} /></PlanGate>} />

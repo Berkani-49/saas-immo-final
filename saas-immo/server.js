@@ -3963,6 +3963,195 @@ app.get('/api/analytics/devices', authenticateToken, requirePlan(['pro', 'premiu
 });
 
 // ================================
+// 📊 CRM INSIGHTS
+// ================================
+
+app.get('/api/crm-insights', authenticateToken, async (req, res) => {
+  try {
+    const agencyId = req.user.agencyId;
+    const now = new Date();
+    const sixMonthsAgo = new Date(now);
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    // Helpers
+    const monthLabel = (date) =>
+      date.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' });
+
+    // Générer les 6 derniers mois
+    const last6Months = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now);
+      d.setMonth(d.getMonth() - (5 - i));
+      return { year: d.getFullYear(), month: d.getMonth() + 1, label: monthLabel(d) };
+    });
+
+    const [
+      allContacts,
+      allProperties,
+      allTasks,
+      allAppointments,
+    ] = await Promise.all([
+      prisma.contact.findMany({
+        where: { agencyId },
+        select: { id: true, type: true, createdAt: true, budgetMin: true, budgetMax: true, cityPreferences: true },
+      }),
+      prisma.property.findMany({
+        where: { agencyId },
+        select: { id: true, propertyType: true, city: true, price: true, area: true, createdAt: true, status: true },
+      }),
+      prisma.task.findMany({
+        where: { agencyId },
+        select: { id: true, status: true, dueDate: true, createdAt: true },
+      }),
+      prisma.appointment.findMany({
+        where: { agencyId },
+        select: { id: true, status: true, appointmentDate: true, createdAt: true },
+      }),
+    ]);
+
+    // --- CONTACTS ---
+    const buyers = allContacts.filter(c => c.type === 'BUYER');
+    const sellers = allContacts.filter(c => c.type === 'SELLER');
+
+    const contactsByMonth = last6Months.map(({ year, month, label }) => {
+      const b = buyers.filter(c => {
+        const d = new Date(c.createdAt);
+        return d.getFullYear() === year && d.getMonth() + 1 === month;
+      }).length;
+      const s = sellers.filter(c => {
+        const d = new Date(c.createdAt);
+        return d.getFullYear() === year && d.getMonth() + 1 === month;
+      }).length;
+      return { label, buyers: b, sellers: s };
+    });
+
+    // Distribution budgets acheteurs
+    const budgetRanges = [
+      { label: '< 100k', min: 0, max: 100000 },
+      { label: '100k–200k', min: 100000, max: 200000 },
+      { label: '200k–350k', min: 200000, max: 350000 },
+      { label: '350k–500k', min: 350000, max: 500000 },
+      { label: '500k–750k', min: 500000, max: 750000 },
+      { label: '> 750k', min: 750000, max: Infinity },
+    ].map(range => ({
+      label: range.label,
+      count: buyers.filter(c => {
+        const budget = c.budgetMax || c.budgetMin;
+        return budget && budget >= range.min && budget < range.max;
+      }).length,
+    }));
+
+    // Top villes demandées par les acheteurs
+    const cityCount = {};
+    buyers.forEach(c => {
+      if (c.cityPreferences) {
+        c.cityPreferences.split(',').map(v => v.trim()).filter(Boolean).forEach(city => {
+          cityCount[city] = (cityCount[city] || 0) + 1;
+        });
+      }
+    });
+    const topCities = Object.entries(cityCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([city, count]) => ({ city, count }));
+
+    // --- PROPERTIES ---
+    const typeCounts = {};
+    allProperties.forEach(p => {
+      const t = p.propertyType || 'Non défini';
+      typeCounts[t] = (typeCounts[t] || 0) + 1;
+    });
+    const propertiesByType = Object.entries(typeCounts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([type, count]) => ({ type, count }));
+
+    const cityCounts = {};
+    allProperties.forEach(p => {
+      const c = p.city || 'Non défini';
+      cityCounts[c] = (cityCounts[c] || 0) + 1;
+    });
+    const propertiesByCity = Object.entries(cityCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([city, count]) => ({ city, count }));
+
+    const propertiesWithArea = allProperties.filter(p => p.area > 0 && p.price > 0);
+    const avgPricePerSqm = propertiesWithArea.length > 0
+      ? Math.round(propertiesWithArea.reduce((sum, p) => sum + p.price / p.area, 0) / propertiesWithArea.length)
+      : 0;
+    const avgPrice = allProperties.length > 0
+      ? Math.round(allProperties.reduce((sum, p) => sum + p.price, 0) / allProperties.length)
+      : 0;
+    const portfolioValue = allProperties.reduce((sum, p) => sum + p.price, 0);
+
+    const propertiesByMonth = last6Months.map(({ year, month, label }) => ({
+      label,
+      count: allProperties.filter(p => {
+        const d = new Date(p.createdAt);
+        return d.getFullYear() === year && d.getMonth() + 1 === month;
+      }).length,
+    }));
+
+    // --- TASKS ---
+    const doneTasks = allTasks.filter(t => t.status === 'DONE' || t.status === 'COMPLETED');
+    const pendingTasks = allTasks.filter(t => t.status === 'PENDING');
+    const overdueTasks = pendingTasks.filter(t => t.dueDate && new Date(t.dueDate) < now);
+    const completionRate = allTasks.length > 0
+      ? Math.round((doneTasks.length / allTasks.length) * 100)
+      : 0;
+
+    // --- APPOINTMENTS ---
+    const apptPending = allAppointments.filter(a => a.status === 'PENDING').length;
+    const apptConfirmed = allAppointments.filter(a => a.status === 'CONFIRMED').length;
+    const apptCancelled = allAppointments.filter(a => a.status === 'CANCELLED').length;
+
+    const appointmentsByMonth = last6Months.map(({ year, month, label }) => ({
+      label,
+      count: allAppointments.filter(a => {
+        const d = new Date(a.appointmentDate);
+        return d.getFullYear() === year && d.getMonth() + 1 === month;
+      }).length,
+    }));
+
+    res.json({
+      contacts: {
+        total: allContacts.length,
+        buyers: buyers.length,
+        sellers: sellers.length,
+        byMonth: contactsByMonth,
+        budgetRanges,
+        topCities,
+      },
+      properties: {
+        total: allProperties.length,
+        avgPrice,
+        avgPricePerSqm,
+        portfolioValue,
+        byType: propertiesByType,
+        byCity: propertiesByCity,
+        byMonth: propertiesByMonth,
+      },
+      tasks: {
+        total: allTasks.length,
+        done: doneTasks.length,
+        pending: pendingTasks.length,
+        overdue: overdueTasks.length,
+        completionRate,
+      },
+      appointments: {
+        total: allAppointments.length,
+        pending: apptPending,
+        confirmed: apptConfirmed,
+        cancelled: apptCancelled,
+        byMonth: appointmentsByMonth,
+      },
+    });
+  } catch (error) {
+    console.error('Erreur CRM insights:', error);
+    res.status(500).json({ error: 'Erreur lors du calcul des insights CRM' });
+  }
+});
+
+// ================================
 // 🔔 ROUTES NOTIFICATIONS
 // ================================
 
