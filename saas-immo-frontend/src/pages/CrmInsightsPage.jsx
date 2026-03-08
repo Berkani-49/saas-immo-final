@@ -4,7 +4,7 @@ import axios from 'axios';
 import {
   Box, Heading, SimpleGrid, Text, Spinner, Flex, Icon, Badge,
   Card, CardBody, CardHeader, VStack, HStack, Stat, StatLabel,
-  StatNumber, StatHelpText, Progress, useToast
+  StatNumber, StatHelpText, Progress, Button, Alert, AlertIcon, AlertTitle, AlertDescription
 } from '@chakra-ui/react';
 import {
   FiUsers, FiHome, FiCheckSquare, FiCalendar,
@@ -83,22 +83,26 @@ function SectionCard({ title, icon, children }) {
 export default function CrmInsightsPage({ token }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const toast = useToast();
+  const [error, setError] = useState(null);
+
+  const loadData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const res = await axios.get(`${API_URL}/api/crm-insights`, config);
+      setData(res.data);
+    } catch (e) {
+      console.error('Erreur CRM insights:', e);
+      const msg = e.response?.data?.error || e.message || 'Erreur inconnue';
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetch = async () => {
-      try {
-        const config = { headers: { Authorization: `Bearer ${token}` } };
-        const res = await axios.get(`${API_URL}/api/crm-insights`, config);
-        setData(res.data);
-      } catch (e) {
-        console.error(e);
-        toast({ title: 'Erreur chargement insights', status: 'error', duration: 3000 });
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetch();
+    loadData();
   }, [token]);
 
   if (loading) return (
@@ -107,7 +111,24 @@ export default function CrmInsightsPage({ token }) {
     </Flex>
   );
 
-  if (!data) return <Text color="gray.500">Aucune donnée disponible.</Text>;
+  if (error) return (
+    <Box py={10}>
+      <Alert status="error" borderRadius="xl" flexDirection="column" alignItems="center" textAlign="center" py={8}>
+        <AlertIcon boxSize={8} mb={3} />
+        <AlertTitle mb={1}>Impossible de charger les insights</AlertTitle>
+        <AlertDescription color="gray.600" mb={4}>{error}</AlertDescription>
+        <Button colorScheme="red" variant="outline" onClick={loadData}>
+          Réessayer
+        </Button>
+      </Alert>
+    </Box>
+  );
+
+  if (!data) return (
+    <Flex justify="center" align="center" h="50vh">
+      <Text color="gray.500">Aucune donnée disponible.</Text>
+    </Flex>
+  );
 
   const { contacts, properties, tasks, appointments } = data;
 

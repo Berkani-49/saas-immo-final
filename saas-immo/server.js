@@ -3968,7 +3968,10 @@ app.get('/api/analytics/devices', authenticateToken, requirePlan(['pro', 'premiu
 
 app.get('/api/crm-insights', authenticateToken, async (req, res) => {
   try {
-    const agencyId = req.user.agencyId;
+    const agencyId = req.user.agencyId || null;
+    if (!agencyId) {
+      return res.status(403).json({ error: 'Aucune agence associée à ce compte. Veuillez contacter le support.' });
+    }
     const now = new Date();
     const sixMonthsAgo = new Date(now);
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
