@@ -3987,16 +3987,26 @@ app.get('/api/crm-insights', authenticateToken, async (req, res) => {
       return { year: d.getFullYear(), month: d.getMonth() + 1, label: monthLabel(d) };
     });
 
+    // Fetch contacts without optional fields first, then try to get budget/city fields
+    let allContacts = [];
+    try {
+      allContacts = await prisma.contact.findMany({
+        where: { agencyId },
+        select: { id: true, type: true, createdAt: true, budgetMin: true, budgetMax: true, cityPreferences: true },
+      });
+    } catch (e) {
+      // Fallback: fetch without potentially missing columns
+      allContacts = await prisma.contact.findMany({
+        where: { agencyId },
+        select: { id: true, type: true, createdAt: true },
+      });
+    }
+
     const [
-      allContacts,
       allProperties,
       allTasks,
       allAppointments,
     ] = await Promise.all([
-      prisma.contact.findMany({
-        where: { agencyId },
-        select: { id: true, type: true, createdAt: true, budgetMin: true, budgetMax: true, cityPreferences: true },
-      }),
       prisma.property.findMany({
         where: { agencyId },
         select: { id: true, propertyType: true, city: true, price: true, area: true, createdAt: true, status: true },
@@ -4150,7 +4160,7 @@ app.get('/api/crm-insights', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Erreur CRM insights:', error);
-    res.status(500).json({ error: 'Erreur lors du calcul des insights CRM' });
+    res.status(500).json({ error: error.message || 'Erreur lors du calcul des insights CRM' });
   }
 });
 
