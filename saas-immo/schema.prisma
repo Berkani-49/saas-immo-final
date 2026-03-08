@@ -33,6 +33,7 @@ model Agency {
   subscription  Subscription?  @relation("AgencySubscription")
   diffusions    PropertyDiffusion[]
   documents     Document[]
+  suivis        Suivi[]
 
   @@index([slug])
 }
@@ -73,6 +74,7 @@ model User {
   pushSubscriptions PushSubscription[]
   subscription Subscription?
   documents  Document[]
+  suivis     Suivi[]
 
   @@index([agencyId])
 }
@@ -143,6 +145,9 @@ model Property {
   // 📝 Documents (mandats, baux, etc.)
   documents  Document[]
 
+  // Suivi commercial
+  suivis    Suivi[]
+
   @@index([agentId])
   @@index([agencyId])
 }
@@ -187,6 +192,9 @@ model Contact {
 
   // Notifications envoyées à ce contact
   notifications Notification[]
+
+  // Suivi commercial
+  suivis    Suivi[]
 
   @@index([agentId])
   @@index([agencyId])
@@ -516,4 +524,34 @@ model Document {
   @@index([agencyId])
   @@index([agentId])
   @@index([signingToken])
+}
+
+// --- MODÈLE SUIVI COMMERCIAL ---
+// Permet de suivre l'avancement d'un acheteur sur un bien spécifique
+model Suivi {
+  id              Int      @id @default(autoincrement())
+  // INTEREST → VISIT → OFFER → SOLD | REJECTED | WITHDRAWN
+  status          String   @default("INTEREST")
+  // Raison si REJECTED : PRICE, FOUND_ELSEWHERE, FINANCING, NOT_MATCHING, OTHER
+  rejectionReason String?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  contact         Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contactId       Int
+
+  property        Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  propertyId      Int
+
+  agent           User     @relation(fields: [agentId], references: [id])
+  agentId         Int
+
+  agency          Agency?  @relation(fields: [agencyId], references: [id])
+  agencyId        Int?
+
+  @@unique([contactId, propertyId])
+  @@index([contactId])
+  @@index([propertyId])
+  @@index([agencyId])
 }

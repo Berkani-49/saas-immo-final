@@ -10,6 +10,7 @@ import {
 } from '@chakra-ui/react';
 import { ArrowBackIcon, PhoneIcon } from '@chakra-ui/icons';
 import ContactProperties from '../components/ContactProperties.jsx';
+import SuiviPanel from '../components/SuiviPanel.jsx';
 import { API_URL } from '../config';
 
 const PHONE_PREFIXES = [
@@ -218,6 +219,13 @@ export default function ContactDetail({ token }) {
             <Box w="full" p={4} bg="gray.50" borderRadius="md" borderWidth="1px" borderColor="gray.300">
                 <ContactProperties contactId={contact.id} token={token} />
             </Box>
+
+            {/* SUIVI COMMERCIAL (acheteurs uniquement) */}
+            {contact.type === 'BUYER' && (
+              <Box w="full" p={4} bg="gray.50" borderRadius="md" borderWidth="1px" borderColor="gray.300">
+                <SuiviPanel contactId={contact.id} token={token} />
+              </Box>
+            )}
           </VStack>
         )}
       </Box>

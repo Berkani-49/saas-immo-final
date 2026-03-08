@@ -3963,6 +3963,97 @@ app.get('/api/analytics/devices', authenticateToken, requirePlan(['pro', 'premiu
 });
 
 // ================================
+// 🔎 SUIVI COMMERCIAL
+// ================================
+
+// GET /api/suivis?contactId=X  — tous les suivis d'un contact
+app.get('/api/suivis', authenticateToken, async (req, res) => {
+  try {
+    const { contactId, propertyId } = req.query;
+    const agencyId = req.user.agencyId;
+    const where = { agencyId };
+    if (contactId) where.contactId = parseInt(contactId);
+    if (propertyId) where.propertyId = parseInt(propertyId);
+
+    const suivis = await prisma.suivi.findMany({
+      where,
+      include: {
+        property: { select: { id: true, address: true, city: true, price: true, propertyType: true } },
+        contact:  { select: { id: true, firstName: true, lastName: true, type: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+    res.json(suivis);
+  } catch (error) {
+    console.error('Erreur GET /api/suivis:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/suivis  — créer un suivi
+app.post('/api/suivis', authenticateToken, async (req, res) => {
+  try {
+    const { contactId, propertyId, status, notes, rejectionReason } = req.body;
+    if (!contactId || !propertyId) return res.status(400).json({ error: 'contactId et propertyId requis' });
+
+    const suivi = await prisma.suivi.create({
+      data: {
+        contactId:       parseInt(contactId),
+        propertyId:      parseInt(propertyId),
+        agentId:         req.user.id,
+        agencyId:        req.user.agencyId,
+        status:          status || 'INTEREST',
+        notes:           notes || null,
+        rejectionReason: rejectionReason || null,
+      },
+      include: {
+        property: { select: { id: true, address: true, city: true, price: true, propertyType: true } },
+        contact:  { select: { id: true, firstName: true, lastName: true, type: true } },
+      },
+    });
+    res.status(201).json(suivi);
+  } catch (error) {
+    if (error.code === 'P2002') return res.status(409).json({ error: 'Un suivi existe déjà pour ce contact/bien' });
+    console.error('Erreur POST /api/suivis:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// PUT /api/suivis/:id  — mettre à jour statut/notes
+app.put('/api/suivis/:id', authenticateToken, async (req, res) => {
+  try {
+    const { status, notes, rejectionReason } = req.body;
+    const suivi = await prisma.suivi.update({
+      where: { id: parseInt(req.params.id) },
+      data: {
+        ...(status          !== undefined && { status }),
+        ...(notes           !== undefined && { notes }),
+        ...(rejectionReason !== undefined && { rejectionReason }),
+      },
+      include: {
+        property: { select: { id: true, address: true, city: true, price: true, propertyType: true } },
+        contact:  { select: { id: true, firstName: true, lastName: true, type: true } },
+      },
+    });
+    res.json(suivi);
+  } catch (error) {
+    console.error('Erreur PUT /api/suivis/:id:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/suivis/:id
+app.delete('/api/suivis/:id', authenticateToken, async (req, res) => {
+  try {
+    await prisma.suivi.delete({ where: { id: parseInt(req.params.id) } });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Erreur DELETE /api/suivis/:id:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ================================
 // 📊 CRM INSIGHTS
 // ================================
 
