@@ -4009,7 +4009,7 @@ app.get('/api/crm-insights', authenticateToken, async (req, res) => {
     ] = await Promise.all([
       prisma.property.findMany({
         where: { agencyId },
-        select: { id: true, propertyType: true, city: true, price: true, area: true, createdAt: true, status: true },
+        select: { id: true, propertyType: true, city: true, price: true, area: true, createdAt: true },
       }),
       prisma.task.findMany({
         where: { agencyId },
