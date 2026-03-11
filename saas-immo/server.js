@@ -4687,7 +4687,7 @@ app.post('/api/properties/:id/send-link', authenticateToken, async (req, res) =>
 
     if (!recipientEmail) return res.status(400).json({ error: "Email destinataire requis" });
 
-    const propertyUrl = `${process.env.FRONTEND_URL || 'https://immoflow.app'}/share/${property.id}`;
+    const propertyUrl = `${process.env.FRONTEND_URL || 'https://saas-immo-final.vercel.app'}/share/${property.id}`;
     const agentName = property.agent ? `${property.agent.firstName} ${property.agent.lastName}` : 'Votre agent';
     const priceFormatted = property.price ? property.price.toLocaleString('fr-FR') + ' €' : '';
     const personalMsg = message ? `<p style="font-style:italic;color:#555;">${message}</p>` : '';
