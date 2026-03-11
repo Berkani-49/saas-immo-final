@@ -4,10 +4,12 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import {
   Box, Text, Button, IconButton, Flex, Badge, Image, VStack, HStack, useToast,
-  FormControl, FormLabel, Input, Textarea, Spacer, useDisclosure, Divider
+  Input, Textarea, Spacer, useDisclosure, Divider,
+  Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter, ModalCloseButton,
+  Select, RadioGroup, Radio, Stack
 } from '@chakra-ui/react';
 import { EditIcon, DeleteIcon } from '@chakra-ui/icons';
-import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaShareAlt } from 'react-icons/fa';
+import { FaBed, FaBath, FaRulerCombined, FaMapMarkerAlt, FaShareAlt, FaEnvelope } from 'react-icons/fa';
 import { FiFileText } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import DocumentGenerator from './components/DocumentGenerator';
@@ -22,6 +24,45 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
 
   // Modal de génération de documents
   const { isOpen: isDocGenOpen, onOpen: onDocGenOpen, onClose: onDocGenClose } = useDisclosure();
+
+  // Modal d'envoi de lien
+  const { isOpen: isSendOpen, onOpen: onSendOpen, onClose: onSendClose } = useDisclosure();
+  const [contacts, setContacts] = useState([]);
+  const [sendMode, setSendMode] = useState('contact'); // 'contact' | 'email'
+  const [selectedContactId, setSelectedContactId] = useState('');
+  const [customEmail, setCustomEmail] = useState('');
+  const [sendMessage, setSendMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
+
+  const handleOpenSend = async () => {
+    onSendOpen();
+    if (contacts.length === 0) {
+      try {
+        const { data } = await axios.get(`${API_URL}/api/contacts`, { headers: { Authorization: `Bearer ${token}` } });
+        setContacts(data.filter(c => c.email));
+      } catch { /* silencieux */ }
+    }
+  };
+
+  const handleSendLink = async () => {
+    setIsSending(true);
+    try {
+      const payload = { message: sendMessage };
+      if (sendMode === 'contact') payload.contactId = selectedContactId;
+      else payload.email = customEmail;
+
+      await axios.post(`${API_URL}/api/properties/${property.id}/send-link`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast({ title: "Email envoyé !", status: "success", duration: 3000 });
+      onSendClose();
+      setSendMessage(''); setSelectedContactId(''); setCustomEmail('');
+    } catch (err) {
+      toast({ title: err.response?.data?.error || "Erreur envoi", status: "error" });
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   // --- SHARE (Nouvelle fonction) ---
   const handleShare = () => {
@@ -91,7 +132,7 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
                 <Input name="rooms" type="number" value={editData.rooms} onChange={handleChange} placeholder="Pièces" />
             </HStack>
             <Flex mt={2} gap={2}>
-              <Button type="submit" colorScheme="green" size="sm" isLoading={isLoading || isUploading}>Sauvegarder</Button>
+              <Button type="submit" colorScheme="green" size="sm" isLoading={isLoading}>Sauvegarder</Button>
               <Button size="sm" variant="ghost" onClick={() => setIsEditing(false)}>Annuler</Button>
             </Flex>
 
@@ -211,6 +252,9 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
                   title="Générer des documents PDF"
                 />
 
+                {/* BOUTON ENVOYER PAR EMAIL */}
+                <IconButton icon={<FaEnvelope />} size="sm" variant="ghost" colorScheme="teal" onClick={handleOpenSend} aria-label="Envoyer à un client" title="Envoyer le lien à un client" />
+
                 {/* LE BOUTON PARTAGER */}
                 <IconButton icon={<FaShareAlt />} size="sm" variant="ghost" colorScheme="purple" onClick={handleShare} aria-label="Partager" />
 
@@ -227,6 +271,64 @@ export default function PropertyItem({ property, token, onPropertyDeleted, onPro
         property={property}
         token={token}
       />
+
+      {/* MODAL ENVOI DE LIEN */}
+      <Modal isOpen={isSendOpen} onClose={onSendClose} isCentered>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Envoyer l'annonce par email</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing={4} align="stretch">
+              <RadioGroup value={sendMode} onChange={setSendMode}>
+                <Stack direction="row" spacing={6}>
+                  <Radio value="contact">Choisir un contact</Radio>
+                  <Radio value="email">Saisir un email</Radio>
+                </Stack>
+              </RadioGroup>
+
+              {sendMode === 'contact' ? (
+                <Select
+                  placeholder="Sélectionner un contact..."
+                  value={selectedContactId}
+                  onChange={e => setSelectedContactId(e.target.value)}
+                >
+                  {contacts.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.firstName} {c.lastName} — {c.email}
+                    </option>
+                  ))}
+                </Select>
+              ) : (
+                <Input
+                  type="email"
+                  placeholder="exemple@email.com"
+                  value={customEmail}
+                  onChange={e => setCustomEmail(e.target.value)}
+                />
+              )}
+
+              <Textarea
+                placeholder="Message personnalisé (optionnel)"
+                value={sendMessage}
+                onChange={e => setSendMessage(e.target.value)}
+                rows={3}
+              />
+            </VStack>
+          </ModalBody>
+          <ModalFooter gap={2}>
+            <Button variant="ghost" onClick={onSendClose}>Annuler</Button>
+            <Button
+              colorScheme="teal"
+              isLoading={isSending}
+              isDisabled={sendMode === 'contact' ? !selectedContactId : !customEmail}
+              onClick={handleSendLink}
+            >
+              Envoyer
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
     </Box>
   );

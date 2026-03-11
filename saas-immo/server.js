@@ -4658,6 +4658,80 @@ app.get('/api/cron/test-reminders', authenticateToken, async (req, res) => {
 });
 
 // ========================================
+// ENVOI DE LIEN D'ANNONCE PAR EMAIL
+// ========================================
+app.post('/api/properties/:id/send-link', authenticateToken, async (req, res) => {
+  try {
+    const propertyId = parseInt(req.params.id);
+    const { contactId, email: customEmail, message } = req.body;
+
+    // Vérifier que le bien appartient à l'agence
+    const property = await prisma.property.findFirst({
+      where: { id: propertyId, agencyId: req.user.agencyId },
+      include: { agent: true }
+    });
+    if (!property) return res.status(404).json({ error: "Bien non trouvé" });
+
+    let recipientEmail = customEmail;
+    let recipientName = '';
+
+    if (contactId) {
+      const contact = await prisma.contact.findFirst({
+        where: { id: parseInt(contactId), agencyId: req.user.agencyId }
+      });
+      if (!contact) return res.status(404).json({ error: "Contact non trouvé" });
+      if (!contact.email) return res.status(400).json({ error: "Ce contact n'a pas d'adresse email" });
+      recipientEmail = contact.email;
+      recipientName = `${contact.firstName} ${contact.lastName}`;
+    }
+
+    if (!recipientEmail) return res.status(400).json({ error: "Email destinataire requis" });
+
+    const propertyUrl = `${process.env.FRONTEND_URL || 'https://immoflow.app'}/share/${property.id}`;
+    const agentName = property.agent ? `${property.agent.firstName} ${property.agent.lastName}` : 'Votre agent';
+    const priceFormatted = property.price ? property.price.toLocaleString('fr-FR') + ' €' : '';
+    const personalMsg = message ? `<p style="font-style:italic;color:#555;">${message}</p>` : '';
+
+    const html = `
+      <!DOCTYPE html><html><body style="font-family:Arial,sans-serif;background:#f5f5f5;margin:0;padding:20px;">
+      <div style="max-width:600px;margin:0 auto;background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.1);">
+        <div style="background:linear-gradient(135deg,#667eea,#764ba2);padding:30px;text-align:center;">
+          <h1 style="color:white;margin:0;font-size:24px;">ImmoFlow</h1>
+          <p style="color:rgba(255,255,255,0.85);margin:8px 0 0;">Un bien vous a été recommandé</p>
+        </div>
+        <div style="padding:30px;">
+          ${recipientName ? `<p>Bonjour <strong>${recipientName}</strong>,</p>` : '<p>Bonjour,</p>'}
+          <p>${agentName} vous partage une annonce immobilière :</p>
+          ${personalMsg}
+          <div style="background:#f8f9ff;border-radius:8px;padding:20px;margin:20px 0;">
+            <h2 style="margin:0 0 8px;color:#333;font-size:18px;">${property.address}</h2>
+            <p style="margin:0;color:#666;">${property.city}${priceFormatted ? ' · ' + priceFormatted : ''}</p>
+            ${property.area ? `<p style="margin:4px 0 0;color:#888;font-size:14px;">${property.area} m² · ${property.rooms || '-'} pièces · ${property.bedrooms || '-'} chambres</p>` : ''}
+          </div>
+          <div style="text-align:center;margin:30px 0;">
+            <a href="${propertyUrl}" style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">
+              Voir l'annonce
+            </a>
+          </div>
+          <p style="color:#aaa;font-size:12px;text-align:center;">Cet email vous a été envoyé par ${agentName} via ImmoFlow.</p>
+        </div>
+      </div>
+      </body></html>
+    `;
+
+    const result = await sendEmail(recipientEmail, `Annonce immobilière : ${property.address}`, html);
+    if (!result.success) {
+      return res.status(500).json({ error: result.error === 'BREVO_NOT_CONFIGURED' ? 'Service email non configuré' : 'Erreur envoi email' });
+    }
+
+    res.json({ success: true, sentTo: recipientEmail });
+  } catch (e) {
+    console.error('Erreur send-link:', e);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// ========================================
 // ERROR HANDLING (À LA FIN, AVANT app.listen)
 // ========================================
 
